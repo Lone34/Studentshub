@@ -1,0 +1,377 @@
+{% extends "base.html" %}
+{% block content %}
+
+<link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+
+<div class="min-h-screen bg-white" x-data="{ activeTab: 'unblur' }">
+    
+    <div class="bg-slate-50 border-b border-slate-200 pb-10 pt-10">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-6" data-aos="fade-down">
+                <div>
+                    <a href="{{ url_for('dashboard') }}" class="text-xs font-bold text-slate-400 hover:text-slate-600 mb-2 inline-block"><i class="fa-solid fa-arrow-left mr-1"></i> Back to Dashboard</a>
+                    <h1 class="text-3xl font-black text-slate-900">Chegg Workspace</h1>
+                    <p class="text-slate-500">Manage your unblurs and expert questions.</p>
+                </div>
+                
+                <div class="inline-flex rounded-xl bg-white p-1.5 shadow-sm border border-slate-200">
+                    <button @click="activeTab = 'unblur'" 
+                            :class="activeTab === 'unblur' ? 'bg-slate-900 text-white shadow-md' : 'text-slate-500 hover:text-slate-700'"
+                            class="flex items-center gap-2 rounded-lg px-6 py-2.5 text-sm font-bold transition-all">
+                        <i class="fa-solid fa-unlock"></i> <span class="hidden sm:inline">Unblur</span>
+                    </button>
+                    <button @click="activeTab = 'post'" 
+                            :class="activeTab === 'post' ? 'bg-slate-900 text-white shadow-md' : 'text-slate-500 hover:text-slate-700'"
+                            class="flex items-center gap-2 rounded-lg px-6 py-2.5 text-sm font-bold transition-all">
+                        <i class="fa-solid fa-paper-plane"></i> <span class="hidden sm:inline">Post Question</span>
+                    </button>
+                    <button @click="activeTab = 'history'" 
+                            :class="activeTab === 'history' ? 'bg-slate-900 text-white shadow-md' : 'text-slate-500 hover:text-slate-700'"
+                            class="flex items-center gap-2 rounded-lg px-6 py-2.5 text-sm font-bold transition-all">
+                        <i class="fa-solid fa-clock-rotate-left"></i> <span class="hidden sm:inline">History</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        
+        <div x-show="activeTab === 'unblur'" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0">
+            <div class="max-w-2xl mx-auto">
+                <div class="bg-white rounded-3xl shadow-xl border border-slate-100 p-8 relative overflow-hidden" data-aos="fade-up">
+                    <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-orange-500 to-rose-500"></div>
+                    
+                    <div class="text-center mb-8">
+                        <div class="w-16 h-16 bg-orange-50 rounded-2xl flex items-center justify-center text-orange-600 text-3xl mx-auto mb-4">
+                            <i class="fa-solid fa-unlock-keyhole"></i>
+                        </div>
+                        <h2 class="text-2xl font-bold text-slate-800">Paste Chegg Link</h2>
+                        <p class="text-slate-500 text-sm">Instant access via Super Admin Pool</p>
+                    </div>
+
+                    <form action="{{ url_for('unblur') }}" method="POST">
+                        <div class="relative mb-6">
+                            <input type="url" name="chegg_url" required placeholder="https://www.chegg.com/homework-help/..." 
+                                   class="w-full bg-slate-50 border-2 border-slate-100 text-slate-800 text-lg py-5 px-6 pr-14 rounded-2xl focus:outline-none focus:border-orange-500 focus:bg-white transition-all shadow-inner">
+                            <div class="absolute right-6 top-1/2 transform -translate-y-1/2 text-slate-300">
+                                <i class="fa-solid fa-link text-xl"></i>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="w-full group relative flex items-center justify-center gap-3 overflow-hidden rounded-2xl bg-slate-900 px-8 py-4 font-bold text-white shadow-lg transition-all hover:bg-orange-600 hover:-translate-y-1">
+                            <span>Unblur Answer</span>
+                            <i class="fa-solid fa-wand-magic-sparkles transition-transform group-hover:rotate-12"></i>
+                        </button>
+                    </form>
+                    
+                    <div class="mt-8 flex justify-center gap-6 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                        <span class="flex items-center gap-2"><i class="fa-solid fa-bolt text-orange-500"></i> Instant</span>
+                        <span class="flex items-center gap-2"><i class="fa-solid fa-shield text-green-500"></i> Secure</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div x-show="activeTab === 'post'" x-cloak x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0">
+            <div class="max-w-4xl mx-auto bg-white rounded-[2.5rem] shadow-xl border border-slate-100 overflow-hidden" data-aos="fade-up">
+                
+                <div class="bg-slate-50/50 p-8 border-b border-slate-100 flex justify-between items-center">
+                    <div>
+                        <h3 class="text-lg font-bold text-slate-800">Ask an Expert</h3>
+                        <p class="text-xs text-slate-500">Post your question to Chegg experts.</p>
+                    </div>
+                    <div class="bg-blue-50 text-blue-600 px-3 py-1 rounded-lg text-xs font-bold border border-blue-100">
+                        1 Credit / Post
+                    </div>
+                </div>
+
+                <div class="p-8 md:p-10">
+                    <form method="POST" id="postForm" class="space-y-8">
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-400 uppercase mb-2">Service Account</label>
+                                <div class="relative">
+                                    <select name="account_id" id="account_select" class="w-full appearance-none bg-slate-50 border border-slate-200 text-slate-700 py-3.5 px-4 rounded-xl focus:outline-none focus:border-blue-500 text-sm font-bold cursor-pointer hover:bg-white transition-colors">
+                                        {% for acc in accounts %}
+                                            <option value="{{ acc.id }}">{{ acc.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400"><i class="fa-solid fa-chevron-down text-xs"></i></div>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-400 uppercase mb-2">Input Mode</label>
+                                <div class="flex bg-slate-100 p-1 rounded-xl">
+                                    <button type="button" onclick="switchMode('text')" id="btn-mode-text" class="flex-1 py-2.5 rounded-lg text-xs font-bold bg-white shadow-sm text-slate-800 transition-all">Text</button>
+                                    <button type="button" onclick="switchMode('image')" id="btn-mode-image" class="flex-1 py-2.5 rounded-lg text-xs font-bold text-slate-500 hover:text-slate-700 transition-all">Image OCR</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <input type="hidden" name="post_mode" id="post_mode" value="text">
+                        <input type="hidden" name="final_image_url" id="final_image_url">
+
+                        <div class="space-y-2">
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase">Question Content</label>
+                            
+                            <textarea name="content" id="question_content" rows="8" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-5 text-sm text-slate-700 focus:outline-none focus:border-blue-500 resize-none font-mono placeholder:text-slate-400 transition-all shadow-inner" placeholder="Type your question content here..."></textarea>
+                            
+                            <div id="container-image" class="hidden">
+                                <div class="border-2 border-dashed border-slate-200 rounded-xl p-10 text-center bg-slate-50 cursor-pointer relative hover:border-blue-400 hover:bg-blue-50 transition-all group h-64 flex flex-col items-center justify-center">
+                                    <input type="file" id="imageInput" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" onchange="uploadImage()">
+                                    
+                                    <div id="upload-prompt" class="group-hover:scale-105 transition-transform duration-300">
+                                        <div class="w-16 h-16 bg-white rounded-full shadow-sm flex items-center justify-center mx-auto mb-4 text-blue-500 text-2xl">
+                                            <i class="fa-solid fa-cloud-arrow-up"></i>
+                                        </div>
+                                        <p class="text-sm font-bold text-slate-700">Click to Upload Image</p>
+                                        <p class="text-xs text-slate-400 mt-1">Supports JPG, PNG with OCR</p>
+                                    </div>
+                                    
+                                    <div id="upload-loading" class="hidden">
+                                        <i class="fa-solid fa-circle-notch fa-spin text-blue-500 text-4xl"></i>
+                                        <p class="text-xs font-bold text-slate-500 mt-4">Analyzing Image...</p>
+                                    </div>
+                                </div>
+                                
+                                <div id="ocr-preview" class="hidden mt-6 flex gap-6 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                                    <img id="img-preview-src" class="w-32 h-32 object-cover rounded-xl bg-slate-100 border border-slate-200">
+                                    <div class="flex-1">
+                                        <p class="text-[10px] font-bold text-green-600 uppercase mb-2"><i class="fa-solid fa-check-circle"></i> OCR Text Extracted</p>
+                                        <textarea id="ocr_editor" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-3 h-24 font-mono text-slate-600 focus:outline-none" oninput="document.getElementById('question_content').value = this.value"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="pt-6 border-t border-slate-100 flex flex-col md:flex-row gap-4">
+                            <div class="flex-1 relative">
+                                <button type="button" onclick="fetchSubjects()" id="searchBtn" class="w-full py-4 rounded-xl border-2 border-dashed border-blue-200 text-blue-600 font-bold text-sm hover:bg-blue-50 transition-all">
+                                    <i class="fa-solid fa-magnifying-glass mr-2"></i> 1. Find Subject
+                                </button>
+                                <div id="subject-step" class="hidden absolute top-0 left-0 w-full h-full bg-white rounded-xl border-2 border-green-100 z-10 animate-fade-in flex items-center">
+                                    <select name="subject_select" id="subject_dropdown" required class="w-full h-full appearance-none bg-transparent px-4 text-sm font-bold text-slate-700 outline-none cursor-pointer">
+                                        <option value="" disabled selected>Select Subject...</option>
+                                    </select>
+                                    <i class="fa-solid fa-chevron-down absolute right-4 text-green-500 pointer-events-none"></i>
+                                </div>
+                            </div>
+
+                            <button type="submit" id="postBtn" class="flex-1 bg-slate-900 text-white font-bold py-4 rounded-xl shadow-xl hover:bg-slate-800 transition-all flex items-center justify-center gap-2 transform active:scale-95">
+                                <span>2. Launch Process</span> <i class="fa-solid fa-rocket"></i>
+                            </button>
+                        </div>
+
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div x-show="activeTab === 'history'" x-cloak x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0">
+            <div class="bg-white rounded-[2rem] shadow-lg border border-slate-100 overflow-hidden" data-aos="fade-up">
+                <div class="px-8 py-6 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
+                    <h3 class="font-bold text-slate-800">Activity Log</h3>
+                    <span class="bg-white border border-slate-200 px-3 py-1 rounded-full text-xs font-bold text-slate-500">{{ jobs|length }} Records</span>
+                </div>
+                
+                {% if jobs %}
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead class="bg-slate-50 text-slate-400 text-[10px] font-bold uppercase tracking-wider border-b border-slate-100">
+                            <tr>
+                                <th class="px-8 py-5">ID</th>
+                                <th class="px-8 py-5">Subject</th>
+                                <th class="px-8 py-5">Status</th>
+                                <th class="px-8 py-5 text-right">Time</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-50">
+                            {% for job in jobs %}
+                            <tr onclick="showDetails(this)" class="hover:bg-blue-50/50 cursor-pointer transition-colors group">
+                                <td class="px-8 py-5 font-mono text-xs text-slate-400">#{{ job.id }}</td>
+                                <td class="px-8 py-5">
+                                    <div class="text-sm font-bold text-slate-700 group-hover:text-blue-600 transition-colors">{{ job.subject }}</div>
+                                </td>
+                                <td class="px-8 py-5">
+                                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold 
+                                        {% if job.status == 'Completed' %}bg-green-50 text-green-600 ring-1 ring-green-100
+                                        {% elif job.status == 'Failed' %}bg-red-50 text-red-600 ring-1 ring-red-100
+                                        {% else %}bg-yellow-50 text-yellow-600 ring-1 ring-yellow-100{% endif %}">
+                                        <span class="w-1.5 h-1.5 rounded-full {% if job.status == 'Completed' %}bg-green-500{% elif job.status == 'Failed' %}bg-red-500{% else %}bg-yellow-500{% endif %}"></span>
+                                        {{ job.status }}
+                                    </span>
+                                </td>
+                                <td class="px-8 py-5 text-right">
+                                    <span class="text-xs text-slate-400 font-mono utc-time" data-time="{{ job.timestamp }}">{{ job.timestamp }}</span>
+                                </td>
+                                <td class="hidden data-storage">
+                                    <div class="raw-content">{{ job.content }}</div>
+                                    <div class="raw-result">{{ job.result_message }}</div>
+                                    <div class="raw-subject">{{ job.subject }}</div>
+                                    <div class="raw-status">{{ job.status }}</div>
+                                    <div class="raw-time">{{ job.timestamp }}</div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="p-20 text-center">
+                    <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-50 text-slate-300 mb-4">
+                        <i class="fa-regular fa-folder-open text-2xl"></i>
+                    </div>
+                    <p class="text-slate-500 font-medium">No history found.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<div id="detailsModal" class="fixed inset-0 z-[60] hidden" x-cloak>
+    <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" onclick="closeDetails()"></div>
+    <div class="fixed inset-0 z-10 overflow-y-auto flex items-center justify-center p-4">
+        <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden animate-fade-in">
+            <div class="bg-slate-50 px-8 py-5 border-b border-slate-100 flex justify-between items-center">
+                <h3 class="font-bold text-slate-800">Job Details</h3>
+                <button onclick="closeDetails()" class="w-8 h-8 rounded-full bg-white text-slate-400 hover:text-red-500 hover:shadow-sm flex items-center justify-center transition-all"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="p-8 space-y-6">
+                <div>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Subject</p>
+                    <p id="modalSubject" class="text-lg font-bold text-slate-800"></p>
+                </div>
+                <div class="flex justify-between items-center bg-slate-50 p-3 rounded-xl border border-slate-100">
+                    <div>
+                        <p class="text-[10px] font-bold text-slate-400 uppercase">Status</p>
+                        <div id="modalStatusContainer" class="mt-1"></div>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase">Result</p>
+                        <p id="modalResult" class="text-xs font-bold text-slate-600 mt-1"></p>
+                    </div>
+                </div>
+                <div>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Content Payload</p>
+                    <div id="modalQuestion" class="h-32 overflow-y-auto bg-slate-900 text-slate-300 p-4 rounded-xl text-xs font-mono border border-slate-800"></div>
+                </div>
+                <div class="text-center pt-2">
+                    <p id="modalTime" class="text-[10px] text-slate-400 font-bold bg-slate-50 inline-block px-3 py-1 rounded-full"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+<script>
+    AOS.init({ duration: 800, once: true, offset: 50 });
+
+    // --- JS LOGIC ---
+    function switchMode(mode) {
+        document.getElementById('post_mode').value = mode;
+        const btnText = document.getElementById('btn-mode-text');
+        const btnImage = document.getElementById('btn-mode-image');
+        const conText = document.getElementById('question_content');
+        const conImage = document.getElementById('container-image');
+
+        if (mode === 'image') {
+            btnImage.className = "flex-1 py-2.5 rounded-lg text-xs font-bold bg-white shadow-sm text-slate-800 transition-all";
+            btnText.className = "flex-1 py-2.5 rounded-lg text-xs font-bold text-slate-500 hover:text-slate-700 transition-all";
+            conText.classList.add('hidden'); 
+            conImage.classList.remove('hidden');
+        } else {
+            btnText.className = "flex-1 py-2.5 rounded-lg text-xs font-bold bg-white shadow-sm text-slate-800 transition-all";
+            btnImage.className = "flex-1 py-2.5 rounded-lg text-xs font-bold text-slate-500 hover:text-slate-700 transition-all";
+            conImage.classList.add('hidden'); 
+            conText.classList.remove('hidden');
+        }
+    }
+
+    function uploadImage() {
+        const input = document.getElementById('imageInput');
+        if (!input.files || !input.files[0]) return;
+        
+        document.getElementById('upload-prompt').classList.add('hidden');
+        document.getElementById('upload-loading').classList.remove('hidden');
+
+        const formData = new FormData();
+        formData.append('file', input.files[0]);
+        formData.append('account_id', document.getElementById('account_select').value);
+
+        fetch('/api/process_image', { method: 'POST', body: formData })
+        .then(res => res.json())
+        .then(data => {
+            document.getElementById('upload-loading').classList.add('hidden');
+            if (data.success) {
+                document.getElementById('container-image').innerHTML = ''; // Clear uploader
+                document.getElementById('ocr-preview').classList.remove('hidden'); // Show Preview
+                document.getElementById('img-preview-src').src = data.image_url;
+                document.getElementById('ocr_editor').value = data.transcribed_text;
+                
+                document.getElementById('final_image_url').value = data.image_url;
+                document.getElementById('question_content').value = data.transcribed_text; 
+            } else { 
+                alert('Error: ' + data.error); 
+                document.getElementById('upload-prompt').classList.remove('hidden'); 
+            }
+        }).catch(err => {
+            alert('Upload failed: ' + err);
+            document.getElementById('upload-loading').classList.add('hidden');
+            document.getElementById('upload-prompt').classList.remove('hidden');
+        });
+    }
+
+    function fetchSubjects() {
+        const qText = document.getElementById('question_content').value;
+        if (qText.length < 5) { alert("Please enter text first."); return; }
+        
+        const btn = document.getElementById('searchBtn');
+        btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Searching...';
+        btn.disabled = true;
+
+        fetch('/api/get_suggested_subjects', {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ question_text: qText, account_id: document.getElementById('account_select').value })
+        }).then(res => res.json()).then(data => {
+            btn.innerHTML = '<i class="fa-solid fa-check"></i> Found';
+            btn.className = "w-full py-4 rounded-xl bg-green-50 text-green-600 font-bold text-sm transition-all";
+            document.getElementById('subject-step').classList.remove('hidden');
+            const drop = document.getElementById('subject_dropdown');
+            drop.innerHTML = "";
+            if (data.subjects) data.subjects.forEach(s => drop.add(new Option(s.title, `${s.title}|${s.subjectId}|${s.groupId}`)));
+        }).catch(err => { btn.innerHTML = 'Error'; btn.disabled = false; });
+    }
+
+    function showDetails(row) {
+        const d = row.querySelector('.data-storage');
+        document.getElementById('modalSubject').innerText = d.querySelector('.raw-subject').innerText;
+        document.getElementById('modalQuestion').innerText = d.querySelector('.raw-content').innerText;
+        document.getElementById('modalResult').innerText = d.querySelector('.raw-result').innerText;
+        
+        const timeVal = d.querySelector('.raw-time').innerText;
+        const dateObj = new Date(timeVal + " UTC");
+        document.getElementById('modalTime').innerText = dateObj.toLocaleString();
+        
+        const status = d.querySelector('.raw-status').innerText;
+        let colorClass = "bg-yellow-100 text-yellow-700";
+        if (status === 'Completed') colorClass = "bg-green-100 text-green-700";
+        if (status === 'Failed') colorClass = "bg-red-100 text-red-700";
+        
+        document.getElementById('modalStatusContainer').innerHTML = `<span class="${colorClass} px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">${status}</span>`;
+        document.getElementById('detailsModal').classList.remove('hidden');
+    }
+    
+    function closeDetails() { document.getElementById('detailsModal').classList.add('hidden'); }
+
+    document.querySelectorAll('.utc-time').forEach(el => {
+        const d = new Date(el.getAttribute('data-time') + " UTC");
+        if (!isNaN(d)) el.innerText = d.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+    });
+</script>
+{% endblock %}
