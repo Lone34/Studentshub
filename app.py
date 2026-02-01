@@ -548,3 +548,30 @@ if __name__ == '__main__':
     with app.app_context():
         db.create_all()
     app.run(debug=True, port=5000)
+
+
+# --- API Route for Checking Balance ---
+@app.route('/api/check_balance', methods=['POST'])
+@login_required
+def api_check_balance():
+    data = request.get_json()
+    account_id = data.get('account_id')
+    
+    if not account_id:
+        return jsonify({"error": "No account selected"})
+
+    # Fetch account
+    account = db.session.get(ServiceAccount, account_id)
+    if not account:
+        return jsonify({"error": "Invalid Account"})
+
+    # Permission check (Standard + Super Admin logic)
+    if current_user.role != 'super_admin':
+        allowed_owner_id = current_user.id if current_user.role == 'admin' else current_user.manager_id
+        if account.owner_id != allowed_owner_id:
+             return jsonify({"error": "Unauthorized"})
+
+    # Call the API
+    balance = chegg_api.get_account_balance(account.cookie_data, account.proxy)
+    
+    return jsonify({"balance": balance})

@@ -40,6 +40,56 @@ def parse_cookie_string(cookie_data):
         return cookie_data 
     return ""
 
+# --- FEATURE 4: CHECK ACCOUNT BALANCE ---
+def get_account_balance(cookie_json, proxy=None):
+    """Checks the questions usage/limit for a specific account."""
+    print(f"   [API] Checking balance...")
+    
+    headers = dict(BASE_HEADERS)
+    cookie_str = parse_cookie_string(cookie_json)
+    if cookie_str:
+        headers["Cookie"] = cookie_str
+        
+    payload = {
+        'operationName': 'ExpertQuestionsBalance',
+        'variables': {},
+        'extensions': {
+            'persistedQuery': {
+                'version': 1,
+                'sha256Hash': '66db9216d692198c44ab926ba405f1bde02da688180f033478682a24f059a26f',
+            },
+        },
+    }
+    
+    status, data = safe_post(ONE_GRAPH_ENDPOINT, headers=headers, payload=payload, proxy=proxy)
+    
+    if status == 200:
+        try:
+            # Check for the specific structure you provided
+            # path: data -> balance -> chat -> chatStarts
+            if 'data' in data and 'balance' in data['data']:
+                chat_data = data['data']['balance'].get('chat', {}).get('chatStarts', {})
+                
+                # 'balance' here = Used count (per your observation)
+                # 'limit' = Total limit
+                used = chat_data.get('balance', 0)
+                limit = chat_data.get('limit', 0)
+                
+                return {"used": used, "limit": limit}
+
+            # Fallback for other account types (viewer -> expertQuestions)
+            elif 'data' in data and 'viewer' in data['data']:
+                 expert_data = data['data']['viewer'].get('expertQuestions')
+                 if expert_data:
+                     # For this old structure, 'balance' usually meant remaining
+                     return {"remaining": expert_data.get('balance', 0)}
+            
+            return {"error": "Unknown Data Structure"}
+            
+        except Exception as e:
+            return {"error": f"Parse Error: {e}"}
+            
+    return {"error": "Network Error"}
 def safe_post(url: str, headers: Dict[str, str], payload: Dict[str, Any], proxy: str = None, files=None):
     proxies = None
     if proxy:
@@ -49,8 +99,8 @@ def safe_post(url: str, headers: Dict[str, str], payload: Dict[str, Any], proxy:
         }
 
     try:
+        # If files are present, do not set content-type (requests handles boundaries)
         if files:
-            # Let requests handle boundary
             if "content-type" in headers:
                 del headers["content-type"]
             resp = requests.post(url, headers=headers, files=files, timeout=60, proxies=proxies)
@@ -70,10 +120,11 @@ def get_subjects_from_text(cookie_json, question_text, proxy=None):
     
     # 1. Clean and truncate text to avoid payload errors
     clean_text = re.sub(r'\s+', ' ', question_text).strip()
+    # Chegg's subject predictor works best with a concise snippet
     if len(clean_text) > 400:
         clean_text = clean_text[:400]
 
-    # 2. Ensure HTML wrapping
+    # 2. Ensure HTML wrapping for the search query
     if "<" not in clean_text:
         search_content = f"<div><p>{clean_text}</p></div>"
     else:
@@ -95,6 +146,11 @@ def get_subjects_from_text(cookie_json, question_text, proxy=None):
     try:
         status, data = safe_post(ONE_GRAPH_ENDPOINT, headers=headers, payload=payload, proxy=proxy)
         
+        # Check for GraphQL specific errors
+        if isinstance(data, dict) and 'errors' in data:
+            print(f"   [API] Subject Search GraphQL Error: {data['errors']}")
+            return []
+
         results = []
         def collect_subjects(obj):
             if isinstance(obj, dict):
@@ -126,92 +182,57 @@ def get_subjects_from_text(cookie_json, question_text, proxy=None):
         print(f"   [API] Search Error: {e}")
         return []
 
-# --- FEATURE 2: POST THE QUESTION (TEXT) ---
-def post_question_to_chegg(account_cookies_json, content, subject_title, subject_id, group_id, proxy=None):
-    """Posts question to specific Subject/Group."""
-    
-    if "<" not in content:
-        html_content = f"<div><p>{content}</p></div>"
-    else:
-        html_content = content
+# --- FEATURE 2: POST THE QUESTION (UNIFIED V3 LOGIC) ---
 
-    print(f"   [API] Posting to: {subject_title} (ID: {subject_id}, Group: {group_id}) [Proxy: {proxy}]")
+def post_question_v3(cookie_json, html_body, subject_id, proxy=None):
+    """
+    Posts a question using the robust V3 mutation.
+    This is a SINGLE atomic request, preventing double-posting issues.
+    """
+    print(f"   [API] Posting Question (V3 Mutation)...")
     
-    cookie_header = parse_cookie_string(account_cookies_json)
-    if not cookie_header:
-        return False, "Invalid Cookie Data"
-
     headers = dict(BASE_HEADERS)
-    headers["Cookie"] = cookie_header
-    headers["x-chegg-referrer"] = "search?search=" + requests.utils.quote(html_content[:50])
-    conversation_id = str(uuid.uuid4())
-    headers["x-chegg-conversation-id"] = conversation_id
-
-    # Step 1: Start
-    print("   [API] Step 1: StartFollowUpConversation...")
-    start_payload = {
-        "operationName": "StartFollowUpConversation",
-        "variables": {
-            "conversationId": conversation_id,
-            "interaction": {
-                "data": {"sendToExpert": {"questionBody": html_content, "skipNBA": True}},
-                "type": "SEND_TO_EXPERT",
-                "plainText": "I'd like to ask an expert.",
-            },
-            "recommendedActions": ["SEND_TO_EXPERT"],
-        },
-        "extensions": {"persistedQuery": {"version": 1, "sha256Hash": "90d3ad3c5581a08e6c8cd6e00e8f111857465d632d9a78bfecc6434d727d75d1"}}
-    }
+    cookie_str = parse_cookie_string(cookie_json)
+    if cookie_str: headers["Cookie"] = cookie_str
     
-    status_sf, resp_sf = safe_post(ONE_GRAPH_ENDPOINT, headers=headers, payload=start_payload, proxy=proxy)
-    if status_sf != 200:
-        if isinstance(resp_sf, dict) and "errors" in resp_sf:
-             return False, f"Start Failed: {resp_sf['errors'][0].get('message')}"
-        return False, f"Start failed status {status_sf}"
-
-    source_message_id = str(uuid.uuid4())
-    try:
-        source_message_id = resp_sf['data']['startFollowUpConversation']['interaction']['id']
-    except:
-        pass
-
-    # Step 2: Continue (Confirm Subject)
-    print("   [API] Step 2: ContinueConversation...")
-    continue_payload = {
-        "operationName": "ContinueConversation",
-        "variables": {
-            "conversationId": conversation_id,
-            "message": {
-                "content": {
-                    "interaction": {
-                        "data": {
-                            "subjectConfirmation": {
-                                "groupId": group_id,
-                                "skipNBA": True,
-                                "subjectId": subject_id,
-                                "HTMLContent": html_content,
-                                "isExpertQuestion": True,
-                            }
-                        },
-                        "plainText": f"I need help with {subject_title}",
-                        "type": "SUBJECT_CONFIRMATION",
-                    }
-                },
-                "sourceMessageId": source_message_id,
+    payload = {
+        'operationName': 'postQuestionV3',
+        'variables': {
+            'body': html_body,
+            'toExpert': True,
+            'subjectId': subject_id,
+        },
+        'extensions': {
+            'persistedQuery': {
+                'version': 1,
+                'sha256Hash': '6b55a6da8e693d68e3c64ebef994bafdf1db65eedfaae79ac8556b188c033c63',
             },
         },
-        "extensions": {"persistedQuery": {"version": 1, "sha256Hash": "d9f0a35cfdde80f9b010cc653734ff6d34f1fd7f72cc15847a1020d9e8b544a7"}}
     }
     
-    status_cont, resp_cont = safe_post(ONE_GRAPH_ENDPOINT, headers=headers, payload=continue_payload, proxy=proxy)
-
-    if status_cont == 200:
-        if isinstance(resp_cont, dict) and "errors" in resp_cont:
-             return False, f"Final Error: {resp_cont['errors'][0].get('message')}"
-        print("   [API] SUCCESS! Question Posted.")
+    status, data = safe_post(ONE_GRAPH_ENDPOINT, headers=headers, payload=payload, proxy=proxy)
+    
+    if status == 200:
+        if "errors" in data:
+            # Handle Chegg-specific errors (e.g., limit reached)
+            return False, f"Chegg Error: {data['errors'][0].get('message', 'Unknown')}"
         return True, "Posted Successfully"
+    return False, f"Network Error: {status}"
+
+def post_question_to_chegg(account_cookies_json, content, subject_title, subject_id, group_id, proxy=None):
+    """
+    Wrapper for Text-Only questions.
+    FIXED: Now uses post_question_v3 internally instead of the old 2-step process.
+    This fixes the 'double question' bug.
+    """
+    # 1. Wrap raw text in HTML div/p tags if not already present
+    if "<" not in content:
+        html_body = f"<div><p>{content}</p></div>"
     else:
-        return False, f"Final step failed status {status_cont}"
+        html_body = content
+        
+    # 2. Call the reliable V3 function (ignoring group_id/title as V3 doesn't need them)
+    return post_question_v3(account_cookies_json, html_body, subject_id, proxy)
 
 # --- FEATURE 3: IMAGE UPLOAD & OCR ---
 
@@ -220,6 +241,7 @@ def upload_image_to_chegg(cookie_json, image_path, proxy=None):
     print(f"   [API] Uploading image: {image_path}...")
     
     headers = dict(BASE_HEADERS)
+    # Remove content-type so requests sets boundary for multipart
     if "content-type" in headers: del headers["content-type"]
     
     cookie_str = parse_cookie_string(cookie_json)
@@ -241,9 +263,8 @@ def upload_image_to_chegg(cookie_json, image_path, proxy=None):
             
         if resp.status_code in [200, 201]:
             data = resp.json()
-            # --- FIX FOR RESPONSE PARSING ---
+            # Extract URL/URI safely (handling different Chegg response formats)
             if 'result' in data:
-                # Chegg can return 'uri', 'secureUri', or 'url' inside result
                 if 'uri' in data['result']:
                     return data['result']['uri']
                 elif 'secureUri' in data['result']:
@@ -282,34 +303,3 @@ def ocr_analyze_image(cookie_json, image_url, proxy=None):
     if status == 200 and 'data' in data and 'ocrAnalyze' in data['data']:
         return data['data']['ocrAnalyze'].get('transcriptionText', '')
     return ""
-
-def post_question_v3(cookie_json, html_body, subject_id, proxy=None):
-    """Posts question using V3 mutation (supports Image HTML)."""
-    print(f"   [API] Posting V3 Question...")
-    
-    headers = dict(BASE_HEADERS)
-    cookie_str = parse_cookie_string(cookie_json)
-    if cookie_str: headers["Cookie"] = cookie_str
-    
-    payload = {
-        'operationName': 'postQuestionV3',
-        'variables': {
-            'body': html_body,
-            'toExpert': True,
-            'subjectId': subject_id,
-        },
-        'extensions': {
-            'persistedQuery': {
-                'version': 1,
-                'sha256Hash': '6b55a6da8e693d68e3c64ebef994bafdf1db65eedfaae79ac8556b188c033c63',
-            },
-        },
-    }
-    
-    status, data = safe_post(ONE_GRAPH_ENDPOINT, headers=headers, payload=payload, proxy=proxy)
-    
-    if status == 200:
-        if "errors" in data:
-            return False, data['errors'][0].get('message', 'Unknown V3 Error')
-        return True, "Posted Successfully (V3)"
-    return False, f"V3 Failed Status: {status}"

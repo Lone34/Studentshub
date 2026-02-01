@@ -199,11 +199,17 @@
                 <div class="p-8 md:p-10">
                     <form method="POST" id="postForm" class="space-y-8">
                         <div class="space-y-3">
-                            <label class="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-wider">
-                                <span class="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 text-[10px]">1</span> Select Service Account
-                            </label>
+                            <div class="flex justify-between items-center">
+                                <label class="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                                    <span class="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 text-[10px]">1</span> Select Service Account
+                                </label>
+                                <div id="balance-display" class="hidden animate-enter">
+                                    <span class="text-[10px] font-bold text-slate-400 uppercase mr-2">Balance:</span>
+                                    <span id="balance-value" class="px-2 py-1 bg-blue-100 text-blue-700 rounded-lg text-xs font-bold">Checking...</span>
+                                </div>
+                                </div>
                             <div class="relative group/select">
-                                <select name="account_id" id="account_select" class="w-full appearance-none bg-slate-50 border border-slate-200 text-slate-700 py-4 px-5 pr-10 rounded-xl focus:outline-none focus:border-orange-500">
+                                <select name="account_id" id="account_select" onchange="checkBalance()" class="w-full appearance-none bg-slate-50 border border-slate-200 text-slate-700 py-4 px-5 pr-10 rounded-xl focus:outline-none focus:border-orange-500">
                                     {% for acc in accounts %}
                                         <option value="{{ acc.id }}">{{ acc.name }} {% if acc.proxy %}(Proxy Active){% endif %}</option>
                                     {% endfor %}
@@ -279,6 +285,13 @@
                                     <option value="1">1 Post</option>
                                     <option value="2">2 Posts</option>
                                     <option value="3">3 Posts</option>
+                                    <option value="4">4 Posts</option>
+                                    <option value="5">5 Posts</option>
+                                    <option value="6">6 Posts</option>
+                                    <option value="7">7 Posts</option>
+                                    <option value="8">8 Posts</option>
+                                    <option value="9">9 Posts</option>
+                                    <option value="10">10 Posts</option>
                                 </select>
                             </div>
                             <button type="submit" id="postBtn" class="flex-1 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 text-white font-bold py-4 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2">
@@ -391,7 +404,6 @@
         window.scrollTo(0, 0);
     }
 
-    // ORIGINAL LOGIC PRESERVED BELOW
     function switchMode(mode) {
         document.getElementById('post_mode').value = mode;
         const btnText = document.getElementById('btn-mode-text');
@@ -516,6 +528,66 @@
     document.querySelectorAll('.utc-time').forEach(el => {
         const d = new Date(el.getAttribute('data-time') + " UTC");
         if (!isNaN(d)) el.innerText = d.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true });
+    });
+
+    // --- CHECK BALANCE UPDATED ---
+    function checkBalance() {
+        const accId = document.getElementById('account_select').value;
+        const display = document.getElementById('balance-display');
+        const valSpan = document.getElementById('balance-value');
+        
+        if(!accId) return;
+
+        display.classList.remove('hidden');
+        valSpan.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i>';
+        valSpan.className = "px-2 py-1 bg-slate-100 text-slate-500 rounded-lg text-xs font-bold";
+
+        fetch('/api/check_balance', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ account_id: accId })
+        })
+        .then(res => res.json())
+        .then(data => {
+            // Check if we got the structured dictionary back (used/limit)
+            if(data.balance && typeof data.balance === 'object') {
+                const b = data.balance;
+                let text = "";
+                let color = "blue";
+
+                if (b.used !== undefined && b.limit !== undefined) {
+                    text = `Posted: ${b.used} / ${b.limit}`;
+                    // Color logic: if usage is near limit, turn red
+                    if (b.used >= b.limit) color = "red";
+                    else if (b.used >= b.limit - 2) color = "yellow";
+                    else color = "green";
+                } else if (b.remaining !== undefined) {
+                    text = `Remaining: ${b.remaining}`;
+                } else {
+                    text = "Format Error";
+                }
+
+                valSpan.className = `px-2 py-1 bg-${color}-100 text-${color}-700 rounded-lg text-xs font-bold`;
+                valSpan.innerText = text;
+            } 
+            else if (data.balance) {
+                // Fallback for simple strings
+                valSpan.innerText = data.balance;
+            }
+            else {
+                valSpan.innerText = "Error";
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            valSpan.innerText = "Offline";
+        });
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+        if(document.getElementById('account_select').value) {
+            checkBalance();
+        }
     });
 </script>
 {% endblock %}
