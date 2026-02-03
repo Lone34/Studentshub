@@ -408,7 +408,7 @@ def dashboard():
                 )
             # ----------------------------------
 
-            job = Job(user_id=current_user.id, subject=title, content=job_desc, status="Processing")
+            job = Job(user_id=current_user.id, subject=title, content=job_desc, status="Processing", service_account_name=account.name)
             db.session.add(job)
             db.session.commit()
 

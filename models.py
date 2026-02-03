@@ -29,3 +29,4 @@ class Job(db.Model):
     status = db.Column(db.String(50), default='Pending')
     result_message = db.Column(db.Text, nullable=True)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    service_account_name = db.Column(db.String(100), nullable=True)

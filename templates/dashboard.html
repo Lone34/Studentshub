@@ -339,12 +339,23 @@
                 <div class="overflow-x-auto">
                     <table class="w-full text-left">
                         <thead class="bg-slate-50 text-slate-400 text-[10px] font-bold uppercase tracking-wider">
-                            <tr><th class="px-6 py-4">ID</th><th class="px-6 py-4">Subject</th><th class="px-6 py-4">Status</th><th class="px-6 py-4 text-right">Time</th></tr>
+                            <tr>
+                                <th class="px-6 py-4">ID</th>
+                                <th class="px-6 py-4">Account</th>
+                                <th class="px-6 py-4">Subject</th>
+                                <th class="px-6 py-4">Status</th>
+                                <th class="px-6 py-4 text-right">Time</th>
+                            </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-50">
                             {% for job in jobs %}
                             <tr onclick="showDetails(this)" class="hover:bg-orange-50/50 cursor-pointer transition-colors group">
                                 <td class="px-6 py-4 font-mono text-xs text-slate-500">#{{ job.id }}</td>
+                                <td class="px-6 py-4">
+                                    <span class="inline-flex items-center px-2 py-1 rounded-lg bg-slate-100 text-slate-600 text-[10px] font-bold">
+                                        {{ job.service_account_name if job.service_account_name else 'System' }}
+                                    </span>
+                                </td>
                                 <td class="px-6 py-4"><div class="text-sm font-bold text-slate-700 group-hover:text-orange-600">{{ job.subject }}</div></td>
                                 <td class="px-6 py-4">
                                     <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold {% if job.status == 'Completed' %}bg-green-100 text-green-700{% elif job.status == 'Failed' %}bg-red-100 text-red-700{% else %}bg-yellow-100 text-yellow-700{% endif %}">
@@ -355,6 +366,7 @@
                                 <td class="hidden data-storage">
                                     <div class="raw-content">{{ job.content }}</div><div class="raw-result">{{ job.result_message }}</div>
                                     <div class="raw-subject">{{ job.subject }}</div><div class="raw-status">{{ job.status }}</div><div class="raw-time">{{ job.timestamp }}</div>
+                                    <div class="raw-account">{{ job.service_account_name if job.service_account_name else 'System' }}</div>
                                 </td>
                             </tr>
                             {% endfor %}
@@ -381,6 +393,10 @@
                 <div class="flex justify-between bg-slate-50 p-3 rounded-lg border border-slate-100">
                     <div><p class="text-[10px] font-bold text-slate-400 uppercase">Subject</p><p id="modalSubject" class="text-sm font-bold text-slate-800"></p></div>
                     <div id="modalStatusContainer"></div>
+                </div>
+                <div class="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                    <p class="text-[10px] font-bold text-slate-400 uppercase">Service Account</p>
+                    <p id="modalAccount" class="text-xs font-bold text-slate-600"></p>
                 </div>
                 <div><p class="text-[10px] font-bold text-slate-400 uppercase mb-2">Result</p><div class="bg-slate-50 rounded-lg p-3 border border-slate-200"><p id="modalResult" class="text-sm text-slate-600 font-medium"></p></div></div>
                 <div><p class="text-[10px] font-bold text-slate-400 uppercase mb-2">Content</p><div id="modalQuestion" class="p-4 bg-slate-800 text-slate-300 rounded-xl text-xs font-mono max-h-48 overflow-y-auto"></div></div>
@@ -515,6 +531,8 @@
         document.getElementById('modalSubject').innerText = d.querySelector('.raw-subject').innerText;
         document.getElementById('modalQuestion').innerText = d.querySelector('.raw-content').innerText;
         document.getElementById('modalResult').innerText = d.querySelector('.raw-result').innerText;
+        document.getElementById('modalAccount').innerText = d.querySelector('.raw-account').innerText; // New logic for account in modal
+        
         const dateObj = new Date(d.querySelector('.raw-time').innerText + " UTC");
         document.getElementById('modalTime').innerText = dateObj.toLocaleString();
         
@@ -549,7 +567,6 @@
         })
         .then(res => res.json())
         .then(data => {
-            // Check if we got the structured dictionary back (used/limit)
             if(data.balance && typeof data.balance === 'object') {
                 const b = data.balance;
                 let text = "";
@@ -557,7 +574,6 @@
 
                 if (b.used !== undefined && b.limit !== undefined) {
                     text = `Posted: ${b.used} / ${b.limit}`;
-                    // Color logic: if usage is near limit, turn red
                     if (b.used >= b.limit) color = "red";
                     else if (b.used >= b.limit - 2) color = "yellow";
                     else color = "green";
@@ -571,7 +587,6 @@
                 valSpan.innerText = text;
             } 
             else if (data.balance) {
-                // Fallback for simple strings
                 valSpan.innerText = data.balance;
             }
             else {
