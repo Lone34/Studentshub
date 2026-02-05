@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Find a Tutor - Students Hub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .gradient-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .tutor-card {
+            transition: all 0.3s ease;
+        }
+
+        .tutor-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .online-dot {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: 0.7;
+                transform: scale(1.2);
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="gradient-header text-white">
+        <div class="container mx-auto px-4 py-6">
+            <div class="flex items-center justify-between mb-6">
+                <a href="/" class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                        <i class="fa-solid fa-graduation-cap"></i>
+                    </div>
+                    <span class="font-bold text-lg">Students Hub</span>
+                </a>
+                <a href="/dashboard" class="px-4 py-2 bg-white/20 rounded-xl hover:bg-white/30 transition-all text-sm">
+                    <i class="fa-solid fa-arrow-left mr-2"></i> Back to Dashboard
+                </a>
+            </div>
+            <div class="text-center py-8">
+                <h1 class="text-4xl font-bold mb-3">Find Your Perfect Tutor</h1>
+                <p class="text-white/80 max-w-2xl mx-auto">
+                    Connect with expert tutors for 1-on-1 video sessions. Get help with any subject, anytime.
+                </p>
+                <div class="mt-4 inline-flex items-center gap-2 bg-white/20 px-4 py-2 rounded-full">
+                    <i class="fa-solid fa-coins"></i>
+                    <span>{{ rate_per_minute }} credits per minute</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-8">
+        <!-- Filters -->
+        <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 mb-8">
+            <div class="flex flex-wrap items-center gap-4">
+                <span class="text-gray-500 font-medium">
+                    <i class="fa-solid fa-filter mr-2"></i> Filter by Subject:
+                </span>
+                <a href="{{ url_for('tutoring.browse_tutors') }}"
+                    class="px-4 py-2 rounded-lg {% if not current_filter %}bg-purple-100 text-purple-700{% else %}bg-gray-100 text-gray-600 hover:bg-gray-200{% endif %} transition-all">
+                    All Subjects
+                </a>
+                {% for subject in subjects %}
+                <a href="{{ url_for('tutoring.browse_tutors', subject=subject) }}"
+                    class="px-4 py-2 rounded-lg {% if current_filter == subject %}bg-purple-100 text-purple-700{% else %}bg-gray-100 text-gray-600 hover:bg-gray-200{% endif %} transition-all">
+                    {{ subject }}
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Tutors Grid -->
+        {% if tutors %}
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for tutor in tutors %}
+            <div class="tutor-card bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                <!-- Header -->
+                <div class="bg-gradient-to-r from-purple-500 to-indigo-600 p-6 text-white relative">
+                    {% if tutor.is_available %}
+                    <div
+                        class="absolute top-4 right-4 flex items-center gap-2 bg-green-500 px-3 py-1 rounded-full text-xs">
+                        <span class="w-2 h-2 bg-white rounded-full online-dot"></span>
+                        Online
+                    </div>
+                    {% endif %}
+                    <div class="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center text-2xl mb-3">
+                        {% if tutor.profile_image %}
+                        <img src="{{ tutor.profile_image }}" alt="" class="w-full h-full object-cover rounded-2xl">
+                        {% else %}
+                        <i class="fa-solid fa-user"></i>
+                        {% endif %}
+                    </div>
+                    <h3 class="text-xl font-bold">{{ tutor.display_name }}</h3>
+                    <p class="text-white/70 text-sm">{{ tutor.qualification }}</p>
+                </div>
+
+                <!-- Body -->
+                <div class="p-6">
+                    <!-- Rating -->
+                    <div class="flex items-center gap-2 mb-4">
+                        <div class="flex text-amber-400">
+                            {% for i in range(5) %}
+                            {% if i < tutor.rating|int %} <i class="fa-solid fa-star"></i>
+                                {% elif i < tutor.rating %} <i class="fa-solid fa-star-half-stroke"></i>
+                                    {% else %}
+                                    <i class="fa-regular fa-star"></i>
+                                    {% endif %}
+                                    {% endfor %}
+                        </div>
+                        <span class="text-gray-500 text-sm">({{ tutor.total_sessions }} sessions)</span>
+                    </div>
+
+                    <!-- Subjects -->
+                    <div class="mb-4">
+                        <p class="text-gray-500 text-sm mb-2">Subjects:</p>
+                        <div class="flex flex-wrap gap-2">
+                            {% for subject in tutor.subjects.split(',')[:3] %}
+                            <span class="px-3 py-1 bg-purple-50 text-purple-700 rounded-full text-xs font-medium">
+                                {{ subject.strip() }}
+                            </span>
+                            {% endfor %}
+                            {% if tutor.subjects.split(',')|length > 3 %}
+                            <span class="px-3 py-1 bg-gray-100 text-gray-500 rounded-full text-xs">
+                                +{{ tutor.subjects.split(',')|length - 3 }} more
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Bio Preview -->
+                    {% if tutor.bio %}
+                    <p class="text-gray-600 text-sm mb-4 line-clamp-2">
+                        {{ tutor.bio[:100] }}{% if tutor.bio|length > 100 %}...{% endif %}
+                    </p>
+                    {% endif %}
+
+                    <!-- Languages -->
+                    <div class="flex items-center gap-2 text-gray-500 text-sm mb-4">
+                        <i class="fa-solid fa-language"></i>
+                        <span>{{ tutor.languages }}</span>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex gap-3">
+                        <a href="{{ url_for('tutoring.tutor_profile', tutor_id=tutor.id) }}"
+                            class="flex-1 py-3 text-center border border-purple-200 text-purple-600 font-medium rounded-xl hover:bg-purple-50 transition-all">
+                            View Profile
+                        </a>
+                        {% if tutor.is_available %}
+                        <a href="{{ url_for('tutoring.tutor_profile', tutor_id=tutor.id) }}#book"
+                            class="flex-1 py-3 text-center bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-medium rounded-xl hover:from-purple-700 hover:to-indigo-700 transition-all">
+                            Book Now
+                        </a>
+                        {% else %}
+                        <button disabled
+                            class="flex-1 py-3 text-center bg-gray-200 text-gray-500 font-medium rounded-xl cursor-not-allowed">
+                            Offline
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <!-- No Tutors -->
+        <div class="text-center py-16">
+            <div class="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <i class="fa-solid fa-user-graduate text-gray-400 text-4xl"></i>
+            </div>
+            <h3 class="text-xl font-bold text-gray-700 mb-2">No Tutors Available</h3>
+            <p class="text-gray-500 mb-4">
+                {% if current_filter %}
+                No tutors found for "{{ current_filter }}". Try a different subject.
+                {% else %}
+                No tutors are registered yet. Check back soon!
+                {% endif %}
+            </p>
+            {% if current_filter %}
+            <a href="{{ url_for('tutoring.browse_tutors') }}"
+                class="inline-block px-6 py-3 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-all">
+                View All Tutors
+            </a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </main>
+
+    <!-- Become a Tutor CTA -->
+    <section class="bg-gradient-to-r from-purple-600 to-indigo-600 text-white py-12 mt-8">
+        <div class="container mx-auto px-4 text-center">
+            <h2 class="text-2xl font-bold mb-3">Are You an Expert?</h2>
+            <p class="text-white/80 mb-6">Join as a tutor and start earning by teaching students!</p>
+            <a href="{{ url_for('tutoring.tutor_register') }}"
+                class="inline-block px-8 py-4 bg-white text-purple-600 font-bold rounded-xl hover:bg-gray-100 transition-all">
+                <i class="fa-solid fa-chalkboard-user mr-2"></i> Become a Tutor
+            </a>
+        </div>
+    </section>
+</body>
+
+</html>

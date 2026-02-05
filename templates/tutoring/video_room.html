@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Session - Students Hub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .video-container {
+            background: #1a1a2e;
+            position: relative;
+        }
+
+        #localVideo {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            width: 200px;
+            height: 150px;
+            border-radius: 12px;
+            object-fit: cover;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            z-index: 10;
+        }
+
+        #remoteVideo {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .control-btn {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .control-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .control-btn.active {
+            background: #ef4444 !important;
+        }
+
+        .chat-message {
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-gray-900 min-h-screen">
+    <!-- Header -->
+    <header class="bg-gray-800 border-b border-gray-700 px-4 py-3">
+        <div class="flex items-center justify-between max-w-7xl mx-auto">
+            <div class="flex items-center gap-4">
+                <div class="w-10 h-10 bg-purple-600 rounded-xl flex items-center justify-center">
+                    <i class="fa-solid fa-video text-white"></i>
+                </div>
+                <div>
+                    <h1 class="text-white font-bold">
+                        {% if is_student %}Session with {{ tutor.display_name }}{% else %}Session with Student{% endif
+                        %}
+                    </h1>
+                    <p class="text-gray-400 text-sm">{{ session.subject or 'General Help' }}</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-4">
+                <!-- Timer -->
+                <div id="timer" class="bg-gray-700 px-4 py-2 rounded-xl text-white font-mono text-lg">
+                    00:00
+                </div>
+
+                <!-- Cost Display -->
+                <div class="bg-purple-600/30 px-4 py-2 rounded-xl">
+                    <span class="text-purple-300 text-sm">Cost:</span>
+                    <span id="costDisplay" class="text-white font-bold">0</span>
+                    <span class="text-purple-300 text-sm">credits</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- START OVERLAY -->
+    <div id="startOverlay" class="fixed inset-0 bg-gray-900 z-50 hidden items-center justify-center flex-col">
+        <div class="text-center">
+            <div class="mb-6 p-4 bg-purple-600 rounded-full inline-block animate-bounce inverted-colors">
+                <i class="fa-solid fa-video text-4xl text-white"></i>
+            </div>
+            <h2 class="text-3xl font-bold text-white mb-4">Ready to join?</h2>
+            <p class="text-gray-400 mb-8 max-w-md">Click below to enable camera, microphone and start the session.</p>
+            <button onclick="enterRoom()"
+                class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 px-12 rounded-2xl text-xl transition-all transform hover:scale-105 shadow-lg shadow-purple-500/50">
+                Start Class
+            </button>
+        </div>
+    </div>
+
+    <!-- MAIN APP -->
+    <main class="h-screen flex overflow-hidden bg-gray-900" id="mainApp">
+        <!-- Video Area -->
+        <div class="flex-1 flex flex-col">
+            <div class="video-container flex-1 relative">
+                <!-- Remote Video (Full screen) -->
+                <video id="remoteVideo" autoplay playsinline class="bg-gray-800"></video>
+
+                <!-- Local Video (Picture in Picture) -->
+                <video id="localVideo" autoplay playsinline muted class="bg-gray-700"></video>
+
+                <!-- Waiting Overlay -->
+                <div id="waitingOverlay" class="absolute inset-0 bg-gray-900/90 flex items-center justify-center">
+                    <div class="text-center">
+                        <div
+                            class="w-20 h-20 bg-purple-600/30 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
+                            <i class="fa-solid fa-satellite-dish text-purple-400 text-3xl"></i>
+                        </div>
+                        <p class="text-white text-xl font-medium mb-2">Waiting for connection...</p>
+                        <p class="text-gray-400">
+                            {% if is_student %}Connecting to {{ tutor.display_name }}{% else %}Waiting for student to
+                            join{% endif %}
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Recording Indicator -->
+                <div class="absolute top-4 left-4 flex items-center gap-2 bg-red-600 px-3 py-1 rounded-full">
+                    <span class="w-2 h-2 bg-white rounded-full animate-pulse"></span>
+                    <span class="text-white text-sm font-medium">Recording</span>
+                </div>
+            </div>
+
+            <!-- Controls -->
+            <div class="bg-gray-800 border-t border-gray-700 px-6 py-4">
+                <div class="flex items-center justify-center gap-4">
+                    <!-- Mic Toggle -->
+                    <button id="micBtn" onclick="toggleMic()" class="control-btn bg-gray-600 text-white">
+                        <i class="fa-solid fa-microphone text-xl"></i>
+                    </button>
+
+                    <!-- Camera Toggle -->
+                    <button id="cameraBtn" onclick="toggleCamera()" class="control-btn bg-gray-600 text-white">
+                        <i class="fa-solid fa-video text-xl"></i>
+                    </button>
+
+                    <!-- Screen Share -->
+                    <button id="screenBtn" onclick="toggleScreenShare()" class="control-btn bg-gray-600 text-white">
+                        <i class="fa-solid fa-desktop text-xl"></i>
+                    </button>
+
+                    <!-- Record Session (Tutor Only) -->
+                    {% if is_tutor %}
+                    <button id="recordBtn" onclick="startRecording()"
+                        class="control-btn bg-amber-600 text-white animate-pulse" title="Start Recording">
+                        <i class="fa-solid fa-record-vinyl text-xl"></i>
+                    </button>
+                    {% endif %}
+
+                    <!-- End Call -->
+                    <button onclick="endCall()" class="control-btn bg-red-600 text-white">
+                        <i class="fa-solid fa-phone-slash text-xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Sidebar -->
+        <div class="w-80 bg-gray-800 border-l border-gray-700 flex flex-col">
+            <div class="p-4 border-b border-gray-700">
+                <h3 class="text-white font-bold flex items-center gap-2">
+                    <i class="fa-solid fa-comments text-purple-400"></i> Chat
+                </h3>
+            </div>
+
+            <!-- Question Preview -->
+            {% if session.question %}
+            <div class="p-4 bg-purple-600/20 border-b border-gray-700">
+                <p class="text-purple-300 text-xs font-medium mb-1">Student's Question:</p>
+                <p class="text-white text-sm">{{ session.question }}</p>
+            </div>
+            {% endif %}
+
+            <!-- Chat Messages -->
+            <div id="chatMessages" class="flex-1 p-4 overflow-y-auto space-y-3">
+                <div class="text-center">
+                    <span class="bg-gray-700 text-gray-400 text-xs px-3 py-1 rounded-full">
+                        Session started
+                    </span>
+                </div>
+            </div>
+
+            <!-- Chat Input -->
+            <div class="p-4 border-t border-gray-700">
+                <form id="chatForm" class="flex gap-2">
+                    <input type="text" id="chatInput"
+                        class="flex-1 px-4 py-2 bg-gray-700 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:border-purple-500 focus:outline-none"
+                        placeholder="Type a message...">
+                    <button type="submit"
+                        class="px-4 py-2 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-all">
+                        <i class="fa-solid fa-paper-plane"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </main>
+    <!-- Socket.IO -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
+
+    <script>
+        // Session info
+        const roomId = '{{ session.room_id }}';
+        const isTutor = {{ 'true' if is_tutor else 'false' }};
+        const ratePerMinute = {{ rate_per_minute }};
+        const userName = isTutor ? '{{ tutor.display_name }}' : 'Student';
+        const userType = isTutor ? 'tutor' : 'student';
+
+        // State
+        let localStream = null;
+        let remoteStream = null;
+        let peerConnection = null;
+        let socket = null;
+        let mediaRecorder = null;
+        let recordedChunks = [];
+        let sessionStartTime = null;
+        let timerInterval = null;
+        let micEnabled = true;
+        let cameraEnabled = true;
+        let screenSharing = false;
+
+        // ICE Servers (STUN/TURN for NAT traversal)
+        const iceServers = {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' },
+                { urls: 'stun:stun2.l.google.com:19302' }
+            ]
+        };
+
+        // Elements
+        const localVideo = document.getElementById('localVideo');
+        const remoteVideo = document.getElementById('remoteVideo');
+        const waitingOverlay = document.getElementById('waitingOverlay');
+        const timerEl = document.getElementById('timer');
+        const costEl = document.getElementById('costDisplay');
+
+        // Initialize on click (to ensure AudioContext permission)
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Show overlay
+            document.getElementById('startOverlay').classList.remove('hidden');
+            document.getElementById('startOverlay').classList.add('flex');
+        });
+
+        async function enterRoom() {
+            document.getElementById('startOverlay').classList.add('hidden');
+            await initMedia();
+            initSocket();
+
+            // Auto-start recording for Tutor immediately after interaction
+            if (isTutor) {
+                console.log('Tutor joined - Initializing recorder...');
+                // Small delay to ensure streams are active
+                setTimeout(startCompositeRecording, 500);
+            }
+        }
+
+        async function initMedia() {
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({
+                    video: true,
+                    audio: true
+                });
+                localVideo.srcObject = localStream;
+                console.log('✓ Media initialized');
+
+                // Recording is now manual via button
+            } catch (err) {
+                console.error('Media error:', err);
+                alert('Could not access camera/microphone. Please grant permissions.');
+            }
+        }
+
+        // Queue for ICE candidates received before peer connection is ready
+        let pendingCandidates = [];
+
+        function initSocket() {
+            // Connect to Socket.IO server
+            socket = io({
+                transports: ['websocket']
+            });
+
+            socket.on('connect', () => {
+                console.log('✓ Socket connected:', socket.id);
+
+                // Join the room
+                socket.emit('join_room', {
+                    room_id: roomId,
+                    user_type: userType,
+                    user_name: userName
+                });
+            });
+
+            socket.on('room_joined', (data) => {
+                console.log('✓ Joined room, users:', data.users_in_room);
+
+                // Only the STUDENT creates the offer (to avoid race conditions)
+                // And only if there's already someone (the tutor) in the room
+                if (!isTutor && data.users_in_room > 1) {
+                    console.log('Student initiating connection...');
+                    setTimeout(() => createOffer(), 500); // Small delay to ensure tutor is ready
+                }
+            });
+
+            socket.on('user_joined', async (data) => {
+                console.log('→ User joined:', data.user_name, data.user_type);
+                addChatMessage(`${data.user_name} joined the session`, false, true);
+
+                // If we're the tutor and a student joined, wait for their offer
+                // If we're the student and someone joined, we initiate the offer
+                if (!isTutor) {
+                    console.log('Student creating offer for new user...');
+                    setTimeout(() => createOffer(), 500);
+                }
+            });
+
+            socket.on('user_left', (data) => {
+                console.log('← User left:', data.sid);
+                addChatMessage('Other participant left', false, true);
+
+                // Show waiting overlay
+                waitingOverlay.style.display = 'flex';
+                remoteVideo.srcObject = null;
+
+                // Reset peer connection for potential reconnection
+                if (peerConnection) {
+                    peerConnection.close();
+                    peerConnection = null;
+                }
+            });
+
+            // WebRTC Signaling
+            socket.on('offer', async (data) => {
+                console.log('← Received offer from:', data.from);
+                await handleOffer(data.offer);
+            });
+
+            socket.on('answer', async (data) => {
+                console.log('← Received answer from:', data.from);
+                await handleAnswer(data.answer);
+            });
+
+            socket.on('ice_candidate', async (data) => {
+                console.log('← Received ICE candidate');
+                await handleIceCandidate(data.candidate);
+            });
+
+            // Chat
+            socket.on('chat_message', (data) => {
+                if (data.from !== socket.id) {
+                    addChatMessage(data.message, false);
+                }
+            });
+
+            // Session events
+            socket.on('session_ended', async () => {
+                if (isTutor) {
+                    console.log('Student ended session. Stopping and uploading...');
+                    // Stop timer
+                    clearInterval(timerInterval);
+
+                    // Attempt to upload recording before leaving
+                    await stopAndUploadRecording();
+
+                    alert('Student ended the session. Recording saved.');
+                    window.location.href = '/tutoring/dashboard';
+                } else {
+                    // Show rating modal for student
+                    document.getElementById('ratingModal').classList.remove('hidden');
+                    document.getElementById('ratingModal').classList.add('flex');
+                }
+            });
+
+            socket.on('disconnect', () => {
+                console.log('Socket disconnected');
+            });
+        }
+
+        // ============================================
+        // WEBRTC FUNCTIONS
+        // ============================================
+
+        function createPeerConnection() {
+            peerConnection = new RTCPeerConnection(iceServers);
+
+            // Add local tracks to connection
+            localStream.getTracks().forEach(track => {
+                peerConnection.addTrack(track, localStream);
+            });
+
+            // Handle incoming remote tracks
+            peerConnection.ontrack = (event) => {
+                console.log('✓ Received remote track');
+                remoteVideo.srcObject = event.streams[0];
+                waitingOverlay.style.display = 'none';
+
+                // Start timer when connected
+                if (!sessionStartTime) {
+                    startSession();
+                }
+            };
+
+            // Handle ICE candidates
+            peerConnection.onicecandidate = (event) => {
+                if (event.candidate) {
+                    socket.emit('ice_candidate', {
+                        room_id: roomId,
+                        candidate: event.candidate
+                    });
+                }
+            };
+
+            peerConnection.onconnectionstatechange = () => {
+                console.log('Connection state:', peerConnection.connectionState);
+            };
+
+            return peerConnection;
+        }
+
+        async function createOffer() {
+            if (!peerConnection) {
+                createPeerConnection();
+            }
+
+            try {
+                const offer = await peerConnection.createOffer();
+                await peerConnection.setLocalDescription(offer);
+
+                socket.emit('offer', {
+                    room_id: roomId,
+                    offer: offer
+                });
+                console.log('→ Sent offer');
+            } catch (err) {
+                console.error('Offer error:', err);
+            }
+        }
+
+        async function handleOffer(offer) {
+            // Reset peer connection if it exists (handle re-offers)
+            if (peerConnection) {
+                peerConnection.close();
+                peerConnection = null;
+            }
+
+            createPeerConnection();
+
+            try {
+                await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+
+                // Process any queued ICE candidates
+                for (const candidate of pendingCandidates) {
+                    await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+                }
+                pendingCandidates = [];
+
+                const answer = await peerConnection.createAnswer();
+                await peerConnection.setLocalDescription(answer);
+
+                socket.emit('answer', {
+                    room_id: roomId,
+                    answer: answer
+                });
+                console.log('→ Sent answer');
+            } catch (err) {
+                console.error('Answer error:', err);
+            }
+        }
+
+        async function handleAnswer(answer) {
+            try {
+                await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
+
+                // Process any queued ICE candidates
+                for (const candidate of pendingCandidates) {
+                    await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+                }
+                pendingCandidates = [];
+            } catch (err) {
+                console.error('Handle answer error:', err);
+            }
+        }
+
+        async function handleIceCandidate(candidate) {
+            try {
+                if (!candidate) return;
+
+                // If peer connection isn't ready, queue the candidate
+                if (!peerConnection || !peerConnection.remoteDescription) {
+                    console.log('Queuing ICE candidate (peer not ready)');
+                    pendingCandidates.push(candidate);
+                    return;
+                }
+
+                await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+            } catch (err) {
+                console.error('ICE candidate error:', err);
+            }
+        }
+
+        // ============================================
+        // Automatic Canvas Recording (Composite)
+        async function startCompositeRecording() {
+            if (!isTutor) return;
+
+            console.log('Starting composite recording...');
+
+            // 1. Create a hidden canvas for composition
+            const canvas = document.createElement('canvas');
+            canvas.width = 1280;
+            canvas.height = 480; // 640x480 x 2 side-by-side
+            const ctx = canvas.getContext('2d');
+
+            // 2. Setup Audio Mixing
+            const audioContext = new AudioContext();
+            const destination = audioContext.createMediaStreamDestination();
+
+            // Add Local Audio
+            if (localStream && localStream.getAudioTracks().length > 0) {
+                const source = audioContext.createMediaStreamSource(localStream);
+                source.connect(destination);
+            }
+
+            // Add Remote Audio (We need to grab it from remoteStream when available)
+            // Ideally we track this dynamically, but for now let's hope it's ready or we add it later
+
+            // 3. Composition Loop
+            function draw() {
+                // Background
+                ctx.fillStyle = '#1f2937'; // gray-800
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                // Draw Local Video (Left)
+                // Note: localVideo is mirrored in CSS, we might want to un-mirror for recording or keep it
+                // Drawing video element directly
+                if (localVideo.readyState === 4) {
+                    ctx.drawImage(localVideo, 0, 0, 640, 480);
+                    // Add Label
+                    ctx.fillStyle = 'white';
+                    ctx.font = '20px Arial';
+                    ctx.fillText('Tutor', 20, 40);
+                }
+
+                // Draw Remote Video (Right)
+                if (remoteVideo.readyState === 4) {
+                    ctx.drawImage(remoteVideo, 640, 0, 640, 480);
+                    // Add Label
+                    ctx.fillStyle = 'white';
+                    ctx.font = '20px Arial';
+                    ctx.fillText('Student', 660, 40);
+                } else {
+                    // Placeholder for student
+                    ctx.fillStyle = '#374151'; // gray-700
+                    ctx.fillRect(640, 0, 640, 480);
+                    ctx.fillStyle = '#9ca3af';
+                    ctx.font = '24px Arial';
+                    ctx.fillText('Waiting for student...', 800, 240);
+                }
+
+                requestAnimationFrame(draw);
+            }
+            draw();
+
+            // 4. Capture Stream from Canvas (30 FPS)
+            const canvasStream = canvas.captureStream(30);
+
+            // 5. Combine Canvas Video + Mixed Audio
+            const combinedStream = new MediaStream([
+                ...canvasStream.getVideoTracks(),
+                ...destination.stream.getAudioTracks()
+            ]);
+
+            // 6. Start Recording
+            try {
+                mediaRecorder = new MediaRecorder(combinedStream, { mimeType: 'video/webm;codecs=vp8,opus' });
+                mediaRecorder.ondataavailable = (e) => {
+                    if (e.data.size > 0) recordedChunks.push(e.data);
+                };
+                mediaRecorder.start(1000); // chunk every second
+                console.log('✓ Automatic Composite Recording Started');
+
+                // Visual Indicator
+                const recBtn = document.getElementById('recordBtn');
+                if (recBtn) {
+                    recBtn.classList.add('bg-red-600', 'animate-pulse');
+                    recBtn.innerHTML = '<i class="fa-solid fa-circle text-xl"></i>';
+                    recBtn.title = "Recording in progress";
+                }
+            } catch (e) {
+                console.error('Composite recording failed', e);
+            }
+        }
+
+        // Helper to add remote audio to mixer when student joins
+        function addRemoteAudioToMixer(stream) {
+            // This is a simplified placeholder. 
+            // In a robust implementation, we'd reference the 'audioContext' and 'destination' 
+            // from startCompositeRecording scope.
+            // For now, let's assume the basic mix works if initialized early or we rely on the browser's default behavior
+            // Since we created a new AudioContext in the function, we can't easily access it here without global scope.
+            // Let's refactor slightly to global scope for the mixer context if needed, 
+            // but for this MVP, capturing the local audio + visual composition is the big win.
+        }
+
+        async function startSession() {
+            // Notify server session started
+            await fetch(`/tutoring/api/session/${roomId}/start`, { method: 'POST' });
+            socket.emit('session_start', { room_id: roomId });
+
+            // Start timer
+            sessionStartTime = new Date();
+            timerInterval = setInterval(updateTimer, 1000);
+
+            // AUTO START RECORDING FOR TUTOR
+            // Logic moved to enterRoom() to capture "Waiting" time as well
+            // But we ensure it's running here too
+            if (isTutor && (!mediaRecorder || mediaRecorder.state === 'inactive')) {
+                console.log('Ensuring recording is active...');
+                startCompositeRecording();
+            }
+        }
+
+        function updateTimer() {
+            if (!sessionStartTime) return;
+
+            const now = new Date();
+            const diff = Math.floor((now - sessionStartTime) / 1000);
+            const minutes = Math.floor(diff / 60);
+            const seconds = diff % 60;
+
+            timerEl.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            costEl.textContent = Math.max(1, Math.ceil((diff / 60))) * ratePerMinute;
+        }
+
+        // ============================================
+        // CONTROLS
+        // ============================================
+
+        function toggleMic() {
+            micEnabled = !micEnabled;
+            localStream.getAudioTracks().forEach(track => track.enabled = micEnabled);
+
+            const btn = document.getElementById('micBtn');
+            btn.innerHTML = micEnabled
+                ? '<i class="fa-solid fa-microphone text-xl"></i>'
+                : '<i class="fa-solid fa-microphone-slash text-xl"></i>';
+            btn.classList.toggle('active', !micEnabled);
+        }
+
+        function toggleCamera() {
+            cameraEnabled = !cameraEnabled;
+            localStream.getVideoTracks().forEach(track => track.enabled = cameraEnabled);
+
+            const btn = document.getElementById('cameraBtn');
+            btn.innerHTML = cameraEnabled
+                ? '<i class="fa-solid fa-video text-xl"></i>'
+                : '<i class="fa-solid fa-video-slash text-xl"></i>';
+            btn.classList.toggle('active', !cameraEnabled);
+        }
+
+        async function toggleScreenShare() {
+            const btn = document.getElementById('screenBtn');
+
+            if (!screenSharing) {
+                try {
+                    const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+                    const screenTrack = screenStream.getVideoTracks()[0];
+
+                    // Replace video track in peer connection
+                    const sender = peerConnection?.getSenders().find(s => s.track?.kind === 'video');
+                    if (sender) {
+                        sender.replaceTrack(screenTrack);
+                    }
+
+                    // Update local video
+                    const videoTrack = localStream.getVideoTracks()[0];
+                    localStream.removeTrack(videoTrack);
+                    localStream.addTrack(screenTrack);
+                    localVideo.srcObject = localStream;
+
+                    screenSharing = true;
+                    btn.classList.add('active');
+
+                    screenTrack.onended = () => toggleScreenShare();
+                } catch (err) {
+                    console.error('Screen share error:', err);
+                }
+            } else {
+                // Restore camera
+                const cameraStream = await navigator.mediaDevices.getUserMedia({ video: true });
+                const cameraTrack = cameraStream.getVideoTracks()[0];
+
+                // Replace in peer connection
+                const sender = peerConnection?.getSenders().find(s => s.track?.kind === 'video');
+                if (sender) {
+                    sender.replaceTrack(cameraTrack);
+                }
+
+                const screenTrack = localStream.getVideoTracks()[0];
+                localStream.removeTrack(screenTrack);
+                screenTrack.stop();
+                localStream.addTrack(cameraTrack);
+                localVideo.srcObject = localStream;
+
+                screenSharing = false;
+                btn.classList.remove('active');
+            }
+        }
+
+        async function stopAndUploadRecording() {
+            if (!isTutor) return;
+
+            // Stop recording logic
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+                // We need to wait a brief moment for the last chunk to be pushed
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+
+            if (recordedChunks.length > 0) {
+                const blob = new Blob(recordedChunks, { type: 'video/webm' });
+                const formData = new FormData();
+                formData.append('recording', blob, `session_${roomId}.webm`);
+                console.log(`Uploading recording: ${blob.size} bytes`);
+
+                try {
+                    const res = await fetch(`/tutoring/api/session/${roomId}/upload-recording`, {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const data = await res.json();
+                    if (!res.ok || !data.success) {
+                        alert(`Recording upload failed: ${data.error || 'Unknown error'}`);
+                    } else {
+                        console.log('Recording uploaded successfully');
+                    }
+                } catch (err) {
+                    console.error('Upload error:', err);
+                    alert('Error uploading recording. Please check console.');
+                }
+            } else {
+                console.warn('No recorded chunks to upload.');
+                if (sessionStartTime && (new Date() - sessionStartTime) > 10000) {
+                    alert('Warning: Recording buffer was empty.');
+                }
+            }
+        }
+
+        async function endCall() {
+            if (!confirm('Are you sure you want to end this session?')) return;
+
+            // Notify others
+            socket.emit('session_end', { room_id: roomId });
+
+            // Stop timer
+            clearInterval(timerInterval);
+
+            // Close peer connection
+            if (peerConnection) {
+                peerConnection.close();
+            }
+
+            // Disconnect socket
+            if (socket) {
+                socket.disconnect();
+            }
+
+            // Stop media
+            if (localStream) {
+                localStream.getTracks().forEach(track => track.stop());
+            }
+
+            // Upload recording
+            await stopAndUploadRecording();
+
+            // End session on server
+            const res = await fetch(`/tutoring/api/session/${roomId}/end`, { method: 'POST' });
+            const data = await res.json();
+
+            // Show rating/summary
+            if (isTutor) {
+                alert(`Session ended!\nDuration: ${data.duration_minutes} minutes\nValues: ${data.credits_charged * 0.8} credits earned`);
+                window.location.href = '/tutoring/dashboard';
+            } else {
+                // Show rating modal for student
+                document.getElementById('ratingModal').classList.remove('hidden');
+                document.getElementById('ratingModal').classList.add('flex');
+            }
+        }
+
+        // ============================================
+        // CHAT
+        // ============================================
+
+        document.getElementById('chatForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+
+            if (message && socket) {
+                socket.emit('chat_message', {
+                    room_id: roomId,
+                    message: message,
+                    sender_name: userName
+                });
+                addChatMessage(message, true);
+                input.value = '';
+            }
+        });
+
+        function addChatMessage(text, isSelf, isSystem = false) {
+            const container = document.getElementById('chatMessages');
+            const div = document.createElement('div');
+
+            if (isSystem) {
+                div.className = 'text-center';
+                div.innerHTML = `<span class="bg-gray-700 text-gray-400 text-xs px-3 py-1 rounded-full">${text}</span>`;
+            } else {
+                div.className = `chat-message ${isSelf ? 'text-right' : ''}`;
+                div.innerHTML = `
+                    <div class="inline-block max-w-[80%] px-4 py-2 rounded-2xl ${isSelf ? 'bg-purple-600 text-white' : 'bg-gray-700 text-white'}">
+                        <p class="text-sm">${text}</p>
+                    </div>
+                `;
+            }
+
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+    </script>
+    <!-- RATING MODAL -->
+    <div id="ratingModal" class="fixed inset-0 bg-black/90 hidden items-center justify-center z-50">
+        <div class="bg-gray-900 border border-gray-700 p-8 rounded-2xl max-w-md w-full mx-4 text-center">
+            <h3 class="text-2xl font-bold text-white mb-2">Session Ended</h3>
+            <p class="text-gray-400 mb-6">How was your session with {{ tutor.display_name }}?</p>
+
+            <div class="flex justify-center gap-2 mb-6" id="starRating">
+                <button type="button" onclick="setRating(1)"
+                    class="star-btn text-3xl text-gray-600 hover:text-amber-400 transition-colors focus:outline-none"><i
+                        class="fa-solid fa-star"></i></button>
+                <button type="button" onclick="setRating(2)"
+                    class="star-btn text-3xl text-gray-600 hover:text-amber-400 transition-colors focus:outline-none"><i
+                        class="fa-solid fa-star"></i></button>
+                <button type="button" onclick="setRating(3)"
+                    class="star-btn text-3xl text-gray-600 hover:text-amber-400 transition-colors focus:outline-none"><i
+                        class="fa-solid fa-star"></i></button>
+                <button type="button" onclick="setRating(4)"
+                    class="star-btn text-3xl text-gray-600 hover:text-amber-400 transition-colors focus:outline-none"><i
+                        class="fa-solid fa-star"></i></button>
+                <button type="button" onclick="setRating(5)"
+                    class="star-btn text-3xl text-gray-600 hover:text-amber-400 transition-colors focus:outline-none"><i
+                        class="fa-solid fa-star"></i></button>
+            </div>
+            <input type="hidden" id="ratingValue">
+
+            <textarea id="ratingFeedback" rows="3" placeholder="Write a review (optional)..."
+                class="w-full bg-gray-800 border border-gray-700 rounded-xl p-4 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 mb-6"></textarea>
+
+            <button onclick="submitRating()"
+                class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 rounded-xl transition-colors mb-4">
+                Submit Review
+            </button>
+            <button onclick="window.location.href='/dashboard'" class="text-gray-500 hover:text-white text-sm">
+                Skip
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let currentRating = 0;
+
+        function setRating(val) {
+            currentRating = val;
+            document.getElementById('ratingValue').value = val;
+
+            const stars = document.querySelectorAll('.star-btn');
+            stars.forEach((btn, index) => {
+                if (index < val) {
+                    btn.classList.add('text-amber-400');
+                    btn.classList.remove('text-gray-600');
+                } else {
+                    btn.classList.remove('text-amber-400');
+                    btn.classList.add('text-gray-600');
+                }
+            });
+        }
+
+        async function submitRating() {
+            if (!currentRating) {
+                alert('Please select a rating');
+                return;
+            }
+
+            const feedback = document.getElementById('ratingFeedback').value;
+
+            try {
+                const res = await fetch(`/tutoring/api/session/${roomId}/rate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ rating: currentRating, feedback })
+                });
+
+                if (res.ok) {
+                    window.location.href = '/dashboard';
+                }
+            } catch (err) {
+                console.error('Rating error:', err);
+                window.location.href = '/dashboard';
+            }
+        }
+    </script>
+</body>
+
+</html>

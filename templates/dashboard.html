@@ -2,185 +2,641 @@
 {% block content %}
 
 <style>
-    /* Custom Animations */
+    /* Enhanced Animations */
     @keyframes slideUpFade {
-        from { opacity: 0; transform: translateY(20px); }
-        to { opacity: 1; transform: translateY(0); }
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
-    .animate-enter { animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-    .delay-100 { animation-delay: 0.1s; }
-    .delay-200 { animation-delay: 0.2s; }
-    .delay-300 { animation-delay: 0.3s; }
-    
+
+    @keyframes float {
+
+        0%,
+        100% {
+            transform: translateY(0) rotate(0deg);
+        }
+
+        50% {
+            transform: translateY(-20px) rotate(5deg);
+        }
+    }
+
+    @keyframes pulse-glow {
+
+        0%,
+        100% {
+            box-shadow: 0 0 20px rgba(249, 115, 22, 0.3);
+        }
+
+        50% {
+            box-shadow: 0 0 40px rgba(249, 115, 22, 0.6);
+        }
+    }
+
+    @keyframes gradient-shift {
+        0% {
+            background-position: 0% 50%;
+        }
+
+        50% {
+            background-position: 100% 50%;
+        }
+
+        100% {
+            background-position: 0% 50%;
+        }
+    }
+
+    @keyframes typewriter {
+        from {
+            width: 0;
+        }
+
+        to {
+            width: 100%;
+        }
+    }
+
+    .animate-enter {
+        animation: slideUpFade 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        opacity: 0;
+    }
+
+    .animate-float {
+        animation: float 6s ease-in-out infinite;
+    }
+
+    .animate-float-delayed {
+        animation: float 8s ease-in-out 2s infinite;
+    }
+
+    .animate-gradient {
+        background-size: 200% 200%;
+        animation: gradient-shift 4s ease infinite;
+    }
+
+    .delay-100 {
+        animation-delay: 0.1s;
+    }
+
+    .delay-200 {
+        animation-delay: 0.2s;
+    }
+
+    .delay-300 {
+        animation-delay: 0.3s;
+    }
+
+    .delay-400 {
+        animation-delay: 0.4s;
+    }
+
+    .delay-500 {
+        animation-delay: 0.5s;
+    }
+
+    /* Glass Cards */
     .glass-card {
-        background: white;
-        border: 1px solid #f1f5f9;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-        transition: all 0.3s ease;
+        background: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+        transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
     }
+
     .glass-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-        border-color: #fed7aa;
+        transform: translateY(-8px) scale(1.02);
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+        border-color: rgba(249, 115, 22, 0.3);
     }
-    
-    /* Coming Soon Badge */
+
+    /* Feature Section Cards */
+    .feature-card {
+        background: white;
+        border-radius: 24px;
+        padding: 2rem;
+        position: relative;
+        overflow: hidden;
+        border: 1px solid #f1f5f9;
+        transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .feature-card:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+    }
+
+    .feature-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, var(--accent-start), var(--accent-end));
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+
+    .feature-card:hover::before {
+        opacity: 1;
+    }
+
+    /* Section Headers */
+    .section-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .section-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        color: white;
+    }
+
+    .section-title {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: #1e293b;
+    }
+
+    .section-subtitle {
+        font-size: 0.875rem;
+        color: #64748b;
+    }
+
+    /* Badge */
     .badge-soon {
-        background: #f1f5f9;
+        background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
         color: #64748b;
         font-size: 0.65rem;
-        padding: 0.2rem 0.6rem;
+        padding: 0.25rem 0.75rem;
         border-radius: 9999px;
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.05em;
     }
+
+    .badge-live {
+        background: linear-gradient(135deg, #dcfce7, #bbf7d0);
+        color: #16a34a;
+    }
+
+    .badge-new {
+        background: linear-gradient(135deg, #fef3c7, #fde68a);
+        color: #d97706;
+    }
 </style>
 
-<div id="hub-view" class="min-h-screen pb-20">
-    
-    <div class="max-w-7xl mx-auto pt-10 px-4 mb-10 animate-enter">
-        <div class="flex flex-col md:flex-row justify-between items-end md:items-center gap-6">
-            <div>
-                <h1 class="text-4xl font-extrabold text-slate-800 tracking-tight mb-2">
-                    Student <span class="text-transparent bg-clip-text bg-gradient-to-r from-orange-600 to-rose-600">Hub</span>
-                </h1>
-                <p class="text-slate-500 font-medium">Welcome back, <strong class="text-slate-800">{{ user.username }}</strong>. Select a tool to begin.</p>
-            </div>
-            
-            <div class="flex flex-wrap items-center gap-3">
+<div id="hub-view" class="min-h-screen pb-20 relative overflow-hidden">
+
+    <!-- Floating Background Orbs -->
+    <div class="fixed inset-0 pointer-events-none overflow-hidden -z-10">
+        <div
+            class="absolute top-20 left-10 w-72 h-72 bg-gradient-to-br from-orange-200/40 to-rose-200/40 rounded-full blur-3xl animate-float">
+        </div>
+        <div
+            class="absolute top-40 right-20 w-96 h-96 bg-gradient-to-br from-indigo-200/30 to-purple-200/30 rounded-full blur-3xl animate-float-delayed">
+        </div>
+        <div
+            class="absolute bottom-40 left-1/3 w-80 h-80 bg-gradient-to-br from-emerald-200/30 to-cyan-200/30 rounded-full blur-3xl animate-float">
+        </div>
+    </div>
+
+    <!-- HERO SECTION -->
+    <div class="relative pt-8 pb-16">
+        <div class="max-w-7xl mx-auto px-4">
+
+            <!-- Top Bar: Admin + Credits -->
+            <div class="flex justify-end items-center gap-3 mb-8 animate-enter">
                 {% if user.role == 'super_admin' %}
-                <a href="{{ url_for('super_admin_dashboard') }}" class="px-5 py-2 bg-slate-900 text-white text-xs font-bold rounded-xl shadow-lg hover:bg-slate-800 transition-all flex items-center gap-2">
+                <a href="{{ url_for('super_admin_dashboard') }}"
+                    class="px-4 py-2 bg-slate-900 text-white text-xs font-bold rounded-xl shadow-lg hover:bg-slate-800 transition-all flex items-center gap-2">
                     <i class="fa-solid fa-user-astronaut"></i> Super Admin
                 </a>
                 {% endif %}
                 {% if user.role == 'admin' %}
-                <a href="{{ url_for('admin') }}" class="px-5 py-2 bg-slate-800 text-white text-xs font-bold rounded-xl shadow-lg hover:bg-slate-700 transition-all flex items-center gap-2">
+                <a href="{{ url_for('admin') }}"
+                    class="px-4 py-2 bg-slate-800 text-white text-xs font-bold rounded-xl shadow-lg hover:bg-slate-700 transition-all flex items-center gap-2">
                     <i class="fa-solid fa-shield-halved"></i> Admin Panel
                 </a>
                 {% endif %}
-                
-                <div class="bg-white px-5 py-2 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
-                    <div class="w-8 h-8 rounded-full bg-orange-50 flex items-center justify-center text-orange-600">
-                        <i class="fa-solid fa-bolt text-sm"></i>
+                <div class="glass-card px-5 py-3 rounded-2xl flex items-center gap-4">
+                    <div class="flex items-center gap-3">
+                        <div
+                            class="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-rose-500 flex items-center justify-center text-white shadow-lg">
+                            <i class="fa-solid fa-bolt"></i>
+                        </div>
+                        <div class="flex flex-col leading-tight">
+                            <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Credits</span>
+                            <span class="text-2xl font-black text-slate-800">{{ user.credits }}</span>
+                        </div>
                     </div>
-                    <div class="flex flex-col leading-none">
-                        <span class="text-[10px] uppercase font-bold text-slate-400">Credits</span>
-                        <span class="text-lg font-black text-slate-800">{{ user.credits }}</span>
+                </div>
+            </div>
+
+            <!-- Main Hero Content -->
+            <div class="text-center max-w-4xl mx-auto animate-enter delay-100">
+                <h1 class="text-5xl md:text-6xl font-extrabold text-slate-800 tracking-tight mb-6 leading-tight">
+                    Your Complete<br>
+                    <span
+                        class="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 via-rose-500 to-purple-600 animate-gradient">Study
+                        Hub</span>
+                </h1>
+                <p class="text-xl text-slate-500 mb-8 max-w-2xl mx-auto leading-relaxed">
+                    Welcome back, <strong class="text-slate-700">{{ user.username }}</strong>! Access expert solutions,
+                    AI tutors, live video sessions, and a complete document library — all in one place.
+                </p>
+
+                <!-- Quick Stats -->
+                <div class="flex flex-wrap justify-center gap-4 mb-8 animate-enter delay-200">
+                    <div class="bg-white/80 backdrop-blur px-6 py-3 rounded-2xl border border-slate-100 shadow-sm">
+                        <span class="text-2xl font-bold text-slate-800">{{ jobs|length }}</span>
+                        <span class="text-sm text-slate-500 ml-2">Questions Posted</span>
+                    </div>
+                    <div class="bg-white/80 backdrop-blur px-6 py-3 rounded-2xl border border-slate-100 shadow-sm">
+                        <span class="text-2xl font-bold text-slate-800">{{ sessions|length }}</span>
+                        <span class="text-sm text-slate-500 ml-2">Tutoring Sessions</span>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12 animate-enter delay-100">
-        
-        <div onclick="openTool()" class="glass-card p-6 rounded-3xl cursor-pointer group relative overflow-hidden">
-            <div class="absolute top-0 right-0 w-32 h-32 bg-orange-100 rounded-full blur-3xl -mr-16 -mt-16 transition-all group-hover:bg-orange-200"></div>
-            <div class="relative z-10">
-                <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-orange-500 to-rose-500 text-white flex items-center justify-center text-xl shadow-lg mb-4">
-                    <i class="fa-solid fa-question"></i>
-                </div>
-                <h3 class="text-xl font-bold text-slate-800 mb-2">Ask an Expert</h3>
-                <p class="text-sm text-slate-500 mb-6 line-clamp-2">Post questions directly to Chegg. Supports text and image uploads with OCR.</p>
-                <span class="inline-flex items-center text-orange-600 font-bold text-sm group-hover:gap-2 transition-all">
-                    Launch Tool <i class="fa-solid fa-arrow-right ml-1 text-xs"></i>
-                </span>
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- SECTION 1: ONLINE PLATFORMS -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <div class="max-w-7xl mx-auto px-4 mb-16 animate-enter delay-200">
+        <div class="section-header">
+            <div class="section-icon bg-gradient-to-br from-orange-500 to-rose-500 shadow-lg shadow-orange-500/30">
+                <i class="fa-solid fa-globe"></i>
+            </div>
+            <div>
+                <h2 class="section-title">Online Platforms</h2>
+                <p class="section-subtitle">Get instant answers from Chegg and other expert platforms</p>
             </div>
         </div>
 
-        <a href="{{ url_for('unblur') }}" class="glass-card p-6 rounded-3xl cursor-pointer group relative overflow-hidden block">
-            <div class="absolute top-0 right-0 w-32 h-32 bg-indigo-100 rounded-full blur-3xl -mr-16 -mt-16 transition-all group-hover:bg-indigo-200"></div>
-            <div class="relative z-10">
-                <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-blue-600 text-white flex items-center justify-center text-xl shadow-lg mb-4">
-                    <i class="fa-solid fa-unlock-keyhole"></i>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Ask an Expert Card -->
+            <div onclick="openTool()" class="feature-card cursor-pointer group"
+                style="--accent-start: #f97316; --accent-end: #e11d48;">
+                <div
+                    class="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-orange-100 to-rose-100 rounded-full blur-3xl -mr-20 -mt-20 group-hover:scale-150 transition-transform duration-700">
                 </div>
-                <h3 class="text-xl font-bold text-slate-800 mb-2">Unblur Answers</h3>
-                <p class="text-sm text-slate-500 mb-6 line-clamp-2">Get instant solutions from Chegg links. View formatted step-by-step answers.</p>
-                <span class="inline-flex items-center text-indigo-600 font-bold text-sm group-hover:gap-2 transition-all">
-                    Open Unblur <i class="fa-solid fa-arrow-right ml-1 text-xs"></i>
-                </span>
+                <div class="relative z-10 flex items-start gap-5">
+                    <div
+                        class="w-16 h-16 rounded-2xl bg-gradient-to-br from-orange-500 to-rose-500 text-white flex items-center justify-center text-2xl shadow-xl flex-shrink-0">
+                        <i class="fa-solid fa-paper-plane"></i>
+                    </div>
+                    <div class="flex-1">
+                        <div class="flex items-center gap-2 mb-2">
+                            <h3 class="text-xl font-bold text-slate-800">Ask an Expert</h3>
+                            <span class="badge-live text-[10px] px-2 py-0.5 rounded-full font-bold">LIVE</span>
+                        </div>
+                        <p class="text-slate-500 mb-4 leading-relaxed">Post questions directly to Chegg with support for
+                            text, images, and OCR extraction. Get expert answers fast.</p>
+                        <span
+                            class="inline-flex items-center text-orange-600 font-bold text-sm group-hover:gap-3 transition-all">
+                            Launch Tool <i
+                                class="fa-solid fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i>
+                        </span>
+                    </div>
+                </div>
             </div>
-        </a>
 
+            <!-- Unblur Answers Card -->
+            <a href="{{ url_for('unblur') }}" class="feature-card cursor-pointer group block"
+                style="--accent-start: #6366f1; --accent-end: #3b82f6;">
+                <div
+                    class="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-indigo-100 to-blue-100 rounded-full blur-3xl -mr-20 -mt-20 group-hover:scale-150 transition-transform duration-700">
+                </div>
+                <div class="relative z-10 flex items-start gap-5">
+                    <div
+                        class="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-blue-600 text-white flex items-center justify-center text-2xl shadow-xl flex-shrink-0">
+                        <i class="fa-solid fa-unlock-keyhole"></i>
+                    </div>
+                    <div class="flex-1">
+                        <div class="flex items-center gap-2 mb-2">
+                            <h3 class="text-xl font-bold text-slate-800">Unblur Answers</h3>
+                        </div>
+                        <p class="text-slate-500 mb-4 leading-relaxed">Paste any Chegg question URL and instantly view
+                            the complete solution with step-by-step explanations.</p>
+                        <span
+                            class="inline-flex items-center text-indigo-600 font-bold text-sm group-hover:gap-3 transition-all">
+                            Open Unblur <i
+                                class="fa-solid fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i>
+                        </span>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <!-- Recent Activity Mini Card -->
         {% if jobs %}
         {% set latest = jobs[0] %}
-        <div class="bg-slate-900 p-6 rounded-3xl relative overflow-hidden flex flex-col justify-between">
-            <div class="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -mr-16 -mt-16"></div>
-            <div>
-                <div class="flex items-center justify-between mb-4">
-                    <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">Latest Activity</span>
-                    {% if latest.status == 'Completed' %}
-                        <span class="bg-green-500/20 text-green-400 px-2 py-1 rounded text-[10px] font-bold">SUCCESS</span>
-                    {% elif latest.status == 'Failed' %}
-                        <span class="bg-red-500/20 text-red-400 px-2 py-1 rounded text-[10px] font-bold">FAILED</span>
-                    {% else %}
-                        <span class="bg-yellow-500/20 text-yellow-400 px-2 py-1 rounded text-[10px] font-bold">PROCESSING</span>
-                    {% endif %}
+        <div class="mt-6 bg-slate-900 rounded-2xl p-5 flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <div
+                    class="w-10 h-10 rounded-xl {% if latest.status == 'Completed' %}bg-green-500/20 text-green-400{% elif latest.status == 'Failed' %}bg-red-500/20 text-red-400{% else %}bg-yellow-500/20 text-yellow-400{% endif %} flex items-center justify-center">
+                    {% if latest.status == 'Completed' %}<i class="fa-solid fa-check"></i>{% elif latest.status ==
+                    'Failed' %}<i class="fa-solid fa-xmark"></i>{% else %}<i class="fa-solid fa-spinner fa-spin"></i>{%
+                    endif %}
                 </div>
-                <p class="text-white font-bold line-clamp-2 text-lg leading-snug mb-1">{{ latest.subject }}</p>
-                <p class="text-slate-400 text-xs truncate">{{ latest.timestamp.strftime('%Y-%m-%d %H:%M') }}</p>
+                <div>
+                    <p class="text-white font-bold text-sm truncate max-w-xs">{{ latest.subject }}</p>
+                    <p class="text-slate-400 text-xs">{{ latest.timestamp.strftime('%Y-%m-%d %H:%M') }}</p>
+                </div>
             </div>
-            <button onclick="openTool(); switchTab('history')" class="mt-4 w-full py-2 bg-white/10 hover:bg-white/20 text-white text-xs font-bold rounded-lg transition-colors text-center">
-                View Full History
+            <button onclick="openTool(); switchTab('history')"
+                class="px-4 py-2 bg-white/10 hover:bg-white/20 text-white text-xs font-bold rounded-lg transition-colors">
+                View History
             </button>
         </div>
         {% endif %}
-
     </div>
 
-    <div class="max-w-7xl mx-auto px-4 mb-8 animate-enter delay-200">
-        <h2 class="text-sm font-bold text-slate-400 uppercase tracking-widest mb-6 ml-1">Coming Soon</h2>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-            
-            <div class="bg-white p-5 rounded-2xl border border-slate-100 flex flex-col items-center text-center opacity-60 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-500">
-                <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center mb-3">
-                    <i class="fa-solid fa-robot"></i>
-                </div>
-                <h4 class="font-bold text-slate-700 text-sm">AI Tutor</h4>
-                <p class="text-[10px] text-slate-400 mt-1 mb-3">GPT & Gemini Integrated</p>
-                <span class="badge-soon">Coming Soon</span>
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- SECTION 2: LIVE TUTORING -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <div class="max-w-7xl mx-auto px-4 mb-16 animate-enter delay-300">
+        <div class="section-header">
+            <div class="section-icon bg-gradient-to-br from-amber-500 to-orange-600 shadow-lg shadow-amber-500/30">
+                <i class="fa-solid fa-video"></i>
             </div>
-
-            <div class="bg-white p-5 rounded-2xl border border-slate-100 flex flex-col items-center text-center opacity-60 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-500">
-                <div class="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center mb-3">
-                    <i class="fa-solid fa-book-open"></i>
-                </div>
-                <h4 class="font-bold text-slate-700 text-sm">Library</h4>
-                <p class="text-[10px] text-slate-400 mt-1 mb-3">Notes & Papers</p>
-                <span class="badge-soon">Coming Soon</span>
+            <div>
+                <h2 class="section-title">Live Tutoring</h2>
+                <p class="section-subtitle">Connect with expert tutors for personalized 1-on-1 video sessions</p>
             </div>
+        </div>
 
-            <div class="bg-white p-5 rounded-2xl border border-slate-100 flex flex-col items-center text-center opacity-60 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-500">
-                <div class="w-10 h-10 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center mb-3">
-                    <i class="fa-solid fa-file-pen"></i>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Book Tutor Card -->
+            <a href="{{ url_for('tutoring.browse_tutors') }}" class="feature-card cursor-pointer group block"
+                style="--accent-start: #f59e0b; --accent-end: #ea580c;">
+                <div
+                    class="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-amber-100 to-orange-100 rounded-full blur-3xl -mr-20 -mt-20 group-hover:scale-150 transition-transform duration-700">
                 </div>
-                <h4 class="font-bold text-slate-700 text-sm">Exam Prep</h4>
-                <p class="text-[10px] text-slate-400 mt-1 mb-3">Mock Tests</p>
-                <span class="badge-soon">Coming Soon</span>
-            </div>
-
-            <div class="bg-white p-5 rounded-2xl border border-slate-100 flex flex-col items-center text-center opacity-60 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-500">
-                <div class="w-10 h-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center mb-3">
-                    <i class="fa-solid fa-chart-pie"></i>
+                <div class="relative z-10 flex items-start gap-5">
+                    <div class="flex -space-x-3">
+                        <div
+                            class="w-14 h-14 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 text-white flex items-center justify-center text-xl shadow-lg border-2 border-white">
+                            <i class="fa-solid fa-chalkboard-user"></i>
+                        </div>
+                        <div
+                            class="w-14 h-14 rounded-xl bg-gradient-to-br from-rose-500 to-pink-600 text-white flex items-center justify-center text-xl shadow-lg border-2 border-white">
+                            <i class="fa-solid fa-headset"></i>
+                        </div>
+                    </div>
+                    <div class="flex-1">
+                        <div class="flex items-center gap-2 mb-2">
+                            <h3 class="text-xl font-bold text-slate-800">Book a Tutor</h3>
+                            <span class="badge-live text-[10px] px-2 py-0.5 rounded-full font-bold">LIVE 1-ON-1</span>
+                        </div>
+                        <p class="text-slate-500 mb-4 leading-relaxed">Browse verified tutors and start an instant video
+                            call. Pay only for the time you use.</p>
+                        <span
+                            class="inline-flex items-center text-amber-600 font-bold text-sm group-hover:gap-3 transition-all">
+                            Browse Tutors <i
+                                class="fa-solid fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i>
+                        </span>
+                    </div>
                 </div>
-                <h4 class="font-bold text-slate-700 text-sm">Analytics</h4>
-                <p class="text-[10px] text-slate-400 mt-1 mb-3">Study Progress</p>
-                <span class="badge-soon">Coming Soon</span>
-            </div>
+            </a>
 
+            <!-- My Sessions Card -->
+            <div onclick="openSessions()" class="feature-card cursor-pointer group"
+                style="--accent-start: #06b6d4; --accent-end: #3b82f6;">
+                <div
+                    class="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-cyan-100 to-blue-100 rounded-full blur-3xl -mr-20 -mt-20 group-hover:scale-150 transition-transform duration-700">
+                </div>
+                <div class="relative z-10 flex items-start gap-5">
+                    <div
+                        class="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 text-white flex items-center justify-center text-2xl shadow-xl flex-shrink-0">
+                        <i class="fa-solid fa-film"></i>
+                    </div>
+                    <div class="flex-1">
+                        <div class="flex items-center gap-2 mb-2">
+                            <h3 class="text-xl font-bold text-slate-800">My Sessions</h3>
+                            <span class="px-2 py-0.5 text-[10px] font-bold bg-cyan-100 text-cyan-700 rounded-full">{{
+                                sessions|length }}</span>
+                        </div>
+                        <p class="text-slate-500 mb-4 leading-relaxed">View your session history and watch recordings of
+                            past tutoring sessions anytime.</p>
+                        <span
+                            class="inline-flex items-center text-cyan-600 font-bold text-sm group-hover:gap-3 transition-all">
+                            View Recordings <i
+                                class="fa-solid fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i>
+                        </span>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- SECTION 3: AI LEARNING -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <div class="max-w-7xl mx-auto px-4 mb-16 animate-enter delay-400">
+        <div class="section-header">
+            <div class="section-icon bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg shadow-emerald-500/30">
+                <i class="fa-solid fa-robot"></i>
+            </div>
+            <div>
+                <h2 class="section-title">AI Learning</h2>
+                <p class="section-subtitle">Get instant answers from multiple AI models</p>
+            </div>
+        </div>
+
+        <a href="{{ url_for('ai_tutor') }}" class="feature-card cursor-pointer group block"
+            style="--accent-start: #10b981; --accent-end: #6366f1;">
+            <div
+                class="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-emerald-100 via-purple-100 to-blue-100 rounded-full blur-3xl -mr-32 -mt-32 group-hover:scale-125 transition-transform duration-700">
+            </div>
+            <div class="relative z-10 flex flex-col md:flex-row items-start gap-6">
+                <div class="flex -space-x-4">
+                    <div
+                        class="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center text-2xl shadow-xl border-3 border-white">
+                        <i class="fa-solid fa-robot"></i>
+                    </div>
+                    <div
+                        class="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 via-purple-500 to-rose-500 text-white flex items-center justify-center text-2xl shadow-xl border-3 border-white">
+                        <i class="fa-solid fa-sparkles"></i>
+                    </div>
+                </div>
+                <div class="flex-1">
+                    <div class="flex items-center gap-3 mb-3">
+                        <h3 class="text-2xl font-bold text-slate-800">AI Tutor</h3>
+                        <span class="badge-new text-[10px] px-2 py-0.5 rounded-full font-bold">DUAL AI</span>
+                    </div>
+                    <p class="text-slate-500 mb-4 leading-relaxed text-lg">Ask any question and get responses from both
+                        <strong>ChatGPT</strong> and <strong>Gemini</strong> side by side. Compare answers and get the
+                        best explanation for your learning style.</p>
+                    <span class="inline-flex items-center text-emerald-600 font-bold group-hover:gap-3 transition-all">
+                        Open AI Tutor <i
+                            class="fa-solid fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i>
+                    </span>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- SECTION 4: RESOURCES -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <div class="max-w-7xl mx-auto px-4 mb-16 animate-enter delay-500">
+        <div class="section-header">
+            <div class="section-icon bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg shadow-blue-500/30">
+                <i class="fa-solid fa-book-open"></i>
+            </div>
+            <div>
+                <h2 class="section-title">Resources</h2>
+                <p class="section-subtitle">Access and share study materials, exam papers, and notes</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Document Library -->
+            <a href="{{ url_for('library') }}" class="feature-card cursor-pointer group block"
+                style="--accent-start: #3b82f6; --accent-end: #6366f1;">
+                <div
+                    class="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-full blur-3xl -mr-20 -mt-20 group-hover:scale-150 transition-transform duration-700">
+                </div>
+                <div class="relative z-10 flex items-start gap-5">
+                    <div
+                        class="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center text-2xl shadow-xl flex-shrink-0">
+                        <i class="fa-solid fa-book-open"></i>
+                    </div>
+                    <div class="flex-1">
+                        <div class="flex items-center gap-2 mb-2">
+                            <h3 class="text-xl font-bold text-slate-800">Document Library</h3>
+                            <span class="px-2 py-0.5 text-[10px] font-bold bg-green-100 text-green-700 rounded-full">+1
+                                CREDIT</span>
+                        </div>
+                        <p class="text-slate-500 mb-4 leading-relaxed">Upload exam papers & notes to earn credits.
+                            Browse and download shared documents from students.</p>
+                        <span
+                            class="inline-flex items-center text-blue-600 font-bold text-sm group-hover:gap-3 transition-all">
+                            Open Library <i
+                                class="fa-solid fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i>
+                        </span>
+                    </div>
+                </div>
+            </a>
+
+            <!-- Quick Search -->
+            <div class="feature-card" style="--accent-start: #8b5cf6; --accent-end: #a855f7;">
+                <div
+                    class="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-purple-100 to-pink-100 rounded-full blur-3xl -mr-20 -mt-20">
+                </div>
+                <div class="relative z-10">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div
+                            class="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 text-white flex items-center justify-center text-xl shadow-lg">
+                            <i class="fa-solid fa-search"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-slate-800">Quick Search</h3>
+                    </div>
+                    <div class="relative">
+                        <input type="text" id="dashboard-search" placeholder="Search exams, notes, papers..."
+                            class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-4 pr-12 py-4 focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100 transition-all text-sm"
+                            autocomplete="off">
+                        <i class="fa-solid fa-search absolute right-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                        <div id="dashboard-search-results"
+                            class="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-200 rounded-xl shadow-xl z-50 hidden max-h-64 overflow-y-auto">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- SECTION 5: COMING SOON -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <div class="max-w-7xl mx-auto px-4 mb-8">
+        <div class="section-header opacity-60">
+            <div class="section-icon bg-gradient-to-br from-slate-400 to-slate-500">
+                <i class="fa-solid fa-rocket"></i>
+            </div>
+            <div>
+                <h2 class="section-title">Coming Soon</h2>
+                <p class="section-subtitle">New features in development</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div
+                class="bg-white/60 p-6 rounded-2xl border border-slate-100 flex flex-col items-center text-center opacity-70 hover:opacity-100 transition-all duration-500">
+                <div
+                    class="w-12 h-12 rounded-xl bg-purple-100 text-purple-500 flex items-center justify-center mb-3 text-xl">
+                    <i class="fa-solid fa-file-pen"></i>
+                </div>
+                <h4 class="font-bold text-slate-700 text-sm mb-1">Exam Prep</h4>
+                <p class="text-[10px] text-slate-400 mb-2">Mock Tests</p>
+                <span class="badge-soon">Coming Soon</span>
+            </div>
+
+            <div
+                class="bg-white/60 p-6 rounded-2xl border border-slate-100 flex flex-col items-center text-center opacity-70 hover:opacity-100 transition-all duration-500">
+                <div
+                    class="w-12 h-12 rounded-xl bg-rose-100 text-rose-500 flex items-center justify-center mb-3 text-xl">
+                    <i class="fa-solid fa-chart-pie"></i>
+                </div>
+                <h4 class="font-bold text-slate-700 text-sm mb-1">Analytics</h4>
+                <p class="text-[10px] text-slate-400 mb-2">Study Progress</p>
+                <span class="badge-soon">Coming Soon</span>
+            </div>
+
+            <div
+                class="bg-white/60 p-6 rounded-2xl border border-slate-100 flex flex-col items-center text-center opacity-70 hover:opacity-100 transition-all duration-500">
+                <div
+                    class="w-12 h-12 rounded-xl bg-amber-100 text-amber-500 flex items-center justify-center mb-3 text-xl">
+                    <i class="fa-solid fa-users"></i>
+                </div>
+                <h4 class="font-bold text-slate-700 text-sm mb-1">Study Groups</h4>
+                <p class="text-[10px] text-slate-400 mb-2">Collaborate</p>
+                <span class="badge-soon">Coming Soon</span>
+            </div>
+
+            <div
+                class="bg-white/60 p-6 rounded-2xl border border-slate-100 flex flex-col items-center text-center opacity-70 hover:opacity-100 transition-all duration-500">
+                <div
+                    class="w-12 h-12 rounded-xl bg-cyan-100 text-cyan-500 flex items-center justify-center mb-3 text-xl">
+                    <i class="fa-solid fa-calendar-check"></i>
+                </div>
+                <h4 class="font-bold text-slate-700 text-sm mb-1">Scheduler</h4>
+                <p class="text-[10px] text-slate-400 mb-2">Study Plans</p>
+                <span class="badge-soon">Coming Soon</span>
+            </div>
+        </div>
+    </div>
+
 </div>
 
 <div id="tool-view" class="hidden min-h-screen bg-slate-50/50 pb-20">
-    
+
     <div class="max-w-6xl mx-auto pt-8 px-4 mb-6">
-        <button onclick="closeTool()" class="text-slate-500 hover:text-orange-600 font-bold text-sm flex items-center gap-2 transition-colors mb-4">
+        <button onclick="closeTool()"
+            class="text-slate-500 hover:text-orange-600 font-bold text-sm flex items-center gap-2 transition-colors mb-4">
             <i class="fa-solid fa-arrow-left"></i> Back to Student Hub
         </button>
         <div class="flex items-center gap-3">
-             <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-rose-500 text-white flex items-center justify-center text-lg shadow-lg">
+            <div
+                class="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-rose-500 text-white flex items-center justify-center text-lg shadow-lg">
                 <i class="fa-solid fa-question"></i>
             </div>
             <h1 class="text-2xl font-extrabold text-slate-800">Ask an Expert</h1>
@@ -188,44 +644,69 @@
     </div>
 
     <div class="max-w-4xl mx-auto px-4 animate-enter delay-100">
-        <div class="bg-white p-1.5 rounded-2xl shadow-sm border border-slate-200 inline-flex w-full md:w-auto mb-8 relative">
-            <button id="btn-post" onclick="switchTab('post')" class="flex-1 md:flex-none px-8 py-3 rounded-xl text-sm font-bold bg-white text-orange-600 shadow-md transition-all">New Question</button>
-            <button id="btn-history" onclick="switchTab('history')" class="flex-1 md:flex-none px-8 py-3 rounded-xl text-sm font-bold text-slate-500 hover:text-slate-700 transition-all">History Log</button>
+        <div
+            class="bg-white p-1.5 rounded-2xl shadow-sm border border-slate-200 inline-flex w-full md:w-auto mb-8 relative">
+            <button id="btn-post" onclick="switchTab('post')"
+                class="flex-1 md:flex-none px-8 py-3 rounded-xl text-sm font-bold bg-white text-orange-600 shadow-md transition-all">New
+                Question</button>
+            <button id="btn-history" onclick="switchTab('history')"
+                class="flex-1 md:flex-none px-8 py-3 rounded-xl text-sm font-bold text-slate-500 hover:text-slate-700 transition-all">History
+                Log</button>
         </div>
 
         <div id="view-post" class="block relative">
-            <div class="bg-white rounded-3xl shadow-xl shadow-slate-200/60 border border-slate-100 overflow-hidden relative group">
+            <div
+                class="bg-white rounded-3xl shadow-xl shadow-slate-200/60 border border-slate-100 overflow-hidden relative group">
                 <div class="h-2 bg-gradient-to-r from-orange-500 via-red-500 to-orange-500"></div>
                 <div class="p-8 md:p-10">
-                    <form method="POST" id="postForm" class="space-y-8">
+                    <form method="POST" id="postForm" class="space-y-8" onsubmit="return handleFormSubmit(event)">
                         <div class="space-y-3">
                             <div class="flex justify-between items-center">
-                                <label class="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-wider">
-                                    <span class="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 text-[10px]">1</span> Select Service Account
+                                <label
+                                    class="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                                    <span
+                                        class="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 text-[10px]">1</span>
+                                    Select Service Account
                                 </label>
                                 <div id="balance-display" class="hidden animate-enter">
                                     <span class="text-[10px] font-bold text-slate-400 uppercase mr-2">Balance:</span>
-                                    <span id="balance-value" class="px-2 py-1 bg-blue-100 text-blue-700 rounded-lg text-xs font-bold">Checking...</span>
+                                    <span id="balance-value"
+                                        class="px-2 py-1 bg-blue-100 text-blue-700 rounded-lg text-xs font-bold">Checking...</span>
                                 </div>
-                                </div>
+                            </div>
                             <div class="relative group/select">
-                                <select name="account_id" id="account_select" onchange="checkBalance()" class="w-full appearance-none bg-slate-50 border border-slate-200 text-slate-700 py-4 px-5 pr-10 rounded-xl focus:outline-none focus:border-orange-500">
+                                <select name="account_id" id="account_select" onchange="checkBalance()"
+                                    class="w-full appearance-none bg-slate-50 border border-slate-200 text-slate-700 py-4 px-5 pr-10 rounded-xl focus:outline-none focus:border-orange-500">
                                     {% for acc in accounts %}
-                                        <option value="{{ acc.id }}">{{ acc.name }} {% if acc.proxy %}(Proxy Active){% endif %}</option>
+                                    <option value="{{ acc.id }}">{{ acc.name }} {% if acc.proxy %}(Proxy Active){% endif
+                                        %}</option>
                                     {% endfor %}
                                 </select>
-                                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-5 text-slate-400"><i class="fa-solid fa-chevron-down"></i></div>
+                                <div
+                                    class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-5 text-slate-400">
+                                    <i class="fa-solid fa-chevron-down"></i>
+                                </div>
                             </div>
                         </div>
 
                         <div class="bg-slate-50 rounded-2xl border border-slate-100 p-5">
                             <div class="flex justify-between items-center mb-4">
-                                <label class="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-wider">
-                                    <span class="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 text-[10px]">2</span> Question Content
+                                <label
+                                    class="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                                    <span
+                                        class="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 text-[10px]">2</span>
+                                    Question Content
                                 </label>
                                 <div class="flex bg-slate-200 p-1 rounded-lg">
-                                    <button type="button" onclick="switchMode('text')" id="btn-mode-text" class="px-3 py-1 rounded-md text-xs font-bold shadow-sm bg-white text-slate-700 transition-all">Text Only</button>
-                                    <button type="button" onclick="switchMode('image')" id="btn-mode-image" class="px-3 py-1 rounded-md text-xs font-bold text-slate-500 hover:text-slate-700 transition-all">Image + OCR</button>
+                                    <button type="button" onclick="switchMode('text')" id="btn-mode-text"
+                                        class="px-3 py-1 rounded-md text-xs font-bold shadow-sm bg-white text-slate-700 transition-all">Text
+                                        Only</button>
+                                    <button type="button" onclick="switchMode('image')" id="btn-mode-image"
+                                        class="px-3 py-1 rounded-md text-xs font-bold text-slate-500 hover:text-slate-700 transition-all">Image
+                                        + OCR</button>
+                                    <button type="button" onclick="switchMode('repost')" id="btn-mode-repost"
+                                        class="px-3 py-1 rounded-md text-xs font-bold text-slate-500 hover:text-slate-700 transition-all">Repost
+                                        URL</button>
                                 </div>
                             </div>
 
@@ -233,14 +714,22 @@
                             <input type="hidden" name="final_image_url" id="final_image_url">
 
                             <div id="container-text" class="block space-y-3">
-                                <textarea name="content" id="question_content" rows="6" class="w-full bg-white border border-slate-200 text-slate-700 py-4 px-5 rounded-xl focus:outline-none focus:border-orange-500 font-mono text-sm" placeholder="Paste question text here..."></textarea>
+                                <textarea name="content" id="question_content" rows="6"
+                                    class="w-full bg-white border border-slate-200 text-slate-700 py-4 px-5 rounded-xl focus:outline-none focus:border-orange-500 font-mono text-sm"
+                                    placeholder="Paste question text here..."></textarea>
                             </div>
 
                             <div id="container-image" class="hidden space-y-4">
-                                <div class="relative border-2 border-dashed border-slate-300 rounded-xl bg-white hover:bg-slate-50 transition-colors p-8 text-center cursor-pointer group">
-                                    <input type="file" id="imageInput" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onchange="uploadImage()">
+                                <div
+                                    class="relative border-2 border-dashed border-slate-300 rounded-xl bg-white hover:bg-slate-50 transition-colors p-8 text-center cursor-pointer group">
+                                    <input type="file" id="imageInput" accept="image/*"
+                                        class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                        onchange="uploadImage()">
                                     <div id="upload-prompt">
-                                        <div class="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-3 text-orange-500"><i class="fa-solid fa-cloud-arrow-up text-lg"></i></div>
+                                        <div
+                                            class="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-3 text-orange-500">
+                                            <i class="fa-solid fa-cloud-arrow-up text-lg"></i>
+                                        </div>
                                         <p class="text-sm font-bold text-slate-600">Click to Upload Image</p>
                                     </div>
                                     <div id="upload-loading" class="hidden">
@@ -250,38 +739,105 @@
                                 </div>
                                 <div id="ocr-preview" class="hidden flex flex-col md:flex-row gap-4">
                                     <div class="w-full md:w-1/3">
-                                        <img id="img-preview-src" src="" class="w-full h-48 object-contain rounded bg-slate-50 mb-2">
-                                        <button type="button" onclick="clearImage()" class="w-full py-2 text-xs font-bold text-red-500 bg-red-50 hover:bg-red-100 rounded-lg">Remove</button>
+                                        <img id="img-preview-src" src=""
+                                            class="w-full h-48 object-contain rounded bg-slate-50 mb-2">
+                                        <button type="button" onclick="clearImage()"
+                                            class="w-full py-2 text-xs font-bold text-red-500 bg-red-50 hover:bg-red-100 rounded-lg">Remove</button>
                                     </div>
                                     <div class="w-full md:w-2/3">
-                                        <textarea id="ocr_editor" rows="8" class="w-full bg-white border border-slate-200 text-slate-700 p-3 rounded-lg focus:outline-none focus:border-orange-500 text-xs font-mono"></textarea>
+                                        <textarea id="ocr_editor" rows="8"
+                                            class="w-full bg-white border border-slate-200 text-slate-700 p-3 rounded-lg focus:outline-none focus:border-orange-500 text-xs font-mono"></textarea>
                                     </div>
                                 </div>
                             </div>
 
+                            <!-- Repost URL Container -->
+                            <div id="container-repost" class="hidden space-y-4">
+                                <div class="flex gap-3">
+                                    <input type="text" id="repost_url"
+                                        class="flex-1 bg-white border border-slate-200 text-slate-700 py-3 px-4 rounded-xl focus:outline-none focus:border-orange-500 text-sm"
+                                        placeholder="Paste Chegg question URL here...">
+                                    <button type="button" onclick="extractQuestion()" id="extractBtn"
+                                        class="px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-all flex items-center gap-2">
+                                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                                        <span>Extract</span>
+                                    </button>
+                                </div>
+                                <div id="repost-preview" class="hidden">
+                                    <div
+                                        class="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200 p-4">
+                                        <div class="flex items-center gap-2 mb-3">
+                                            <i class="fa-solid fa-check-circle text-green-600"></i>
+                                            <span class="text-green-700 font-bold text-sm">Question Extracted
+                                                Successfully!</span>
+                                        </div>
+                                        <div id="repost-content"
+                                            class="bg-white rounded-lg p-4 border border-green-100 max-h-48 overflow-y-auto text-sm text-slate-700">
+                                        </div>
+                                        <div id="repost-images" class="mt-3 flex flex-wrap gap-2"></div>
+
+                                        <!-- OCR Text Editor Section -->
+                                        <div id="repost-ocr-section" class="hidden mt-4 border-t border-green-100 pt-4">
+                                            <div class="flex items-center justify-between mb-2">
+                                                <label
+                                                    class="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
+                                                    <i class="fa-solid fa-font"></i> Extracted Text (OCR)
+                                                </label>
+                                                <label class="flex items-center gap-2 cursor-pointer">
+                                                    <span class="text-xs text-slate-500">Include text</span>
+                                                    <input type="checkbox" id="include_ocr_text" checked
+                                                        class="w-4 h-4 text-orange-600 bg-slate-100 border-slate-300 rounded focus:ring-orange-500">
+                                                </label>
+                                            </div>
+                                            <textarea id="repost_ocr_editor" rows="4"
+                                                class="w-full bg-white border border-slate-200 text-slate-700 p-3 rounded-lg focus:outline-none focus:border-orange-500 text-xs font-mono"
+                                                placeholder="OCR extracted text will appear here. You can edit or clear it."></textarea>
+                                            <p class="text-[10px] text-slate-400 mt-1">
+                                                <i class="fa-solid fa-info-circle"></i>
+                                                Edit the text above or uncheck "Include text" to post only the image.
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <input type="hidden" id="extracted_html" name="extracted_html">
+                                </div>
+                                <div id="repost-error"
+                                    class="hidden bg-red-50 text-red-600 rounded-xl p-4 text-sm font-medium"></div>
+                            </div>
+
                             <div class="mt-4 pt-4 border-t border-slate-100">
-                                <button type="button" onclick="fetchSubjects()" id="searchBtn" class="w-full py-3 rounded-xl border-2 border-dashed border-blue-200 text-blue-600 font-bold hover:bg-blue-50 transition-all flex items-center justify-center gap-2">
+                                <button type="button" onclick="fetchSubjects()" id="searchBtn"
+                                    class="w-full py-3 rounded-xl border-2 border-dashed border-blue-200 text-blue-600 font-bold hover:bg-blue-50 transition-all flex items-center justify-center gap-2">
                                     <i class="fa-solid fa-magnifying-glass"></i> <span>Find Related Subjects</span>
                                 </button>
                             </div>
                         </div>
 
-                        <div class="space-y-3 opacity-50 pointer-events-none transition-all duration-300" id="subject-step">
-                            <label class="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-wider">
-                                <span class="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 text-[10px]">3</span> Target Subject
+                        <div class="space-y-3 opacity-50 pointer-events-none transition-all duration-300"
+                            id="subject-step">
+                            <label
+                                class="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                                <span
+                                    class="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 text-[10px]">3</span>
+                                Target Subject
                             </label>
                             <div class="relative">
-                                <select name="subject_select" id="subject_dropdown" required class="w-full appearance-none bg-slate-100 border border-slate-200 text-slate-500 py-4 px-5 pr-10 rounded-xl focus:outline-none focus:border-orange-500">
+                                <select name="subject_select" id="subject_dropdown" required
+                                    class="w-full appearance-none bg-slate-100 border border-slate-200 text-slate-500 py-4 px-5 pr-10 rounded-xl focus:outline-none focus:border-orange-500">
                                     <option value="" disabled selected>Waiting for search...</option>
                                 </select>
-                                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-5 text-slate-400"><i class="fa-solid fa-chevron-down"></i></div>
+                                <div
+                                    class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-5 text-slate-400">
+                                    <i class="fa-solid fa-chevron-down"></i>
+                                </div>
                             </div>
                         </div>
 
                         <div class="flex items-center gap-4 pt-4 border-t border-slate-100">
                             <div class="w-1/3">
-                                <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Quantity</label>
-                                <select name="post_count" class="w-full bg-slate-50 border border-slate-200 text-slate-700 font-bold py-3 px-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-100">
+                                <label
+                                    class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Quantity</label>
+                                <select name="post_count"
+                                    class="w-full bg-slate-50 border border-slate-200 text-slate-700 font-bold py-3 px-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-100">
                                     <option value="1">1 Post</option>
                                     <option value="2">2 Posts</option>
                                     <option value="3">3 Posts</option>
@@ -294,14 +850,15 @@
                                     <option value="10">10 Posts</option>
                                 </select>
                             </div>
-                            <button type="submit" id="postBtn" class="flex-1 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 text-white font-bold py-4 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2">
+                            <button type="submit" id="postBtn"
+                                class="flex-1 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 text-white font-bold py-4 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2">
                                 <span>Launch Process</span> <i class="fa-solid fa-rocket"></i>
                             </button>
                         </div>
                     </form>
                 </div>
             </div>
-            
+
             {% if jobs %}
             <div class="mt-8 animate-enter delay-200">
                 <div class="flex items-center gap-4 mb-4">
@@ -313,11 +870,18 @@
                 <div class="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm flex items-start gap-4">
                     <div class="flex-shrink-0 mt-1">
                         {% if latest.status == 'Completed' %}
-                            <div class="w-10 h-10 rounded-full bg-green-100 text-green-600 flex items-center justify-center"><i class="fa-solid fa-check"></i></div>
+                        <div
+                            class="w-10 h-10 rounded-full bg-green-100 text-green-600 flex items-center justify-center">
+                            <i class="fa-solid fa-check"></i>
+                        </div>
                         {% elif latest.status == 'Failed' %}
-                            <div class="w-10 h-10 rounded-full bg-red-100 text-red-600 flex items-center justify-center"><i class="fa-solid fa-xmark"></i></div>
+                        <div class="w-10 h-10 rounded-full bg-red-100 text-red-600 flex items-center justify-center"><i
+                                class="fa-solid fa-xmark"></i></div>
                         {% else %}
-                            <div class="w-10 h-10 rounded-full bg-yellow-100 text-yellow-600 flex items-center justify-center"><i class="fa-solid fa-spinner fa-spin"></i></div>
+                        <div
+                            class="w-10 h-10 rounded-full bg-yellow-100 text-yellow-600 flex items-center justify-center">
+                            <i class="fa-solid fa-spinner fa-spin"></i>
+                        </div>
                         {% endif %}
                     </div>
                     <div>
@@ -333,7 +897,8 @@
             <div class="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
                 <div class="px-8 py-6 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
                     <h2 class="font-bold text-slate-800">Job History</h2>
-                    <span class="text-xs bg-white border border-slate-200 px-2 py-1 rounded-lg text-slate-500">{{ jobs|length }} Records</span>
+                    <span class="text-xs bg-white border border-slate-200 px-2 py-1 rounded-lg text-slate-500">{{
+                        jobs|length }} Records</span>
                 </div>
                 {% if jobs %}
                 <div class="overflow-x-auto">
@@ -349,24 +914,35 @@
                         </thead>
                         <tbody class="divide-y divide-slate-50">
                             {% for job in jobs %}
-                            <tr onclick="showDetails(this)" class="hover:bg-orange-50/50 cursor-pointer transition-colors group">
+                            <tr onclick="showDetails(this)"
+                                class="hover:bg-orange-50/50 cursor-pointer transition-colors group">
                                 <td class="px-6 py-4 font-mono text-xs text-slate-500">#{{ job.id }}</td>
                                 <td class="px-6 py-4">
-                                    <span class="inline-flex items-center px-2 py-1 rounded-lg bg-slate-100 text-slate-600 text-[10px] font-bold">
+                                    <span
+                                        class="inline-flex items-center px-2 py-1 rounded-lg bg-slate-100 text-slate-600 text-[10px] font-bold">
                                         {{ job.service_account_name if job.service_account_name else 'System' }}
                                     </span>
                                 </td>
-                                <td class="px-6 py-4"><div class="text-sm font-bold text-slate-700 group-hover:text-orange-600">{{ job.subject }}</div></td>
                                 <td class="px-6 py-4">
-                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold {% if job.status == 'Completed' %}bg-green-100 text-green-700{% elif job.status == 'Failed' %}bg-red-100 text-red-700{% else %}bg-yellow-100 text-yellow-700{% endif %}">
+                                    <div class="text-sm font-bold text-slate-700 group-hover:text-orange-600">{{
+                                        job.subject }}</div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span
+                                        class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold {% if job.status == 'Completed' %}bg-green-100 text-green-700{% elif job.status == 'Failed' %}bg-red-100 text-red-700{% else %}bg-yellow-100 text-yellow-700{% endif %}">
                                         {{ job.status }}
                                     </span>
                                 </td>
-                                <td class="px-6 py-4 text-right"><span class="text-xs text-slate-400 utc-time" data-time="{{ job.timestamp }}">{{ job.timestamp }}</span></td>
+                                <td class="px-6 py-4 text-right"><span class="text-xs text-slate-400 utc-time"
+                                        data-time="{{ job.timestamp }}">{{ job.timestamp }}</span></td>
                                 <td class="hidden data-storage">
-                                    <div class="raw-content">{{ job.content }}</div><div class="raw-result">{{ job.result_message }}</div>
-                                    <div class="raw-subject">{{ job.subject }}</div><div class="raw-status">{{ job.status }}</div><div class="raw-time">{{ job.timestamp }}</div>
-                                    <div class="raw-account">{{ job.service_account_name if job.service_account_name else 'System' }}</div>
+                                    <div class="raw-content">{{ job.content }}</div>
+                                    <div class="raw-result">{{ job.result_message }}</div>
+                                    <div class="raw-subject">{{ job.subject }}</div>
+                                    <div class="raw-status">{{ job.status }}</div>
+                                    <div class="raw-time">{{ job.timestamp }}</div>
+                                    <div class="raw-account">{{ job.service_account_name if job.service_account_name
+                                        else 'System' }}</div>
                                 </td>
                             </tr>
                             {% endfor %}
@@ -374,12 +950,102 @@
                     </table>
                 </div>
                 {% else %}
-                <div class="p-16 text-center"><p class="text-slate-500 text-sm">No jobs found.</p></div>
+                <div class="p-16 text-center">
+                    <p class="text-slate-500 text-sm">No jobs found.</p>
+                </div>
                 {% endif %}
             </div>
         </div>
     </div>
+</div>
+
+<div id="session-view" class="hidden min-h-screen bg-slate-50/50 pb-20">
+    <div class="max-w-6xl mx-auto pt-8 px-4 mb-6">
+        <button onclick="closeSessions()"
+            class="text-slate-500 hover:text-cyan-600 font-bold text-sm flex items-center gap-2 transition-colors mb-4">
+            <i class="fa-solid fa-arrow-left"></i> Back to Student Hub
+        </button>
+        <div class="flex items-center gap-3">
+            <div
+                class="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 text-white flex items-center justify-center text-lg shadow-lg">
+                <i class="fa-solid fa-film"></i>
+            </div>
+            <h1 class="text-2xl font-extrabold text-slate-800">My Sessions</h1>
+        </div>
     </div>
+
+    <div class="max-w-5xl mx-auto px-4 animate-enter delay-100">
+        <div class="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
+            {% if sessions %}
+            <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead class="bg-slate-50 text-slate-400 text-[10px] font-bold uppercase tracking-wider">
+                        <tr>
+                            <th class="px-6 py-4">Date</th>
+                            <th class="px-6 py-4">Tutor</th>
+                            <th class="px-6 py-4">Duration</th>
+                            <th class="px-6 py-4">Cost</th>
+                            <th class="px-6 py-4 text-right">Recording</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-50">
+                        {% for session in sessions %}
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4">
+                                <span class="text-sm font-bold text-slate-700 block">
+                                    {{ session.created_at.strftime('%Y-%m-%d') }}
+                                </span>
+                                <span class="text-xs text-slate-400">{{ session.created_at.strftime('%I:%M %p')
+                                    }}</span>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-slate-600">
+                                {% if session.tutor %}
+                                {{ session.tutor.display_name }}
+                                {% else %}
+                                <span class="text-slate-400 italic">Unknown Tutor</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 text-xs font-mono text-slate-500">
+                                {{ "%.1f"|format(session.duration_minutes) }} min
+                            </td>
+                            <td class="px-6 py-4">
+                                <span
+                                    class="inline-flex items-center px-2 py-1 rounded-lg bg-orange-50 text-orange-600 text-xs font-bold">
+                                    -{{ session.credits_paid }} Credits
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 text-right">
+                                {% if session.recording_path %}
+                                <a href="/{{ session.recording_path.replace('\\', '/') }}" target="_blank"
+                                    class="inline-flex items-center gap-2 px-4 py-2 bg-cyan-50 text-cyan-600 hover:bg-cyan-100 hover:text-cyan-700 rounded-xl text-xs font-bold transition-all">
+                                    <i class="fa-solid fa-play"></i> Watch
+                                </a>
+                                {% else %}
+                                <span class="text-xs text-slate-400 italic">No Recording</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="p-16 text-center">
+                <div
+                    class="w-16 h-16 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
+                    <i class="fa-solid fa-video-slash"></i>
+                </div>
+                <h3 class="text-lg font-bold text-slate-700 mb-2">No Sessions Yet</h3>
+                <p class="text-slate-500 text-sm mb-6">Book a tutor to start learning!</p>
+                <a href="{{ url_for('tutoring.browse_tutors') }}"
+                    class="px-6 py-3 bg-slate-900 text-white font-bold rounded-xl text-sm hover:bg-slate-800 transition-all">
+                    Find a Tutor
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
 
 <div id="detailsModal" class="fixed inset-0 z-50 hidden">
     <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closeDetails()"></div>
@@ -387,20 +1053,35 @@
         <div class="relative rounded-2xl bg-white text-left shadow-2xl sm:max-w-lg w-full border border-slate-100">
             <div class="bg-slate-50 px-6 py-4 border-b border-slate-100 flex justify-between items-center">
                 <h3 class="text-base font-bold text-slate-900" id="modal-title">Details</h3>
-                <button onclick="closeDetails()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-xl"></i></button>
+                <button onclick="closeDetails()" class="text-slate-400 hover:text-slate-600"><i
+                        class="fa-solid fa-xmark text-xl"></i></button>
             </div>
             <div class="px-6 py-6 space-y-4">
                 <div class="flex justify-between bg-slate-50 p-3 rounded-lg border border-slate-100">
-                    <div><p class="text-[10px] font-bold text-slate-400 uppercase">Subject</p><p id="modalSubject" class="text-sm font-bold text-slate-800"></p></div>
+                    <div>
+                        <p class="text-[10px] font-bold text-slate-400 uppercase">Subject</p>
+                        <p id="modalSubject" class="text-sm font-bold text-slate-800"></p>
+                    </div>
                     <div id="modalStatusContainer"></div>
                 </div>
                 <div class="bg-slate-50 p-3 rounded-lg border border-slate-100">
                     <p class="text-[10px] font-bold text-slate-400 uppercase">Service Account</p>
                     <p id="modalAccount" class="text-xs font-bold text-slate-600"></p>
                 </div>
-                <div><p class="text-[10px] font-bold text-slate-400 uppercase mb-2">Result</p><div class="bg-slate-50 rounded-lg p-3 border border-slate-200"><p id="modalResult" class="text-sm text-slate-600 font-medium"></p></div></div>
-                <div><p class="text-[10px] font-bold text-slate-400 uppercase mb-2">Content</p><div id="modalQuestion" class="p-4 bg-slate-800 text-slate-300 rounded-xl text-xs font-mono max-h-48 overflow-y-auto"></div></div>
-                <div class="text-right"><span id="modalTime" class="text-[10px] text-slate-400 font-medium"></span></div>
+                <div>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase mb-2">Result</p>
+                    <div class="bg-slate-50 rounded-lg p-3 border border-slate-200">
+                        <p id="modalResult" class="text-sm text-slate-600 font-medium"></p>
+                    </div>
+                </div>
+                <div>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase mb-2">Content</p>
+                    <div id="modalQuestion"
+                        class="p-4 bg-slate-800 text-slate-300 rounded-xl text-xs font-mono max-h-48 overflow-y-auto">
+                    </div>
+                </div>
+                <div class="text-right"><span id="modalTime" class="text-[10px] text-slate-400 font-medium"></span>
+                </div>
             </div>
         </div>
     </div>
@@ -420,21 +1101,51 @@
         window.scrollTo(0, 0);
     }
 
+    function openSessions() {
+        document.getElementById('hub-view').classList.add('hidden');
+        document.getElementById('session-view').classList.remove('hidden');
+        window.scrollTo(0, 0);
+    }
+
+    function closeSessions() {
+        document.getElementById('session-view').classList.add('hidden');
+        document.getElementById('hub-view').classList.remove('hidden');
+        window.scrollTo(0, 0);
+    }
+
     function switchMode(mode) {
         document.getElementById('post_mode').value = mode;
         const btnText = document.getElementById('btn-mode-text');
         const btnImage = document.getElementById('btn-mode-image');
+        const btnRepost = document.getElementById('btn-mode-repost');
         const conText = document.getElementById('container-text');
         const conImage = document.getElementById('container-image');
+        const conRepost = document.getElementById('container-repost');
 
+        // Reset all buttons
+        [btnText, btnImage, btnRepost].forEach(btn => {
+            btn.classList.remove('bg-white', 'text-slate-700', 'shadow-sm');
+            btn.classList.add('text-slate-500');
+        });
+
+        // Hide all containers
+        conText.classList.add('hidden');
+        conImage.classList.add('hidden');
+        conRepost.classList.add('hidden');
+
+        // Activate selected mode
         if (mode === 'image') {
-            btnImage.classList.add('bg-white', 'text-slate-700', 'shadow-sm'); btnImage.classList.remove('text-slate-500');
-            btnText.classList.remove('bg-white', 'text-slate-700', 'shadow-sm'); btnText.classList.add('text-slate-500');
-            conText.classList.add('hidden'); conImage.classList.remove('hidden');
+            btnImage.classList.add('bg-white', 'text-slate-700', 'shadow-sm');
+            btnImage.classList.remove('text-slate-500');
+            conImage.classList.remove('hidden');
+        } else if (mode === 'repost') {
+            btnRepost.classList.add('bg-white', 'text-slate-700', 'shadow-sm');
+            btnRepost.classList.remove('text-slate-500');
+            conRepost.classList.remove('hidden');
         } else {
-            btnText.classList.add('bg-white', 'text-slate-700', 'shadow-sm'); btnText.classList.remove('text-slate-500');
-            btnImage.classList.remove('bg-white', 'text-slate-700', 'shadow-sm'); btnImage.classList.add('text-slate-500');
-            conImage.classList.add('hidden'); conText.classList.remove('hidden');
+            btnText.classList.add('bg-white', 'text-slate-700', 'shadow-sm');
+            btnText.classList.remove('text-slate-500');
+            conText.classList.remove('hidden');
         }
     }
 
@@ -449,40 +1160,40 @@
         formData.append('account_id', document.getElementById('account_select').value);
 
         fetch('/api/process_image', { method: 'POST', body: formData })
-        .then(res => res.json())
-        .then(data => {
-            document.getElementById('upload-loading').classList.add('hidden');
-            document.getElementById('upload-prompt').classList.remove('hidden');
-            if (data.success) {
-                document.getElementById('ocr-preview').classList.remove('hidden');
-                document.getElementById('ocr-preview').classList.add('flex');
-                document.getElementById('img-preview-src').src = data.image_url;
-                document.getElementById('final_image_url').value = data.image_url;
-                document.getElementById('ocr_editor').value = data.transcribed_text;
-                document.getElementById('question_content').value = data.transcribed_text; 
-            } else { alert('Error: ' + data.error); }
-        }).catch(err => {
-            document.getElementById('upload-loading').classList.add('hidden');
-            document.getElementById('upload-prompt').classList.remove('hidden');
-            alert('Upload failed: ' + err);
-        });
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('upload-loading').classList.add('hidden');
+                document.getElementById('upload-prompt').classList.remove('hidden');
+                if (data.success) {
+                    document.getElementById('ocr-preview').classList.remove('hidden');
+                    document.getElementById('ocr-preview').classList.add('flex');
+                    document.getElementById('img-preview-src').src = data.image_url;
+                    document.getElementById('final_image_url').value = data.image_url;
+                    document.getElementById('ocr_editor').value = data.transcribed_text;
+                    document.getElementById('question_content').value = data.transcribed_text;
+                } else { alert('Error: ' + data.error); }
+            }).catch(err => {
+                document.getElementById('upload-loading').classList.add('hidden');
+                document.getElementById('upload-prompt').classList.remove('hidden');
+                alert('Upload failed: ' + err);
+            });
     }
 
     function clearOcrText() { document.getElementById('ocr_editor').value = ''; document.getElementById('question_content').value = ''; }
-    function clearImage() { 
-        document.getElementById('ocr-preview').classList.add('hidden'); 
-        document.getElementById('final_image_url').value = ''; 
-        document.getElementById('imageInput').value = ''; 
+    function clearImage() {
+        document.getElementById('ocr-preview').classList.add('hidden');
+        document.getElementById('final_image_url').value = '';
+        document.getElementById('imageInput').value = '';
     }
-    
-    document.getElementById('ocr_editor').addEventListener('input', function(e) { document.getElementById('question_content').value = e.target.value; });
+
+    document.getElementById('ocr_editor').addEventListener('input', function (e) { document.getElementById('question_content').value = e.target.value; });
 
     function fetchSubjects() {
         const mode = document.getElementById('post_mode').value;
         const qText = mode === 'image' ? document.getElementById('ocr_editor').value : document.getElementById('question_content').value;
-        
+
         if (qText.length < 5) { alert("Please enter more text first."); return; }
-        
+
         const btn = document.getElementById('searchBtn');
         const drop = document.getElementById('subject_dropdown');
         btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Finding...';
@@ -491,7 +1202,7 @@
         drop.innerHTML = "<option>Searching Chegg...</option>";
 
         fetch('/api/get_suggested_subjects', {
-            method: 'POST', headers: {'Content-Type': 'application/json'},
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ question_text: qText, account_id: document.getElementById('account_select').value })
         }).then(res => res.json()).then(data => {
             drop.innerHTML = "";
@@ -513,7 +1224,7 @@
     }
 
     function switchTab(tab) {
-        if(tab === 'post') {
+        if (tab === 'post') {
             document.getElementById('view-post').classList.remove('hidden');
             document.getElementById('view-history').classList.add('hidden');
             document.getElementById('btn-post').className = "flex-1 md:flex-none px-8 py-3 rounded-xl text-sm font-bold bg-white text-orange-600 shadow-md transition-all";
@@ -532,17 +1243,17 @@
         document.getElementById('modalQuestion').innerText = d.querySelector('.raw-content').innerText;
         document.getElementById('modalResult').innerText = d.querySelector('.raw-result').innerText;
         document.getElementById('modalAccount').innerText = d.querySelector('.raw-account').innerText; // New logic for account in modal
-        
+
         const dateObj = new Date(d.querySelector('.raw-time').innerText + " UTC");
         document.getElementById('modalTime').innerText = dateObj.toLocaleString();
-        
+
         const status = d.querySelector('.raw-status').innerText;
         const color = status === 'Completed' ? 'green' : (status === 'Failed' ? 'red' : 'yellow');
         document.getElementById('modalStatusContainer').innerHTML = `<span class="bg-${color}-100 text-${color}-700 px-2 py-1 rounded text-[10px] font-bold">${status.toUpperCase()}</span>`;
         document.getElementById('detailsModal').classList.remove('hidden');
     }
     function closeDetails() { document.getElementById('detailsModal').classList.add('hidden'); }
-    
+
     document.querySelectorAll('.utc-time').forEach(el => {
         const d = new Date(el.getAttribute('data-time') + " UTC");
         if (!isNaN(d)) el.innerText = d.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true });
@@ -553,8 +1264,8 @@
         const accId = document.getElementById('account_select').value;
         const display = document.getElementById('balance-display');
         const valSpan = document.getElementById('balance-value');
-        
-        if(!accId) return;
+
+        if (!accId) return;
 
         display.classList.remove('hidden');
         valSpan.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i>';
@@ -562,46 +1273,288 @@
 
         fetch('/api/check_balance', {
             method: 'POST',
-            headers: {'Content-Type': 'application/json'},
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ account_id: accId })
         })
-        .then(res => res.json())
-        .then(data => {
-            if(data.balance && typeof data.balance === 'object') {
-                const b = data.balance;
-                let text = "";
-                let color = "blue";
+            .then(res => res.json())
+            .then(data => {
+                if (data.balance && typeof data.balance === 'object') {
+                    const b = data.balance;
+                    let text = "";
+                    let color = "blue";
 
-                if (b.used !== undefined && b.limit !== undefined) {
-                    text = `Posted: ${b.used} / ${b.limit}`;
-                    if (b.used >= b.limit) color = "red";
-                    else if (b.used >= b.limit - 2) color = "yellow";
-                    else color = "green";
-                } else if (b.remaining !== undefined) {
-                    text = `Remaining: ${b.remaining}`;
-                } else {
-                    text = "Format Error";
+                    if (b.used !== undefined && b.limit !== undefined) {
+                        text = `Posted: ${b.used} / ${b.limit}`;
+                        if (b.used >= b.limit) color = "red";
+                        else if (b.used >= b.limit - 2) color = "yellow";
+                        else color = "green";
+                    } else if (b.remaining !== undefined) {
+                        text = `Remaining: ${b.remaining}`;
+                    } else {
+                        text = "Format Error";
+                    }
+
+                    valSpan.className = `px-2 py-1 bg-${color}-100 text-${color}-700 rounded-lg text-xs font-bold`;
+                    valSpan.innerText = text;
                 }
-
-                valSpan.className = `px-2 py-1 bg-${color}-100 text-${color}-700 rounded-lg text-xs font-bold`;
-                valSpan.innerText = text;
-            } 
-            else if (data.balance) {
-                valSpan.innerText = data.balance;
-            }
-            else {
-                valSpan.innerText = "Error";
-            }
-        })
-        .catch(err => {
-            console.error(err);
-            valSpan.innerText = "Offline";
-        });
+                else if (data.balance) {
+                    valSpan.innerText = data.balance;
+                }
+                else {
+                    valSpan.innerText = "Error";
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                valSpan.innerText = "Offline";
+            });
     }
 
-    document.addEventListener("DOMContentLoaded", function() {
-        if(document.getElementById('account_select').value) {
+    // --- REPOST FEATURE: EXTRACT QUESTION FROM URL ---
+    function extractQuestion() {
+        const url = document.getElementById('repost_url').value.trim();
+        const btn = document.getElementById('extractBtn');
+        const preview = document.getElementById('repost-preview');
+        const errorDiv = document.getElementById('repost-error');
+
+        if (!url || !url.includes('chegg.com')) {
+            errorDiv.classList.remove('hidden');
+            errorDiv.innerText = 'Please enter a valid Chegg URL';
+            preview.classList.add('hidden');
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Extracting...';
+        preview.classList.add('hidden');
+        errorDiv.classList.add('hidden');
+
+        fetch('/api/chegg/extract-question', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url: url })
+        })
+            .then(res => res.json())
+            .then(data => {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> Extract';
+
+                if (data.error) {
+                    errorDiv.classList.remove('hidden');
+                    errorDiv.innerText = data.error;
+                    return;
+                }
+
+                if (data.success) {
+                    preview.classList.remove('hidden');
+
+                    // Display content - use innerHTML for HTML content, show text if no HTML
+                    const contentDiv = document.getElementById('repost-content');
+                    if (data.content_html && data.content_html.includes('<')) {
+                        // Sanitize and display HTML (without scripts)
+                        const tempDiv = document.createElement('div');
+                        tempDiv.innerHTML = data.content_html;
+                        tempDiv.querySelectorAll('script').forEach(s => s.remove());
+                        contentDiv.innerHTML = tempDiv.innerHTML || data.plain_text;
+                    } else {
+                        contentDiv.innerText = data.plain_text || 'No text extracted';
+                    }
+
+                    document.getElementById('extracted_html').value = data.content_html;
+
+                    // Show images if any
+                    const imagesDiv = document.getElementById('repost-images');
+                    imagesDiv.innerHTML = '';
+                    if (data.images && data.images.length > 0) {
+                        data.images.forEach(imgUrl => {
+                            const img = document.createElement('img');
+                            img.src = imgUrl;
+                            img.className = 'max-w-full h-auto rounded-lg border border-slate-200 my-2';
+                            img.style.maxHeight = '200px';
+                            img.onerror = function () { this.style.display = 'none'; };
+                            imagesDiv.appendChild(img);
+                        });
+                    }
+
+                    // Show OCR text if extracted
+                    const ocrSection = document.getElementById('repost-ocr-section');
+                    const ocrEditor = document.getElementById('repost_ocr_editor');
+                    if (data.ocr_text && data.ocr_text.trim()) {
+                        ocrSection.classList.remove('hidden');
+                        ocrEditor.value = data.ocr_text;
+                        document.getElementById('include_ocr_text').checked = true;
+                        console.log('OCR text extracted:', data.ocr_text.length, 'chars');
+                    } else {
+                        ocrSection.classList.add('hidden');
+                        ocrEditor.value = '';
+                    }
+
+                    // Copy to question content for subject finding
+                    document.getElementById('question_content').value = data.plain_text || data.ocr_text || 'Repost from Chegg';
+
+                    // Auto-populate subject if detected
+                    if (data.subject && data.subject.title) {
+                        // Unlock subject step
+                        document.getElementById('subject-step').classList.remove('opacity-50', 'pointer-events-none');
+
+                        const drop = document.getElementById('subject_dropdown');
+                        drop.innerHTML = '';
+
+                        // Add detected subject
+                        const subjectValue = data.subject.subjectId && data.subject.groupId
+                            ? `${data.subject.title}|${data.subject.subjectId}|${data.subject.groupId}`
+                            : data.subject.title;
+
+                        drop.add(new Option(`✓ ${data.subject.title} (Auto-detected)`, subjectValue, true, true));
+                        drop.add(new Option("Or click 'Find Related Subjects' for more options", "", false, false));
+
+                        console.log('Auto-detected subject:', data.subject);
+                    }
+
+                    // Debug info
+                    if (data.raw_keys) {
+                        console.log('Chegg response keys:', data.raw_keys);
+                    }
+                }
+            })
+            .catch(err => {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> Extract';
+                errorDiv.classList.remove('hidden');
+                errorDiv.innerText = 'Connection error: ' + err.message;
+            });
+    }
+
+    // --- HANDLE FORM SUBMISSION (FOR REPOST MODE) ---
+    function handleFormSubmit(event) {
+        const mode = document.getElementById('post_mode').value;
+
+        // If not repost mode, let the form submit normally
+        if (mode !== 'repost') {
+            return true;
+        }
+
+        // Prevent default form submission for repost mode
+        event.preventDefault();
+
+        const extractedHtml = document.getElementById('extracted_html').value;
+        const subject = document.getElementById('subject_dropdown').value;
+        const accountId = document.getElementById('account_select').value;
+        const postBtn = document.getElementById('postBtn');
+
+        if (!extractedHtml) {
+            alert('Please extract a question first by pasting a Chegg URL and clicking Extract.');
+            return false;
+        }
+
+        if (!subject) {
+            alert('Please select a subject first.');
+            return false;
+        }
+
+        const postCount = document.querySelector('select[name="post_count"]').value || 1;
+
+        // Check if OCR text should be included
+        let finalHtml = extractedHtml;
+        const includeOcrText = document.getElementById('include_ocr_text');
+        const ocrEditor = document.getElementById('repost_ocr_editor');
+
+        if (includeOcrText && includeOcrText.checked && ocrEditor && ocrEditor.value.trim()) {
+            // Prepend OCR text to the content
+            const ocrText = ocrEditor.value.trim();
+            finalHtml = `<div><p>${ocrText.replace(/\n/g, '</p><p>')}</p></div>` + finalHtml;
+        }
+
+        postBtn.disabled = true;
+        postBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Reposting...';
+
+        fetch('/api/chegg/repost', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                content_html: finalHtml,
+                subject: subject,
+                account_id: accountId,
+                post_count: parseInt(postCount)
+            })
+        })
+            .then(res => res.json())
+            .then(data => {
+                postBtn.disabled = false;
+                postBtn.innerHTML = '<span>Launch Process</span> <i class="fa-solid fa-rocket"></i>';
+
+                if (data.error) {
+                    alert('Error: ' + data.error);
+                } else if (data.success) {
+                    alert('✅ ' + data.message + '\nCredits remaining: ' + data.credits_remaining);
+                    // Refresh page to update credits and job history
+                    window.location.reload();
+                }
+            })
+            .catch(err => {
+                postBtn.disabled = false;
+                postBtn.innerHTML = '<span>Launch Process</span> <i class="fa-solid fa-rocket"></i>';
+                alert('Connection error: ' + err.message);
+            });
+
+        return false;
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        if (document.getElementById('account_select').value) {
             checkBalance();
+        }
+
+        // Dashboard Library Search
+        const dashSearch = document.getElementById('dashboard-search');
+        const dashResults = document.getElementById('dashboard-search-results');
+        let searchTimeout;
+
+        if (dashSearch && dashResults) {
+            dashSearch.addEventListener('input', function () {
+                clearTimeout(searchTimeout);
+                const query = this.value.trim();
+
+                if (query.length < 2) {
+                    dashResults.classList.add('hidden');
+                    return;
+                }
+
+                searchTimeout = setTimeout(async () => {
+                    try {
+                        const response = await fetch(`/api/library/search?q=${encodeURIComponent(query)}`);
+                        const data = await response.json();
+
+                        if (data.results.length === 0) {
+                            dashResults.innerHTML = '<div class="p-4 text-slate-500 text-center text-sm">No results found</div>';
+                        } else {
+                            dashResults.innerHTML = data.results.map(doc => `
+                                <a href="/library/document/${doc.id}" class="flex items-center gap-3 p-3 hover:bg-slate-50 border-b border-slate-100 last:border-0">
+                                    <div class="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0">
+                                        <i class="fa-solid fa-file-lines text-slate-400 text-sm"></i>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <h4 class="font-bold text-slate-800 text-sm truncate">${doc.title}</h4>
+                                        <p class="text-xs text-slate-500">${doc.doc_type} • ${doc.downloads} views</p>
+                                    </div>
+                                    ${doc.is_unlocked ? '<i class="fa-solid fa-unlock text-green-500 text-xs"></i>' : '<i class="fa-solid fa-lock text-slate-400 text-xs"></i>'}
+                                </a>
+                            `).join('');
+                        }
+
+                        dashResults.classList.remove('hidden');
+                    } catch (err) {
+                        console.error('Search error:', err);
+                    }
+                }, 300);
+            });
+
+            // Hide results when clicking outside
+            document.addEventListener('click', function (e) {
+                if (!dashSearch.contains(e.target) && !dashResults.contains(e.target)) {
+                    dashResults.classList.add('hidden');
+                }
+            });
         }
     });
 </script>

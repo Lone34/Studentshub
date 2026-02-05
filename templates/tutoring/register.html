@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Become a Tutor - Students Hub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+        }
+    </style>
+</head>
+
+<body class="min-h-screen gradient-bg">
+    <div class="min-h-screen flex items-center justify-center p-4 py-12">
+        <div class="glass-card rounded-3xl shadow-2xl w-full max-w-2xl p-8 md:p-12">
+            <!-- Header -->
+            <div class="text-center mb-8">
+                <div
+                    class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-2xl mb-4">
+                    <i class="fa-solid fa-chalkboard-user text-white text-2xl"></i>
+                </div>
+                <h1 class="text-3xl font-bold text-gray-800 mb-2">Become a Tutor</h1>
+                <p class="text-gray-500">Join our platform and start teaching students worldwide</p>
+            </div>
+
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            {% for category, message in messages %}
+            <div
+                class="mb-4 p-4 rounded-xl {% if category == 'danger' %}bg-red-50 text-red-700 border border-red-200{% elif category == 'success' %}bg-green-50 text-green-700 border border-green-200{% else %}bg-blue-50 text-blue-700 border border-blue-200{% endif %}">
+                <i
+                    class="fa-solid {% if category == 'danger' %}fa-circle-xmark{% elif category == 'success' %}fa-circle-check{% else %}fa-circle-info{% endif %} mr-2"></i>
+                {{ message }}
+            </div>
+            {% endfor %}
+            {% endif %}
+            {% endwith %}
+
+            <!-- Registration Form -->
+            <form method="POST" enctype="multipart/form-data" class="space-y-6">
+                <!-- Account Info Section -->
+                <div class="border-b border-gray-200 pb-6">
+                    <h2 class="text-lg font-semibold text-gray-700 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-user-lock text-purple-500"></i> Account Information
+                    </h2>
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600 mb-2">Email Address *</label>
+                            <input type="email" name="email" required
+                                class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-100 transition-all"
+                                placeholder="your@email.com">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600 mb-2">Phone Number *</label>
+                            <input type="tel" name="phone" required
+                                class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-100 transition-all"
+                                placeholder="+91 9876543210">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600 mb-2">Password *</label>
+                            <input type="password" name="password" required minlength="6"
+                                class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-100 transition-all"
+                                placeholder="Min 6 characters">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600 mb-2">Confirm Password *</label>
+                            <input type="password" name="confirm_password" required
+                                class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-100 transition-all"
+                                placeholder="Repeat password">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Personal Details Section -->
+                <div class="border-b border-gray-200 pb-6">
+                    <h2 class="text-lg font-semibold text-gray-700 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-id-card text-purple-500"></i> Personal Details
+                    </h2>
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600 mb-2">Full Name * <span
+                                    class="text-gray-400 text-xs">(for verification)</span></label>
+                            <input type="text" name="full_name" required
+                                class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-100 transition-all"
+                                placeholder="Your legal name">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600 mb-2">Display Name * <span
+                                    class="text-gray-400 text-xs">(shown to students)</span></label>
+                            <input type="text" name="display_name" required
+                                class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-100 transition-all"
+                                placeholder="e.g., Prof. John, MathExpert">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Qualifications Section -->
+                <div class="border-b border-gray-200 pb-6">
+                    <h2 class="text-lg font-semibold text-gray-700 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-graduation-cap text-purple-500"></i> Qualifications
+                    </h2>
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600 mb-2">Highest Qualification *</label>
+                            <input type="text" name="qualification" required
+                                class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-100 transition-all"
+                                placeholder="e.g., B.Tech, M.Sc, PhD">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600 mb-2">Years of Experience</label>
+                            <input type="number" name="experience_years" min="0" max="50" value="0"
+                                class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-100 transition-all">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-600 mb-2">College/University</label>
+                            <input type="text" name="college"
+                                class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-100 transition-all"
+                                placeholder="Where you studied/teach">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-600 mb-2">Upload ID Proof <span
+                                    class="text-gray-400 text-xs">(PDF, JPG, PNG)</span></label>
+                            <input type="file" name="id_proof" accept=".pdf,.jpg,.jpeg,.png"
+                                class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-100 transition-all file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Teaching Info Section -->
+                <div class="pb-4">
+                    <h2 class="text-lg font-semibold text-gray-700 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-book-open text-purple-500"></i> Teaching Information
+                    </h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600 mb-2">Subjects You Can Teach * <span
+                                    class="text-gray-400 text-xs">(comma-separated)</span></label>
+                            <input type="text" name="subjects" required
+                                class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-100 transition-all"
+                                placeholder="e.g., Mathematics, Physics, Chemistry">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600 mb-2">Languages</label>
+                            <input type="text" name="languages" value="English"
+                                class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-100 transition-all"
+                                placeholder="e.g., English, Hindi">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600 mb-2">Bio / About You</label>
+                            <textarea name="bio" rows="3"
+                                class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-100 transition-all resize-none"
+                                placeholder="Tell students about your teaching style, experience, and how you can help them..."></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit"
+                    class="w-full py-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold rounded-xl hover:from-purple-700 hover:to-indigo-700 transition-all transform hover:scale-[1.02] shadow-lg flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-paper-plane"></i>
+                    Submit Application
+                </button>
+
+                <p class="text-center text-gray-500 text-sm">
+                    Already registered?
+                    <a href="{{ url_for('tutoring.tutor_login') }}"
+                        class="text-purple-600 font-medium hover:underline">Login here</a>
+                </p>
+            </form>
+        </div>
+    </div>
+</body>
+
+</html>

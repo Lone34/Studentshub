@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ tutor.display_name }} - Tutor Profile</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .gradient-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="gradient-header text-white">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <a href="{{ url_for('tutoring.browse_tutors') }}"
+                    class="flex items-center gap-2 hover:opacity-80 transition-all">
+                    <i class="fa-solid fa-arrow-left"></i>
+                    <span>Back to Tutors</span>
+                </a>
+                <a href="/dashboard" class="px-4 py-2 bg-white/20 rounded-xl hover:bg-white/30 transition-all text-sm">
+                    Dashboard
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-8">
+        <div class="grid lg:grid-cols-3 gap-8">
+            <!-- Left Column: Profile Info -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Profile Header -->
+                <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                    <div class="bg-gradient-to-r from-purple-500 to-indigo-600 p-8 text-white relative">
+                        {% if tutor.is_available %}
+                        <div class="absolute top-4 right-4 flex items-center gap-2 bg-green-500 px-4 py-2 rounded-full">
+                            <span class="w-2 h-2 bg-white rounded-full animate-pulse"></span>
+                            Currently Online
+                        </div>
+                        {% else %}
+                        <div class="absolute top-4 right-4 flex items-center gap-2 bg-gray-500 px-4 py-2 rounded-full">
+                            <span class="w-2 h-2 bg-gray-300 rounded-full"></span>
+                            Offline
+                        </div>
+                        {% endif %}
+
+                        <div class="flex items-center gap-6">
+                            <div class="w-24 h-24 bg-white/20 rounded-2xl flex items-center justify-center text-4xl">
+                                {% if tutor.profile_image %}
+                                <img src="{{ tutor.profile_image }}" alt=""
+                                    class="w-full h-full object-cover rounded-2xl">
+                                {% else %}
+                                <i class="fa-solid fa-user-graduate"></i>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <h1 class="text-3xl font-bold mb-1">{{ tutor.display_name }}</h1>
+                                <p class="text-white/80">{{ tutor.qualification }}</p>
+                                <div class="flex items-center gap-4 mt-3">
+                                    <div class="flex items-center gap-1">
+                                        <div class="flex text-amber-300">
+                                            {% for i in range(5) %}
+                                            {% if i < tutor.rating|int %} <i class="fa-solid fa-star"></i>
+                                                {% else %}
+                                                <i class="fa-regular fa-star"></i>
+                                                {% endif %}
+                                                {% endfor %}
+                                        </div>
+                                        <span class="ml-1">{{ "%.1f"|format(tutor.rating) }}</span>
+                                    </div>
+                                    <span class="text-white/60">|</span>
+                                    <span>{{ tutor.total_sessions }} sessions</span>
+                                    <span class="text-white/60">|</span>
+                                    <span>{{ tutor.experience_years }} years exp.</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="p-6">
+                        <!-- Bio -->
+                        <div class="mb-6">
+                            <h3 class="font-bold text-gray-800 mb-3 flex items-center gap-2">
+                                <i class="fa-solid fa-quote-left text-purple-500"></i> About Me
+                            </h3>
+                            <p class="text-gray-600 leading-relaxed">
+                                {{ tutor.bio or 'No bio provided.' }}
+                            </p>
+                        </div>
+
+                        <!-- Subjects -->
+                        <div class="mb-6">
+                            <h3 class="font-bold text-gray-800 mb-3 flex items-center gap-2">
+                                <i class="fa-solid fa-book-open text-purple-500"></i> Subjects I Teach
+                            </h3>
+                            <div class="flex flex-wrap gap-2">
+                                {% for subject in tutor.subjects.split(',') %}
+                                <span class="px-4 py-2 bg-purple-50 text-purple-700 rounded-xl font-medium">
+                                    {{ subject.strip() }}
+                                </span>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- Languages -->
+                        <div>
+                            <h3 class="font-bold text-gray-800 mb-3 flex items-center gap-2">
+                                <i class="fa-solid fa-language text-purple-500"></i> Languages
+                            </h3>
+                            <div class="flex flex-wrap gap-2">
+                                {% for lang in tutor.languages.split(',') %}
+                                <span class="px-4 py-2 bg-gray-100 text-gray-700 rounded-xl font-medium">
+                                    {{ lang.strip() }}
+                                </span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stats -->
+                <div class="grid grid-cols-3 gap-4">
+                    <div class="bg-white rounded-xl border border-gray-100 p-5 text-center">
+                        <p class="text-3xl font-bold text-purple-600">{{ tutor.total_sessions }}</p>
+                        <p class="text-gray-500 text-sm">Total Sessions</p>
+                    </div>
+                    <div class="bg-white rounded-xl border border-gray-100 p-5 text-center">
+                        <p class="text-3xl font-bold text-blue-600">{{ tutor.total_minutes }}</p>
+                        <p class="text-gray-500 text-sm">Minutes Taught</p>
+                    </div>
+                    <div class="bg-white rounded-xl border border-gray-100 p-5 text-center">
+                        <p class="text-3xl font-bold text-amber-600">{{ "%.1f"|format(tutor.rating) }}</p>
+                        <p class="text-gray-500 text-sm">Avg. Rating</p>
+                    </div>
+                </div>
+
+                <!-- Reviews -->
+                <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 overflow-hidden">
+                    <h3 class="font-bold text-gray-800 mb-6 flex items-center gap-2">
+                        <i class="fa-solid fa-star text-amber-500"></i> Student Reviews
+                    </h3>
+                    
+                    {% if reviews %}
+                        <div class="space-y-6">
+                            {% for review in reviews %}
+                            <div class="border-b border-gray-50 last:border-0 pb-6 last:pb-0">
+                                <div class="flex items-center justify-between mb-2">
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-500">
+                                            {{ review.student_name[0]|upper }}
+                                        </div>
+                                        <span class="font-bold text-slate-700 text-sm">{{ review.student_name }}</span>
+                                    </div>
+                                    <span class="text-xs text-gray-400">{{ review.date }}</span>
+                                </div>
+                                <div class="flex text-amber-400 text-xs mb-2">
+                                    {% for i in range(review.rating) %}
+                                    <i class="fa-solid fa-star"></i>
+                                    {% endfor %}
+                                    {% for i in range(5 - review.rating) %}
+                                    <i class="fa-regular fa-star text-gray-300"></i>
+                                    {% endfor %}
+                                </div>
+                                {% if review.feedback %}
+                                <p class="text-gray-600 text-sm italic">"{{ review.feedback }}"</p>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-8">
+                            <i class="fa-regular fa-comments text-4xl text-gray-200 mb-2"></i>
+                            <p class="text-gray-400 text-sm">No reviews yet.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Right Column: Booking -->
+            <div class="space-y-6" id="book">
+                <!-- Booking Card -->
+                <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 sticky top-8">
+                    <h3 class="font-bold text-gray-800 text-lg mb-4">Book a Session</h3>
+
+                    <!-- Pricing -->
+                    <div class="bg-purple-50 rounded-xl p-4 mb-6">
+                        <div class="flex items-center justify-between">
+                            <span class="text-gray-600">Rate per minute</span>
+                            <span class="text-2xl font-bold text-purple-600">{{ rate_per_minute }} <span
+                                    class="text-base font-normal text-gray-500">credits</span></span>
+                        </div>
+                        <p class="text-gray-500 text-sm mt-2">
+                            <i class="fa-solid fa-info-circle mr-1"></i>
+                            You'll be charged based on actual call duration
+                        </p>
+                    </div>
+
+                    {% if tutor.is_available %}
+                    <!-- Booking Form -->
+                    <form id="bookingForm" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600 mb-2">Select Subject</label>
+                            <select name="subject" required
+                                class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-100">
+                                <option value="">Choose a subject...</option>
+                                {% for subject in tutor.subjects.split(',') %}
+                                <option value="{{ subject.strip() }}">{{ subject.strip() }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600 mb-2">Your Question/Doubt</label>
+                            <textarea name="question" rows="4" required
+                                class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-100 resize-none"
+                                placeholder="Describe what you need help with..."></textarea>
+                        </div>
+
+                        <button type="submit"
+                            class="w-full py-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold rounded-xl hover:from-purple-700 hover:to-indigo-700 transition-all flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-video"></i>
+                            Start Video Session
+                        </button>
+                    </form>
+                    {% else %}
+                    <!-- Offline Message -->
+                    <div class="text-center py-6">
+                        <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fa-solid fa-clock text-gray-400 text-2xl"></i>
+                        </div>
+                        <p class="text-gray-700 font-medium mb-2">Tutor is currently offline</p>
+                        <p class="text-gray-500 text-sm">Please check back later or browse other tutors.</p>
+                    </div>
+                    {% endif %}
+
+                    <!-- Safety Info -->
+                    <div class="mt-6 pt-6 border-t border-gray-100">
+                        <p class="text-gray-500 text-xs flex items-start gap-2">
+                            <i class="fa-solid fa-shield-heart text-green-500 mt-0.5"></i>
+                            <span>All sessions are recorded for quality and safety purposes. No personal details are
+                                shared.</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        document.getElementById('bookingForm')?.addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const subject = this.querySelector('[name="subject"]').value;
+            const question = this.querySelector('[name="question"]').value;
+            const tutorId = {{ tutor.id }};
+
+            if (!subject || !question) {
+                alert('Please fill all fields');
+                return;
+            }
+
+            const btn = this.querySelector('button[type="submit"]');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Creating session...';
+
+            try {
+                const res = await fetch('/tutoring/api/session/book', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        tutor_id: tutorId,
+                        subject: subject,
+                        question: question
+                    })
+                });
+
+                const data = await res.json();
+
+                if (data.success) {
+                    window.location.href = data.room_url;
+                } else {
+                    alert(data.error || 'Failed to book session');
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fa-solid fa-video"></i> Start Video Session';
+                }
+            } catch (err) {
+                alert('Error: ' + err.message);
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-video"></i> Start Video Session';
+            }
+        });
+    </script>
+</body>
+
+</html>

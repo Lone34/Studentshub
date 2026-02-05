@@ -1,22 +1,191 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="max-w-md mx-auto bg-white p-8 rounded shadow-md mt-10">
-    <h2 class="text-2xl font-bold mb-6 text-center">Login</h2>
-    <form method="POST">
-        <div class="mb-4">
-            <label class="block text-gray-700 text-sm font-bold mb-2">Username</label>
-            <input type="text" name="username" class="w-full border rounded p-2" required>
+<style>
+    .gradient-bg {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    .glass-card {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+    }
+
+    .tab-btn {
+        transition: all 0.3s ease;
+    }
+
+    .tab-btn.active {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .tab-content {
+        display: none;
+    }
+
+    .tab-content.active {
+        display: block;
+        animation: fadeIn 0.4s ease;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
+
+<div class="min-h-screen flex items-center justify-center p-4 py-12">
+    <div class="glass-card rounded-3xl shadow-2xl w-full max-w-md p-8 md:p-10">
+        <!-- Header -->
+        <div class="text-center mb-6">
+            <div
+                class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-2xl mb-4 shadow-lg">
+                <i class="fa-solid fa-right-to-bracket text-white text-2xl"></i>
+            </div>
+            <h1 class="text-2xl font-bold text-gray-800 mb-2">Welcome Back!</h1>
+            <p class="text-gray-500 text-sm">Login to access your dashboard</p>
         </div>
-        <div class="mb-6">
-            <label class="block text-gray-700 text-sm font-bold mb-2">Password</label>
-            <input type="password" name="password" class="w-full border rounded p-2" required>
+
+        <!-- Tab Switcher -->
+        <div class="flex bg-slate-100 p-1.5 rounded-2xl mb-6">
+            <button type="button" onclick="switchLoginTab('student')" id="login-tab-student"
+                class="tab-btn flex-1 py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active">
+                <i class="fa-solid fa-user-graduate"></i> Student
+            </button>
+            <button type="button" onclick="switchLoginTab('tutor')" id="login-tab-tutor"
+                class="tab-btn flex-1 py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 text-slate-500 hover:text-slate-700">
+                <i class="fa-solid fa-chalkboard-user"></i> Tutor
+            </button>
         </div>
-        <button class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 rounded">
-            Sign In
-        </button>
-    </form>
-    <p class="mt-4 text-center text-sm">
-        Don't have an account? <a href="{{ url_for('register') }}" class="text-blue-500">Register</a>
-    </p>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div
+            class="mb-4 p-4 rounded-xl text-sm {% if category == 'danger' %}bg-red-50 text-red-700 border border-red-200{% elif category == 'success' %}bg-green-50 text-green-700 border border-green-200{% elif category == 'warning' %}bg-yellow-50 text-yellow-700 border border-yellow-200{% else %}bg-blue-50 text-blue-700 border border-blue-200{% endif %}">
+            <i
+                class="fa-solid {% if category == 'danger' %}fa-circle-xmark{% elif category == 'success' %}fa-circle-check{% elif category == 'warning' %}fa-triangle-exclamation{% else %}fa-circle-info{% endif %} mr-2"></i>
+            {{ message }}
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        <!-- STUDENT LOGIN FORM -->
+        <div id="login-content-student" class="tab-content active">
+            <form method="POST" action="{{ url_for('login') }}" class="space-y-5">
+                <input type="hidden" name="user_type" value="student">
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-600 mb-2">Username</label>
+                    <div class="relative">
+                        <span class="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400">
+                            <i class="fa-solid fa-user"></i>
+                        </span>
+                        <input type="text" name="username" required
+                            class="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-100 transition-all"
+                            placeholder="Your username">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-600 mb-2">Password</label>
+                    <div class="relative">
+                        <span class="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400">
+                            <i class="fa-solid fa-lock"></i>
+                        </span>
+                        <input type="password" name="password" required
+                            class="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-100 transition-all"
+                            placeholder="••••••••">
+                    </div>
+                </div>
+
+                <button type="submit"
+                    class="w-full py-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold rounded-xl hover:from-green-600 hover:to-emerald-700 transition-all transform hover:scale-[1.02] shadow-lg flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-right-to-bracket"></i>
+                    Login as Student
+                </button>
+            </form>
+        </div>
+
+        <!-- TUTOR LOGIN FORM -->
+        <div id="login-content-tutor" class="tab-content">
+            <form method="POST" action="{{ url_for('tutoring.tutor_login') }}" class="space-y-5">
+                <div>
+                    <label class="block text-sm font-medium text-gray-600 mb-2">Email Address</label>
+                    <div class="relative">
+                        <span class="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400">
+                            <i class="fa-solid fa-envelope"></i>
+                        </span>
+                        <input type="email" name="email" required
+                            class="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-100 transition-all"
+                            placeholder="your@email.com">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-600 mb-2">Password</label>
+                    <div class="relative">
+                        <span class="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400">
+                            <i class="fa-solid fa-lock"></i>
+                        </span>
+                        <input type="password" name="password" required
+                            class="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-100 transition-all"
+                            placeholder="••••••••">
+                    </div>
+                </div>
+
+                <button type="submit"
+                    class="w-full py-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold rounded-xl hover:from-purple-700 hover:to-indigo-700 transition-all transform hover:scale-[1.02] shadow-lg flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-chalkboard-user"></i>
+                    Login as Tutor
+                </button>
+            </form>
+        </div>
+
+        <!-- Register Link -->
+        <div class="mt-6 text-center space-y-3">
+            <p class="text-gray-500 text-sm">
+                Don't have an account?
+                <a href="{{ url_for('register') }}" class="text-purple-600 font-medium hover:underline">Register now</a>
+            </p>
+            <p class="text-gray-400 text-xs">
+                <a href="/" class="hover:text-purple-600 transition-colors">← Back to Home</a>
+            </p>
+        </div>
+    </div>
 </div>
+
+<script>
+    function switchLoginTab(tab) {
+        // Update tab buttons
+        document.getElementById('login-tab-student').classList.remove('active');
+        document.getElementById('login-tab-tutor').classList.remove('active');
+        document.getElementById('login-tab-student').classList.add('text-slate-500', 'hover:text-slate-700');
+        document.getElementById('login-tab-tutor').classList.add('text-slate-500', 'hover:text-slate-700');
+
+        document.getElementById('login-tab-' + tab).classList.add('active');
+        document.getElementById('login-tab-' + tab).classList.remove('text-slate-500', 'hover:text-slate-700');
+
+        // Update content
+        document.getElementById('login-content-student').classList.remove('active');
+        document.getElementById('login-content-tutor').classList.remove('active');
+        document.getElementById('login-content-' + tab).classList.add('active');
+    }
+
+    // Check URL hash or query param to auto-switch tab
+    document.addEventListener('DOMContentLoaded', function () {
+        if (window.location.hash === '#tutor' || new URLSearchParams(window.location.search).get('type') === 'tutor') {
+            switchLoginTab('tutor');
+        }
+    });
+</script>
 {% endblock %}

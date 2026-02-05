@@ -1,0 +1,306 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes pulse {
+
+        0%,
+        100% {
+            opacity: 0.4;
+        }
+
+        50% {
+            opacity: 1;
+        }
+    }
+
+    .animate-slide {
+        animation: slideIn 0.3s ease-out forwards;
+    }
+
+    .chat-container {
+        height: calc(100vh - 320px);
+        min-height: 400px;
+    }
+
+    .response-card {
+        animation: slideIn 0.4s ease-out;
+    }
+
+    .typing-indicator span {
+        display: inline-block;
+        width: 6px;
+        height: 6px;
+        background: #94a3b8;
+        border-radius: 50%;
+        margin: 0 2px;
+        animation: pulse 1.4s infinite ease-in-out;
+    }
+
+    .typing-indicator span:nth-child(2) {
+        animation-delay: 0.2s;
+    }
+
+    .typing-indicator span:nth-child(3) {
+        animation-delay: 0.4s;
+    }
+
+    .ai-response pre {
+        background: #1e293b;
+        color: #e2e8f0;
+        padding: 12px;
+        border-radius: 8px;
+        overflow-x: auto;
+        font-size: 13px;
+    }
+
+    .ai-response code {
+        font-family: 'Fira Code', monospace;
+    }
+</style>
+
+<div class="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 pb-10">
+    <!-- Header -->
+    <div class="max-w-6xl mx-auto pt-8 px-4 mb-6">
+        <a href="{{ url_for('dashboard') }}"
+            class="text-slate-500 hover:text-orange-600 font-bold text-sm flex items-center gap-2 transition-colors mb-6">
+            <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
+        </a>
+
+        <div class="flex items-center justify-between flex-wrap gap-4">
+            <div class="flex items-center gap-4">
+                <div class="flex -space-x-2">
+                    <div
+                        class="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center text-xl shadow-lg border-2 border-white">
+                        <i class="fa-solid fa-robot"></i>
+                    </div>
+                    <div
+                        class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 via-purple-500 to-rose-500 text-white flex items-center justify-center text-xl shadow-lg border-2 border-white">
+                        <i class="fa-solid fa-sparkles"></i>
+                    </div>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-extrabold text-slate-800">AI Tutor</h1>
+                    <p class="text-slate-500 text-sm">Get answers from both ChatGPT & Gemini</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-4">
+                <div class="bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-sm flex items-center gap-2">
+                    <i class="fa-solid fa-bolt text-orange-500"></i>
+                    <span class="font-bold text-slate-700" id="credits-display">{{ user.credits }}</span>
+                    <span class="text-xs text-slate-400">credits</span>
+                </div>
+                <span class="text-xs text-slate-400 bg-slate-100 px-3 py-1 rounded-full">1 credit = both AI
+                    answers</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chat Container -->
+    <div class="max-w-6xl mx-auto px-4">
+        <div class="bg-white rounded-3xl shadow-xl shadow-slate-200/60 border border-slate-100 overflow-hidden">
+
+            <!-- Chat Messages Area -->
+            <div id="chat-messages" class="chat-container overflow-y-auto p-6 space-y-6">
+                <!-- Welcome Message -->
+                <div class="text-center py-8">
+                    <div class="flex justify-center -space-x-3 mb-4">
+                        <div
+                            class="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center text-2xl shadow-lg border-2 border-white">
+                            <i class="fa-solid fa-robot"></i>
+                        </div>
+                        <div
+                            class="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 via-purple-500 to-rose-500 text-white flex items-center justify-center text-2xl shadow-lg border-2 border-white">
+                            <i class="fa-solid fa-sparkles"></i>
+                        </div>
+                    </div>
+                    <h2 class="text-xl font-bold text-slate-700 mb-2">Ask any question!</h2>
+                    <p class="text-slate-500 text-sm">You'll receive answers from both ChatGPT and Gemini side by side.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Loading Indicator -->
+            <div id="loading-indicator" class="hidden px-6 pb-4">
+                <div class="flex items-center justify-center gap-6 py-4">
+                    <div class="flex items-center gap-2 text-emerald-600">
+                        <div class="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center"><i
+                                class="fa-solid fa-robot"></i></div>
+                        <div class="typing-indicator"><span></span><span></span><span></span></div>
+                    </div>
+                    <div class="flex items-center gap-2 text-blue-600">
+                        <div class="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center"><i
+                                class="fa-solid fa-sparkles"></i></div>
+                        <div class="typing-indicator"><span></span><span></span><span></span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Input Area -->
+            <div class="border-t border-slate-100 p-4 bg-slate-50/50">
+                <form id="chat-form" class="flex gap-3">
+                    <input type="text" id="question-input" placeholder="Ask your question here..."
+                        class="flex-1 bg-white border border-slate-200 rounded-xl px-5 py-4 focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100 transition-all"
+                        autocomplete="off">
+                    <button type="submit" id="send-btn"
+                        class="px-8 py-4 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold rounded-xl shadow-lg transition-all flex items-center gap-2">
+                        <span>Ask Both</span>
+                        <i class="fa-solid fa-paper-plane"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const chatMessages = document.getElementById('chat-messages');
+    const loadingIndicator = document.getElementById('loading-indicator');
+    const questionInput = document.getElementById('question-input');
+    const sendBtn = document.getElementById('send-btn');
+    const creditsDisplay = document.getElementById('credits-display');
+
+    function scrollToBottom() {
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    function formatResponse(text) {
+        if (!text) return '<span class="text-slate-400 italic">No response</span>';
+        text = text.replace(/```(\w+)?\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>');
+        text = text.replace(/`([^`]+)`/g, '<code class="bg-slate-200 px-1 rounded text-sm">$1</code>');
+        text = text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+        text = text.replace(/\n/g, '<br>');
+        return text;
+    }
+
+    function addQuestionBubble(question) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'flex justify-end animate-slide';
+        wrapper.innerHTML = `
+        <div class="max-w-2xl bg-gradient-to-r from-purple-500 to-blue-500 text-white px-5 py-3 rounded-2xl rounded-br-sm shadow-md">
+            <p class="text-sm">${escapeHtml(question)}</p>
+        </div>
+    `;
+        chatMessages.appendChild(wrapper);
+        scrollToBottom();
+    }
+
+    function addDualResponse(chatgptData, geminiData) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'response-card grid grid-cols-1 md:grid-cols-2 gap-4';
+
+        // ChatGPT Response
+        const gptContent = chatgptData.error
+            ? `<p class="text-red-500 text-sm"><i class="fa-solid fa-exclamation-circle mr-1"></i>${escapeHtml(chatgptData.error)}</p>`
+            : `<div class="ai-response prose prose-sm max-w-none text-slate-700">${formatResponse(chatgptData.answer)}</div>`;
+
+        // Gemini Response
+        const geminiContent = geminiData.error
+            ? `<p class="text-red-500 text-sm"><i class="fa-solid fa-exclamation-circle mr-1"></i>${escapeHtml(geminiData.error)}</p>`
+            : `<div class="ai-response prose prose-sm max-w-none text-slate-700">${formatResponse(geminiData.answer)}</div>`;
+
+        wrapper.innerHTML = `
+        <!-- ChatGPT Response -->
+        <div class="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl p-5 border border-emerald-100">
+            <div class="flex items-center gap-2 mb-3 pb-3 border-b border-emerald-100">
+                <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center text-sm">
+                    <i class="fa-solid fa-robot"></i>
+                </div>
+                <span class="font-bold text-emerald-700">ChatGPT</span>
+                <span class="text-[10px] bg-emerald-100 text-emerald-600 px-2 py-0.5 rounded-full">OpenAI</span>
+            </div>
+            ${gptContent}
+        </div>
+        
+        <!-- Gemini Response -->
+        <div class="bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl p-5 border border-blue-100">
+            <div class="flex items-center gap-2 mb-3 pb-3 border-b border-blue-100">
+                <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 via-purple-500 to-rose-500 text-white flex items-center justify-center text-sm">
+                    <i class="fa-solid fa-sparkles"></i>
+                </div>
+                <span class="font-bold text-blue-700">Gemini</span>
+                <span class="text-[10px] bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full">Google</span>
+            </div>
+            ${geminiContent}
+        </div>
+    `;
+
+        chatMessages.appendChild(wrapper);
+        scrollToBottom();
+    }
+
+    document.getElementById('chat-form').addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        const question = questionInput.value.trim();
+        if (!question) return;
+
+        // Add question bubble
+        addQuestionBubble(question);
+        questionInput.value = '';
+
+        // Show loading
+        loadingIndicator.classList.remove('hidden');
+        sendBtn.disabled = true;
+        sendBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+        scrollToBottom();
+
+        try {
+            const response = await fetch('/api/ai-tutor/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ question: question })
+            });
+
+            const data = await response.json();
+            loadingIndicator.classList.add('hidden');
+
+            if (data.error) {
+                addDualResponse(
+                    { error: data.error },
+                    { error: data.error }
+                );
+            } else {
+                addDualResponse(data.chatgpt, data.gemini);
+                creditsDisplay.textContent = data.credits_remaining;
+            }
+        } catch (err) {
+            loadingIndicator.classList.add('hidden');
+            addDualResponse(
+                { error: 'Connection error' },
+                { error: 'Connection error' }
+            );
+        }
+
+        sendBtn.disabled = false;
+        sendBtn.innerHTML = '<span>Ask Both</span><i class="fa-solid fa-paper-plane"></i>';
+    });
+
+    questionInput.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            document.getElementById('chat-form').dispatchEvent(new Event('submit'));
+        }
+    });
+</script>
+
+{% endblock %}

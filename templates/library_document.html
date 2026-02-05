@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+    .content-blurred {
+        filter: blur(8px);
+        user-select: none;
+        pointer-events: none;
+    }
+
+    .unlock-overlay {
+        background: linear-gradient(to bottom, transparent 0%, rgba(255, 255, 255, 0.95) 30%, white 100%);
+    }
+</style>
+
+<div class="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 pb-10">
+    <!-- Header -->
+    <div class="max-w-4xl mx-auto pt-8 px-4 mb-6">
+        <a href="{{ url_for('library') }}"
+            class="text-slate-500 hover:text-blue-600 font-bold text-sm flex items-center gap-2 transition-colors mb-6">
+            <i class="fa-solid fa-arrow-left"></i> Back to Library
+        </a>
+
+        <div class="flex items-start justify-between flex-wrap gap-4 mb-6">
+            <div class="flex items-start gap-4">
+                <div class="w-14 h-14 rounded-2xl bg-gradient-to-br 
+                    {% if document.doc_type == 'exam' %}from-orange-400 to-red-500{% elif document.doc_type == 'notes' %}from-blue-400 to-indigo-500{% elif document.doc_type == 'paper' %}from-purple-400 to-pink-500{% else %}from-green-400 to-emerald-500{% endif %}
+                    text-white flex items-center justify-center text-2xl shadow-lg flex-shrink-0">
+                    {% if document.file_type == 'pdf' %}
+                    <i class="fa-solid fa-file-pdf"></i>
+                    {% else %}
+                    <i class="fa-solid fa-image"></i>
+                    {% endif %}
+                </div>
+                <div>
+                    <span
+                        class="text-xs font-bold uppercase tracking-wider 
+                        {% if document.doc_type == 'exam' %}text-orange-600{% elif document.doc_type == 'notes' %}text-blue-600{% elif document.doc_type == 'paper' %}text-purple-600{% else %}text-green-600{% endif %}">
+                        {{ document.doc_type }}
+                    </span>
+                    <h1 class="text-2xl font-extrabold text-slate-800 mb-1">{{ document.title }}</h1>
+                    <div class="flex items-center gap-3 text-sm text-slate-500">
+                        <span><i class="fa-solid fa-user mr-1"></i> {{ document.user.username }}</span>
+                        <span><i class="fa-solid fa-calendar mr-1"></i> {{ document.timestamp.strftime('%b %d, %Y')
+                            }}</span>
+                        <span><i class="fa-solid fa-download mr-1"></i> {{ document.downloads }} views</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <div class="bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-sm flex items-center gap-2">
+                    <i class="fa-solid fa-bolt text-orange-500"></i>
+                    <span class="font-bold text-slate-700" id="credits-display">{{ user.credits }}</span>
+                    <span class="text-xs text-slate-400">credits</span>
+                </div>
+            </div>
+        </div>
+
+        {% if document.description %}
+        <p class="text-slate-600 bg-white rounded-xl border border-slate-100 p-4 mb-6">{{ document.description }}</p>
+        {% endif %}
+    </div>
+
+    <!-- Document Content -->
+    <div class="max-w-4xl mx-auto px-4">
+        <div class="bg-white rounded-3xl shadow-xl shadow-slate-200/60 border border-slate-100 overflow-hidden">
+
+            <!-- Document Header (Always Visible) -->
+            <div class="p-6 border-b border-slate-100">
+                <h2 class="text-xl font-bold text-slate-800 mb-2">{{ document.title }}</h2>
+                <div class="flex items-center gap-2 flex-wrap">
+                    <span
+                        class="px-3 py-1 rounded-full text-xs font-bold 
+                        {% if document.doc_type == 'exam' %}bg-orange-100 text-orange-700{% elif document.doc_type == 'notes' %}bg-blue-100 text-blue-700{% elif document.doc_type == 'paper' %}bg-purple-100 text-purple-700{% else %}bg-green-100 text-green-700{% endif %}">
+                        {{ document.doc_type|capitalize }}
+                    </span>
+                    {% if is_unlocked %}
+                    <span class="px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700">
+                        <i class="fa-solid fa-unlock mr-1"></i> Unlocked
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Document Content -->
+            <div class="relative">
+                {% if is_unlocked %}
+                <!-- Full Content (Unlocked) -->
+                <div class="p-6">
+                    <div class="prose prose-slate max-w-none">
+                        {% if document.formatted_content %}
+                        {{ document.formatted_content|safe }}
+                        {% elif document.extracted_text %}
+                        <pre
+                            class="whitespace-pre-wrap text-sm text-slate-700 bg-slate-50 p-4 rounded-xl">{{ document.extracted_text }}</pre>
+                        {% else %}
+                        <!-- Show the original file when no text extracted -->
+                        {% if document.file_type == 'image' %}
+                        <div class="text-center">
+                            <p class="text-slate-500 mb-4"><i class="fa-solid fa-image mr-2"></i>Original Document Image
+                            </p>
+                            <img src="{{ url_for('static', filename='uploads/library/' + document.file_path.split('/')[-1].split('\\')[-1]) }}"
+                                alt="{{ document.title }}" class="max-w-full rounded-xl shadow-lg mx-auto">
+                        </div>
+                        {% else %}
+                        <div class="text-center py-8">
+                            <i class="fa-solid fa-file-pdf text-5xl text-red-400 mb-4"></i>
+                            <p class="text-slate-500">PDF document - click below to view</p>
+                        </div>
+                        {% endif %}
+                        {% endif %}
+                    </div>
+
+                    <!-- Download Original -->
+                    <div class="mt-8 pt-6 border-t border-slate-100">
+                        <a href="{{ url_for('static', filename='uploads/library/' + document.file_path.split('/')[-1].split('\\')[-1]) }}"
+                            target="_blank"
+                            class="inline-flex items-center gap-2 px-6 py-3 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl transition-all">
+                            <i class="fa-solid fa-download"></i>
+                            View Original File
+                        </a>
+                    </div>
+                </div>
+
+                {% else %}
+                <!-- Blurred Preview (Locked) -->
+                <div class="relative min-h-[400px]">
+                    <!-- Visible Header Section -->
+                    <div class="p-6 pb-4">
+                        {% if document.formatted_content %}
+                        <div class="prose prose-slate max-w-none">
+                            <p class="text-slate-700">{{ document.formatted_content[:200]|safe }}...</p>
+                        </div>
+                        {% elif document.extracted_text %}
+                        <pre
+                            class="whitespace-pre-wrap text-sm text-slate-700">{{ document.extracted_text[:200] }}...</pre>
+                        {% else %}
+                        <p class="text-slate-600 font-medium mb-2">{{ document.title }}</p>
+                        <p class="text-slate-500 text-sm">{{ document.description or 'Document uploaded - unlock to view
+                            full content' }}</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Blurred Content -->
+                    <div class="content-blurred p-6 pt-0">
+                        {% if document.formatted_content %}
+                        <div class="prose prose-slate max-w-none">
+                            {{ document.formatted_content[200:800]|safe }}
+                        </div>
+                        {% elif document.extracted_text %}
+                        <pre
+                            class="whitespace-pre-wrap text-sm text-slate-700">{{ document.extracted_text[200:800] }}</pre>
+                        {% else %}
+                        <!-- Show blurred image preview -->
+                        {% if document.file_type == 'image' %}
+                        <img src="{{ url_for('static', filename='uploads/library/' + document.file_path.split('/')[-1].split('\\')[-1]) }}"
+                            alt="Blurred preview" class="max-w-full rounded-xl mx-auto max-h-64 object-cover">
+                        {% else %}
+                        <div
+                            class="h-64 bg-gradient-to-b from-slate-100 to-slate-200 rounded-xl flex items-center justify-center">
+                            <i class="fa-solid fa-file-pdf text-6xl text-red-300"></i>
+                        </div>
+                        {% endif %}
+                        {% endif %}
+                    </div>
+
+                    <!-- Unlock Overlay -->
+                    <div class="unlock-overlay absolute bottom-0 left-0 right-0 p-8">
+                        <div class="text-center">
+                            <div
+                                class="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-4">
+                                <i class="fa-solid fa-lock text-2xl text-slate-400"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-slate-800 mb-2">Unlock Full Document</h3>
+                            <p class="text-slate-500 mb-6">Spend 1 credit to access the complete document</p>
+
+                            <button id="unlock-btn" onclick="unlockDocument({{ document.id }})"
+                                class="px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold rounded-xl shadow-lg transition-all inline-flex items-center gap-2">
+                                <i class="fa-solid fa-unlock"></i>
+                                Unlock for 1 Credit
+                            </button>
+
+                            <p class="text-xs text-slate-400 mt-4">Your balance: <span id="credit-balance">{{
+                                    user.credits }}</span> credits</p>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if not is_unlocked %}
+<script>
+    async function unlockDocument(docId) {
+        const btn = document.getElementById('unlock-btn');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Unlocking...';
+
+        try {
+            const response = await fetch(`/api/library/unlock/${docId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            const data = await response.json();
+
+            if (data.error) {
+                alert(data.error);
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-unlock"></i> Unlock for 1 Credit';
+                return;
+            }
+
+            // Reload page to show full content
+            window.location.reload();
+
+        } catch (err) {
+            alert('Error unlocking document. Please try again.');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-unlock"></i> Unlock for 1 Credit';
+        }
+    }
+</script>
+{% endif %}
+
+{% endblock %}

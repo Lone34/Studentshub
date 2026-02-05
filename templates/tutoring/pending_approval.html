@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pending Approval - Students Hub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+        }
+
+        .pulse-animation {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+    </style>
+</head>
+
+<body class="min-h-screen gradient-bg flex items-center justify-center p-4">
+    <div class="glass-card rounded-3xl shadow-2xl w-full max-w-md p-8 md:p-10 text-center">
+        <!-- Pending Icon -->
+        <div class="mb-6">
+            <div
+                class="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-r from-amber-400 to-orange-500 rounded-full mb-4 shadow-lg pulse-animation">
+                <i class="fa-solid fa-hourglass-half text-white text-4xl"></i>
+            </div>
+        </div>
+
+        <!-- Message -->
+        <h1 class="text-2xl font-bold text-gray-800 mb-3">Application Under Review</h1>
+        <p class="text-gray-500 mb-6">
+            Hi <strong>{{ tutor.display_name if tutor else 'Tutor' }}</strong>! Your application is being reviewed by
+            our admin team.
+            This usually takes 24-48 hours.
+        </p>
+
+        <!-- Status Card -->
+        <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
+            <div class="flex items-center justify-center gap-2 text-amber-700">
+                <i class="fa-solid fa-clock"></i>
+                <span class="font-medium">Status: Pending Approval</span>
+            </div>
+            {% if tutor %}
+            <p class="text-amber-600 text-sm mt-2">
+                Submitted: {{ tutor.created_at.strftime('%B %d, %Y at %I:%M %p') if tutor.created_at else 'Recently' }}
+            </p>
+            {% endif %}
+        </div>
+
+        <!-- What happens next -->
+        <div class="text-left bg-gray-50 rounded-xl p-4 mb-6">
+            <h3 class="font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                <i class="fa-solid fa-list-check text-purple-500"></i> What happens next?
+            </h3>
+            <ul class="text-sm text-gray-600 space-y-2">
+                <li class="flex items-start gap-2">
+                    <i class="fa-solid fa-check text-green-500 mt-1"></i>
+                    <span>Our team verifies your qualifications and ID</span>
+                </li>
+                <li class="flex items-start gap-2">
+                    <i class="fa-solid fa-check text-green-500 mt-1"></i>
+                    <span>You'll receive an email once approved</span>
+                </li>
+                <li class="flex items-start gap-2">
+                    <i class="fa-solid fa-check text-green-500 mt-1"></i>
+                    <span>Start teaching and earning immediately!</span>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Actions -->
+        <div class="space-y-3">
+            <a href="{{ url_for('tutoring.tutor_login') }}"
+                class="block w-full py-3 bg-gray-100 text-gray-700 font-medium rounded-xl hover:bg-gray-200 transition-all">
+                <i class="fa-solid fa-arrow-rotate-right mr-2"></i> Check Status Again
+            </a>
+            <a href="{{ url_for('tutoring.tutor_logout') }}"
+                class="block w-full py-3 text-gray-500 font-medium hover:text-gray-700 transition-all">
+                <i class="fa-solid fa-right-from-bracket mr-2"></i> Logout
+            </a>
+        </div>
+    </div>
+</body>
+
+</html>
