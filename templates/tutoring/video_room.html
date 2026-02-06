@@ -252,12 +252,39 @@
         let screenSharing = false;
 
         // ICE Servers (STUN/TURN for NAT traversal)
+        // TURN servers are essential for production - they relay video when direct P2P fails
         const iceServers = {
             iceServers: [
+                // Google STUN servers (for direct connection discovery)
                 { urls: 'stun:stun.l.google.com:19302' },
                 { urls: 'stun:stun1.l.google.com:19302' },
-                { urls: 'stun:stun2.l.google.com:19302' }
-            ]
+
+                // Metered.ca Free TURN Servers (for relay when P2P fails)
+                {
+                    urls: 'stun:stun.relay.metered.ca:80'
+                },
+                {
+                    urls: 'turn:global.relay.metered.ca:80',
+                    username: 'e8dd65def92f416ab2c50c62',
+                    credential: 'qW6yfhVHvBJqH0El'
+                },
+                {
+                    urls: 'turn:global.relay.metered.ca:80?transport=tcp',
+                    username: 'e8dd65def92f416ab2c50c62',
+                    credential: 'qW6yfhVHvBJqH0El'
+                },
+                {
+                    urls: 'turn:global.relay.metered.ca:443',
+                    username: 'e8dd65def92f416ab2c50c62',
+                    credential: 'qW6yfhVHvBJqH0El'
+                },
+                {
+                    urls: 'turns:global.relay.metered.ca:443?transport=tcp',
+                    username: 'e8dd65def92f416ab2c50c62',
+                    credential: 'qW6yfhVHvBJqH0El'
+                }
+            ],
+            iceCandidatePoolSize: 10
         };
 
         // Elements

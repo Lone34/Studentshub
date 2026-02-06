@@ -1247,15 +1247,19 @@ def api_check_balance():
         if account.owner_id != allowed_owner_id:
             return jsonify({"error": "Unauthorized"})
 
-    # Check Balance (Mock logic for different services)
-    balance_info = "Unlimited"
-    # Fix: ServiceAccount doesn't have 'service', checking 'name' instead
-    if "chegg" in account.name.lower():
-        balance_info = "Active (Subscription)"
-    elif "openai" in account.name.lower():
-        balance_info = "$12.50"
-    
-    return jsonify({"balance": balance_info})
+    # Actually call the Chegg API to get real balance
+    try:
+        balance_result = chegg_api.get_account_balance(account.cookie_data, account.proxy)
+        
+        if "error" in balance_result:
+            return jsonify({"balance": f"Error: {balance_result['error']}"})
+        
+        # Return the actual balance data (used/limit or remaining)
+        return jsonify({"balance": balance_result})
+        
+    except Exception as e:
+        print(f"[Balance Check Error] {e}")
+        return jsonify({"balance": "API Error"})
 
 if __name__ == '__main__':
     with app.app_context():
