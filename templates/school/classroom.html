@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ subject.name }} - Live Class</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+        }
+
+        .video-container {
+            background: #0f0f1a;
+            position: relative;
+        }
+
+        #teacherVideo {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            background: #1a1a2e;
+        }
+
+        .control-btn {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .control-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .control-btn.active {
+            background: #ef4444 !important;
+        }
+
+        .chat-message {
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .student-count {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.7;
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-gray-900 min-h-screen">
+    <!-- Header -->
+    <header class="bg-gray-800 border-b border-gray-700 px-4 py-3">
+        <div class="flex items-center justify-between max-w-7xl mx-auto">
+            <div class="flex items-center gap-4">
+                <div class="w-10 h-10 bg-violet-600 rounded-xl flex items-center justify-center">
+                    <i class="fa-solid fa-school text-white"></i>
+                </div>
+                <div>
+                    <h1 class="text-white font-bold">{{ subject.name }}</h1>
+                    <p class="text-gray-400 text-sm">{{ subject.grade.name }} • {{ teacher.display_name if teacher else
+                        'Teacher' }}</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-4">
+                <!-- Live Indicator -->
+                <div class="flex items-center gap-2 bg-red-500/20 px-3 py-1 rounded-full">
+                    <span class="w-2 h-2 bg-red-500 rounded-full student-count"></span>
+                    <span class="text-red-400 text-sm font-bold">LIVE</span>
+                </div>
+
+                <!-- Student Count -->
+                <div class="bg-gray-700 px-4 py-2 rounded-xl flex items-center gap-2">
+                    <i class="fa-solid fa-users text-violet-400"></i>
+                    <span id="studentCount" class="text-white font-bold">0</span>
+                    <span class="text-gray-400 text-sm">students</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="h-[calc(100vh-64px)] flex">
+        <!-- Video Area -->
+        <div class="flex-1 flex flex-col">
+            <div class="video-container flex-1 relative">
+                <!-- Teacher Video (Full Screen) -->
+                <video id="teacherVideo" autoplay playsinline></video>
+
+                <!-- Waiting Overlay (for students) -->
+                {% if not is_teacher %}
+                <div id="waitingOverlay" class="absolute inset-0 bg-gray-900/90 flex items-center justify-center">
+                    <div class="text-center">
+                        <div
+                            class="w-20 h-20 bg-violet-600/30 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
+                            <i class="fa-solid fa-satellite-dish text-violet-400 text-3xl"></i>
+                        </div>
+                        <p class="text-white text-xl font-medium mb-2">Connecting to class...</p>
+                        <p class="text-gray-400">Waiting for {{ teacher.display_name if teacher else 'teacher' }} to
+                            start</p>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Teacher's local preview (small) -->
+                {% if is_teacher %}
+                <video id="localVideo" autoplay playsinline muted
+                    class="absolute bottom-4 right-4 w-48 h-36 rounded-xl object-cover border-2 border-violet-500"></video>
+                {% endif %}
+            </div>
+
+            <!-- Controls -->
+            <div class="bg-gray-800 border-t border-gray-700 px-6 py-4">
+                <div class="flex items-center justify-center gap-4">
+                    {% if is_teacher %}
+                    <!-- Teacher Controls -->
+                    <button id="micBtn" onclick="toggleMic()" class="control-btn bg-gray-600 text-white">
+                        <i class="fa-solid fa-microphone text-lg"></i>
+                    </button>
+                    <button id="cameraBtn" onclick="toggleCamera()" class="control-btn bg-gray-600 text-white">
+                        <i class="fa-solid fa-video text-lg"></i>
+                    </button>
+                    <button id="screenBtn" onclick="toggleScreenShare()" class="control-btn bg-gray-600 text-white">
+                        <i class="fa-solid fa-desktop text-lg"></i>
+                    </button>
+                    <button onclick="endClass()" class="control-btn bg-red-600 text-white">
+                        <i class="fa-solid fa-phone-slash text-lg"></i>
+                    </button>
+                    {% else %}
+                    <!-- Student Controls -->
+                    <button onclick="leaveClass()"
+                        class="px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl transition-all">
+                        <i class="fa-solid fa-right-from-bracket mr-2"></i> Leave Class
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Sidebar -->
+        <div class="w-80 bg-gray-800 border-l border-gray-700 flex flex-col">
+            <div class="p-4 border-b border-gray-700">
+                <h3 class="text-white font-bold flex items-center gap-2">
+                    <i class="fa-solid fa-comments text-violet-400"></i> Class Chat
+                </h3>
+            </div>
+
+            <!-- Chat Messages -->
+            <div id="chatMessages" class="flex-1 p-4 overflow-y-auto space-y-3">
+                <div class="text-center">
+                    <span class="bg-gray-700 text-gray-400 text-xs px-3 py-1 rounded-full">
+                        Class started
+                    </span>
+                </div>
+            </div>
+
+            <!-- Chat Input -->
+            <div class="p-4 border-t border-gray-700">
+                <form id="chatForm" class="flex gap-2">
+                    <input type="text" id="chatInput"
+                        class="flex-1 px-4 py-2 bg-gray-700 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:border-violet-500 focus:outline-none"
+                        placeholder="Type a message...">
+                    <button type="submit"
+                        class="px-4 py-2 bg-violet-600 text-white rounded-xl hover:bg-violet-700 transition-all">
+                        <i class="fa-solid fa-paper-plane"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <!-- Socket.IO -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
+
+    <script>
+        // Room info
+        const roomId = '{{ school_class.room_id }}';
+        const classId = {{ school_class.id }};
+        const isTeacher = {{ 'true' if is_teacher else 'false' }};
+        const userName = isTeacher ? '{{ teacher.display_name if teacher else "Teacher" }}' : 'Student';
+
+        // State
+        let localStream = null;
+        let peerConnection = null;
+        let socket = null;
+        let micEnabled = true;
+        let cameraEnabled = true;
+
+        // ICE Servers (same as tutoring)
+        const iceServers = {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' },
+                {
+                    urls: 'turn:global.relay.metered.ca:80',
+                    username: 'e8dd65def92f416ab2c50c62',
+                    credential: 'qW6yfhVHvBJqH0El'
+                },
+                {
+                    urls: 'turn:global.relay.metered.ca:443',
+                    username: 'e8dd65def92f416ab2c50c62',
+                    credential: 'qW6yfhVHvBJqH0El'
+                },
+                {
+                    urls: 'turns:global.relay.metered.ca:443?transport=tcp',
+                    username: 'e8dd65def92f416ab2c50c62',
+                    credential: 'qW6yfhVHvBJqH0El'
+                }
+            ],
+            iceCandidatePoolSize: 10
+        };
+
+        // Elements
+        const teacherVideo = document.getElementById('teacherVideo');
+        const localVideo = document.getElementById('localVideo');
+        const waitingOverlay = document.getElementById('waitingOverlay');
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (isTeacher) {
+                await initTeacherMedia();
+            }
+            initSocket();
+        });
+
+        async function initTeacherMedia() {
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({
+                    video: true,
+                    audio: true
+                });
+                localVideo.srcObject = localStream;
+                teacherVideo.srcObject = localStream; // Show on main view too
+                console.log('✓ Teacher media initialized');
+            } catch (err) {
+                console.error('Media error:', err);
+                alert('Could not access camera/microphone.');
+            }
+        }
+
+        function initSocket() {
+            socket = io({ transports: ['websocket'] });
+
+            socket.on('connect', () => {
+                console.log('✓ Socket connected:', socket.id);
+                socket.emit('join_room', {
+                    room_id: roomId,
+                    user_type: isTeacher ? 'teacher' : 'student',
+                    user_name: userName
+                });
+            });
+
+            socket.on('room_joined', (data) => {
+                console.log('✓ Joined room, users:', data.users_in_room);
+                updateStudentCount();
+            });
+
+            socket.on('user_joined', (data) => {
+                console.log('→ User joined:', data.user_name);
+                addChatMessage(`${data.user_name} joined the class`, true);
+                updateStudentCount();
+
+                // If teacher and student joins, send offer
+                if (isTeacher && data.user_type === 'student') {
+                    setTimeout(() => createOffer(), 500);
+                }
+            });
+
+            socket.on('user_left', (data) => {
+                addChatMessage('A student left the class', true);
+                updateStudentCount();
+            });
+
+            // WebRTC signaling
+            socket.on('offer', async (data) => {
+                console.log('← Received offer');
+                await handleOffer(data.offer);
+            });
+
+            socket.on('answer', async (data) => {
+                console.log('← Received answer');
+                await handleAnswer(data.answer);
+            });
+
+            socket.on('ice_candidate', async (data) => {
+                if (peerConnection && data.candidate) {
+                    await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
+                }
+            });
+
+            // Chat
+            socket.on('chat_message', (data) => {
+                if (data.from !== socket.id) {
+                    addChatMessage(`${data.sender_name}: ${data.message}`, false);
+                }
+            });
+
+            socket.on('session_ended', () => {
+                alert('Class has ended.');
+                window.location.href = '{{ url_for("school.index") }}';
+            });
+        }
+
+        // WebRTC functions
+        function createPeerConnection() {
+            peerConnection = new RTCPeerConnection(iceServers);
+
+            if (localStream) {
+                localStream.getTracks().forEach(track => {
+                    peerConnection.addTrack(track, localStream);
+                });
+            }
+
+            peerConnection.ontrack = (event) => {
+                console.log('✓ Received remote track');
+                teacherVideo.srcObject = event.streams[0];
+                if (waitingOverlay) waitingOverlay.style.display = 'none';
+            };
+
+            peerConnection.onicecandidate = (event) => {
+                if (event.candidate) {
+                    socket.emit('ice_candidate', {
+                        room_id: roomId,
+                        candidate: event.candidate
+                    });
+                }
+            };
+
+            return peerConnection;
+        }
+
+        async function createOffer() {
+            if (!peerConnection) createPeerConnection();
+
+            try {
+                const offer = await peerConnection.createOffer();
+                await peerConnection.setLocalDescription(offer);
+                socket.emit('offer', { room_id: roomId, offer: offer });
+                console.log('→ Sent offer');
+            } catch (err) {
+                console.error('Offer error:', err);
+            }
+        }
+
+        async function handleOffer(offer) {
+            if (peerConnection) {
+                peerConnection.close();
+                peerConnection = null;
+            }
+
+            createPeerConnection();
+
+            try {
+                await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+                const answer = await peerConnection.createAnswer();
+                await peerConnection.setLocalDescription(answer);
+                socket.emit('answer', { room_id: roomId, answer: answer });
+                console.log('→ Sent answer');
+            } catch (err) {
+                console.error('Answer error:', err);
+            }
+        }
+
+        async function handleAnswer(answer) {
+            try {
+                await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
+            } catch (err) {
+                console.error('Handle answer error:', err);
+            }
+        }
+
+        // Controls
+        function toggleMic() {
+            micEnabled = !micEnabled;
+            localStream.getAudioTracks().forEach(track => track.enabled = micEnabled);
+            const btn = document.getElementById('micBtn');
+            btn.innerHTML = micEnabled
+                ? '<i class="fa-solid fa-microphone text-lg"></i>'
+                : '<i class="fa-solid fa-microphone-slash text-lg"></i>';
+            btn.classList.toggle('active', !micEnabled);
+        }
+
+        function toggleCamera() {
+            cameraEnabled = !cameraEnabled;
+            localStream.getVideoTracks().forEach(track => track.enabled = cameraEnabled);
+            const btn = document.getElementById('cameraBtn');
+            btn.innerHTML = cameraEnabled
+                ? '<i class="fa-solid fa-video text-lg"></i>'
+                : '<i class="fa-solid fa-video-slash text-lg"></i>';
+            btn.classList.toggle('active', !cameraEnabled);
+        }
+
+        async function toggleScreenShare() {
+            const btn = document.getElementById('screenBtn');
+            try {
+                const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+                const screenTrack = screenStream.getVideoTracks()[0];
+
+                const sender = peerConnection?.getSenders().find(s => s.track?.kind === 'video');
+                if (sender) sender.replaceTrack(screenTrack);
+
+                teacherVideo.srcObject = screenStream;
+                btn.classList.add('active');
+
+                screenTrack.onended = () => {
+                    if (localStream) {
+                        const videoTrack = localStream.getVideoTracks()[0];
+                        if (sender) sender.replaceTrack(videoTrack);
+                        teacherVideo.srcObject = localStream;
+                        btn.classList.remove('active');
+                    }
+                };
+            } catch (err) {
+                console.error('Screen share error:', err);
+            }
+        }
+
+        function endClass() {
+            if (!confirm('End this class for all students?')) return;
+
+            fetch(`/school/teacher/end-class/${classId}`, { method: 'POST' })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        socket.emit('session_end', { room_id: roomId });
+                        window.location.href = '{{ url_for("school.teacher_dashboard") }}';
+                    }
+                });
+        }
+
+        function leaveClass() {
+            if (socket) socket.disconnect();
+            window.location.href = '{{ url_for("school.index") }}';
+        }
+
+        // Chat
+        document.getElementById('chatForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            if (!message) return;
+
+            socket.emit('chat_message', {
+                room_id: roomId,
+                message: message,
+                sender_name: userName
+            });
+
+            addChatMessage(`You: ${message}`, false);
+            input.value = '';
+        });
+
+        function addChatMessage(text, isSystem = false) {
+            const container = document.getElementById('chatMessages');
+            const div = document.createElement('div');
+            div.className = 'chat-message';
+
+            if (isSystem) {
+                div.innerHTML = `<span class="bg-gray-700 text-gray-400 text-xs px-3 py-1 rounded-full">${text}</span>`;
+                div.className += ' text-center';
+            } else {
+                div.innerHTML = `<p class="text-sm text-gray-300">${text}</p>`;
+            }
+
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function updateStudentCount() {
+            fetch(`/school/api/class/${classId}/attendance`)
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('studentCount').textContent = data.count || 0;
+                });
+        }
+    </script>
+</body>
+
+</html>

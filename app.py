@@ -5,7 +5,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 import os
 # ----------------------------------------------
-from models import db, User, ServiceAccount, Job, ChatHistory, Document, DocumentUnlock, Tutor, TutoringSession
+from models import db, User, ServiceAccount, Job, ChatHistory, Document, DocumentUnlock, Tutor, TutoringSession, Grade, Subject
 from sqlalchemy import func, or_
 import chegg_api
 import time
@@ -35,6 +35,10 @@ login_manager.init_app(app)
 # --- REGISTER TUTORING BLUEPRINT ---
 from tutoring import tutoring_bp
 app.register_blueprint(tutoring_bp)
+
+# --- REGISTER SCHOOL BLUEPRINT ---
+from school import school_bp
+app.register_blueprint(school_bp)
 
 # --- SOCKETIO FOR VIDEO TUTORING ---
 from signaling import init_socketio
@@ -614,7 +618,7 @@ def super_admin_dashboard():
 def index():
     if current_user.is_authenticated:
         return redirect(url_for('dashboard'))
-    return redirect(url_for('login'))
+    return render_template('landing.html')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -637,13 +641,67 @@ def register():
             flash('Username taken')
             return redirect(url_for('register'))
 
-        new_user = User(username=username, password=generate_password_hash(password))
+        # Create user with additional profile fields
+        new_user = User(
+            username=username, 
+            password=generate_password_hash(password),
+            full_name=request.form.get('full_name'),
+            email=request.form.get('email'),
+            phone=request.form.get('phone'),
+            grade_id=request.form.get('grade_id') or None
+        )
         db.session.add(new_user)
         db.session.commit()
         login_user(new_user)
-        flash('Account created. Contact an admin to activate service access.')
+        flash('Account created. Welcome to Students Hub!')
         return redirect(url_for('dashboard'))
-    return render_template('register.html')
+    
+    # Pass grades and unique subjects to template for dropdown
+    grades = Grade.query.filter_by(is_active=True).order_by(Grade.display_order).all()
+    # Get unique subject names
+    subjects = db.session.query(Subject.name).distinct().order_by(Subject.name).all()
+    subject_names = [s[0] for s in subjects]
+    return render_template('register.html', grades=grades, subjects=subject_names)
+
+
+# --- ONE-TIME DATABASE SETUP ---
+@app.route('/setup-database')
+def setup_database():
+    """One-time setup: creates super_admin and seeds grades. Only works if no admin exists."""
+    # Check if admin already exists
+    existing_admin = User.query.filter_by(role='super_admin').first()
+    if existing_admin:
+        return jsonify({"message": "Setup already complete. Admin exists.", "admin_username": existing_admin.username})
+    
+    # Create super_admin user
+    admin = User(
+        username='admin',
+        password=generate_password_hash('admin123'),
+        role='super_admin'
+    )
+    db.session.add(admin)
+    
+    # Seed grades from Nursery to 12th
+    default_grades = [
+        "Nursery", "LKG", "UKG",
+        "Class 1", "Class 2", "Class 3", "Class 4", "Class 5",
+        "Class 6", "Class 7", "Class 8", "Class 9", "Class 10",
+        "Class 11", "Class 12"
+    ]
+    
+    for i, name in enumerate(default_grades):
+        grade = Grade(name=name, display_order=i, is_active=True)
+        db.session.add(grade)
+    
+    db.session.commit()
+    
+    return jsonify({
+        "success": True,
+        "message": "Database initialized!",
+        "admin": {"username": "admin", "password": "admin123"},
+        "grades_created": len(default_grades)
+    })
+
 
 # --- HELPER: GET TRENDING TOPICS ---
 from datetime import timedelta

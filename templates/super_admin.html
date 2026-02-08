@@ -2,7 +2,7 @@
 {% block content %}
 
 <div class="max-w-7xl mx-auto animate-fade-in pb-20">
-    
+
     <div class="bg-slate-900 text-white p-8 rounded-3xl shadow-2xl mb-8 relative overflow-hidden">
         <div class="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -mr-16 -mt-16"></div>
         <div class="relative z-10 flex justify-between items-end">
@@ -11,7 +11,8 @@
                 <p class="text-slate-400 mt-2 font-mono text-sm">/lone-admin/ access granted</p>
             </div>
             <div class="flex gap-3">
-                <a href="{{ url_for('dashboard') }}" class="bg-white/10 hover:bg-white/20 px-5 py-2.5 rounded-xl font-bold text-sm transition-all backdrop-blur-sm">
+                <a href="{{ url_for('dashboard') }}"
+                    class="bg-white/10 hover:bg-white/20 px-5 py-2.5 rounded-xl font-bold text-sm transition-all backdrop-blur-sm">
                     <i class="fa-solid fa-rocket mr-2"></i> Go to Posting
                 </a>
             </div>
@@ -48,7 +49,8 @@
                     <p class="text-orange-100 text-xs">These accounts are used exclusively for the Unblur feature</p>
                 </div>
             </div>
-            <span class="bg-white/20 text-white px-3 py-1 rounded-lg text-xs font-bold">{{ my_accounts|length }} Active</span>
+            <span class="bg-white/20 text-white px-3 py-1 rounded-lg text-xs font-bold">{{ my_accounts|length }}
+                Active</span>
         </div>
 
         <div class="p-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -58,20 +60,21 @@
                 </h3>
                 <form method="POST" class="space-y-4">
                     <input type="hidden" name="action" value="add_account">
-                    
+
                     <div>
-                        <input type="text" name="acc_name" placeholder="Account Name (e.g. Unblur Bot 1)" required 
-                               class="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-orange-500 text-sm">
+                        <input type="text" name="acc_name" placeholder="Account Name (e.g. Unblur Bot 1)" required
+                            class="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-orange-500 text-sm">
                     </div>
                     <div>
-                        <input type="text" name="proxy" placeholder="Proxy (Optional)" 
-                               class="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-orange-500 text-sm font-mono">
+                        <input type="text" name="proxy" placeholder="Proxy (Optional)"
+                            class="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-orange-500 text-sm font-mono">
                     </div>
                     <div>
-                        <textarea name="cookie_json" rows="3" placeholder="Paste Cookies here..." required 
-                                  class="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-orange-500 text-xs font-mono"></textarea>
+                        <textarea name="cookie_json" rows="3" placeholder="Paste Cookies here..." required
+                            class="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-orange-500 text-xs font-mono"></textarea>
                     </div>
-                    <button class="w-full bg-slate-900 hover:bg-slate-800 text-white py-3 rounded-xl font-bold transition-all shadow-md">
+                    <button
+                        class="w-full bg-slate-900 hover:bg-slate-800 text-white py-3 rounded-xl font-bold transition-all shadow-md">
                         Add to Pool
                     </button>
                 </form>
@@ -81,9 +84,11 @@
                 <h3 class="font-bold text-slate-700 mb-4">Active Pool</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
                     {% for acc in my_accounts %}
-                    <div class="bg-white border border-slate-200 p-4 rounded-xl flex items-center justify-between group hover:border-orange-200 transition-colors shadow-sm">
+                    <div
+                        class="bg-white border border-slate-200 p-4 rounded-xl flex items-center justify-between group hover:border-orange-200 transition-colors shadow-sm">
                         <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-full bg-green-50 text-green-600 flex items-center justify-center font-bold text-sm">
+                            <div
+                                class="w-10 h-10 rounded-full bg-green-50 text-green-600 flex items-center justify-center font-bold text-sm">
                                 {{ loop.index }}
                             </div>
                             <div>
@@ -100,7 +105,8 @@
                         </form>
                     </div>
                     {% else %}
-                    <div class="col-span-2 text-center py-10 text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-300">
+                    <div
+                        class="col-span-2 text-center py-10 text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-300">
                         <p>No unblur accounts added yet.</p>
                     </div>
                     {% endfor %}
@@ -110,22 +116,25 @@
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
+
         <div class="lg:col-span-1 space-y-8">
             <div class="bg-white rounded-2xl shadow-lg border border-slate-100 p-6">
                 <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
-                    <span class="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center"><i class="fa-solid fa-user-tie"></i></span>
+                    <span class="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center"><i
+                            class="fa-solid fa-user-tie"></i></span>
                     Promote User to Admin
                 </h3>
                 <form method="POST" class="space-y-3">
                     <input type="hidden" name="action" value="create_admin">
-                    
+
                     <div class="space-y-1">
                         <label class="text-[10px] font-bold text-slate-400 uppercase">Existing User</label>
-                        <input type="text" name="username" placeholder="Enter Registered Username" required class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500">
+                        <input type="text" name="username" placeholder="Enter Registered Username" required
+                            class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500">
                     </div>
-                    
-                    <button class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-indigo-500/20">
+
+                    <button
+                        class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-indigo-500/20">
                         Promote to Admin
                     </button>
                     <p class="text-[10px] text-center text-slate-400 mt-2">The user must register an account first.</p>
@@ -140,16 +149,20 @@
                     {% for admin in admins %}
                     <div class="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
                         <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-bold">{{ admin.username[0]|upper }}</div>
+                            <div
+                                class="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-bold">
+                                {{ admin.username[0]|upper }}</div>
                             <div>
                                 <div class="font-bold text-slate-800 text-sm">{{ admin.username }}</div>
-                                <div class="text-[10px] text-slate-400">ID: {{ admin.id }} | Credits: {{ admin.credits }}</div>
+                                <div class="text-[10px] text-slate-400">ID: {{ admin.id }} | Credits: {{ admin.credits
+                                    }}</div>
                             </div>
                         </div>
                         <form method="POST" onsubmit="return confirm('Delete Admin and ALL their users/accounts?');">
                             <input type="hidden" name="action" value="delete_user">
                             <input type="hidden" name="user_id" value="{{ admin.id }}">
-                            <button class="text-slate-300 hover:text-red-500 transition-colors"><i class="fa-solid fa-trash"></i></button>
+                            <button class="text-slate-300 hover:text-red-500 transition-colors"><i
+                                    class="fa-solid fa-trash"></i></button>
                         </form>
                     </div>
                     {% endfor %}
@@ -158,7 +171,7 @@
         </div>
 
         <div class="lg:col-span-2 space-y-8">
-            
+
             <div class="bg-white rounded-2xl shadow-lg border border-slate-100 overflow-hidden">
                 <div class="bg-slate-50 px-6 py-4 border-b border-slate-100 flex justify-between items-center">
                     <h3 class="font-bold text-slate-700 text-sm">Global Job History</h3>
@@ -166,7 +179,8 @@
                 </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left">
-                        <thead class="bg-white text-slate-400 text-[10px] font-bold uppercase tracking-wider border-b border-slate-100">
+                        <thead
+                            class="bg-white text-slate-400 text-[10px] font-bold uppercase tracking-wider border-b border-slate-100">
                             <tr>
                                 <th class="px-6 py-3">User</th>
                                 <th class="px-6 py-3">Subject</th>
@@ -182,19 +196,21 @@
                                         <i class="fa-solid fa-user text-slate-300 text-xs"></i>
                                         {{ user.username }}
                                         {% if user.role == 'admin' %}
-                                            <span class="text-[9px] bg-indigo-50 text-indigo-600 px-1 rounded border border-indigo-100">ADMIN</span>
+                                        <span
+                                            class="text-[9px] bg-indigo-50 text-indigo-600 px-1 rounded border border-indigo-100">ADMIN</span>
                                         {% endif %}
                                     </span>
                                 </td>
                                 <td class="px-6 py-3 text-slate-600 truncate max-w-xs">{{ job.subject }}</td>
                                 <td class="px-6 py-3">
                                     {% if job.status == 'Completed' %}
-                                        <span class="text-green-600 font-bold text-xs">SUCCESS</span>
+                                    <span class="text-green-600 font-bold text-xs">SUCCESS</span>
                                     {% else %}
-                                        <span class="text-red-500 font-bold text-xs">{{ job.status }}</span>
+                                    <span class="text-red-500 font-bold text-xs">{{ job.status }}</span>
                                     {% endif %}
                                 </td>
-                                <td class="px-6 py-3 text-right text-slate-400 text-xs">{{ job.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
+                                <td class="px-6 py-3 text-right text-slate-400 text-xs">{{
+                                    job.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -209,18 +225,21 @@
                 </div>
                 <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
                     {% for acc in other_accounts %}
-                    <div class="border border-slate-200 rounded-xl p-4 flex justify-between items-center bg-slate-50/50">
+                    <div
+                        class="border border-slate-200 rounded-xl p-4 flex justify-between items-center bg-slate-50/50">
                         <div>
                             <div class="font-bold text-slate-700 text-sm">{{ acc.name }}</div>
                             <div class="text-xs text-slate-400">
-                                Owner ID: {{ acc.owner_id }} 
-                                {% if acc.proxy %}<span class="text-orange-500 ml-2"><i class="fa-solid fa-shield-halved"></i> Proxy</span>{% endif %}
+                                Owner ID: {{ acc.owner_id }}
+                                {% if acc.proxy %}<span class="text-orange-500 ml-2"><i
+                                        class="fa-solid fa-shield-halved"></i> Proxy</span>{% endif %}
                             </div>
                         </div>
                         <form method="POST" onsubmit="return confirm('Force delete this account?');">
                             <input type="hidden" name="action" value="delete_account">
                             <input type="hidden" name="account_id" value="{{ acc.id }}">
-                            <button class="bg-white border border-slate-200 hover:border-red-500 hover:text-red-500 text-slate-400 px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm">
+                            <button
+                                class="bg-white border border-slate-200 hover:border-red-500 hover:text-red-500 text-slate-400 px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm">
                                 Revoke
                             </button>
                         </form>
@@ -233,12 +252,519 @@
 
         </div>
     </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- SCHOOL MANAGEMENT SECTION -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <div class="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden mt-8">
+        <div class="bg-gradient-to-r from-violet-500 to-purple-600 px-8 py-5 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-white">
+                    <i class="fa-solid fa-school text-xl"></i>
+                </div>
+                <div>
+                    <h2 class="text-white font-bold text-lg">Online School Management</h2>
+                    <p class="text-purple-100 text-xs">Manage grades, subjects, schedules, and teacher assignments</p>
+                </div>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="switchSchoolTab('grades')" id="tab-grades"
+                    class="school-tab bg-white/20 text-white px-4 py-2 rounded-lg text-xs font-bold transition-all">
+                    <i class="fa-solid fa-layer-group mr-1"></i> Grades
+                </button>
+                <button onclick="switchSchoolTab('subjects')" id="tab-subjects"
+                    class="school-tab bg-white/10 text-white/70 px-4 py-2 rounded-lg text-xs font-bold transition-all">
+                    <i class="fa-solid fa-book mr-1"></i> Subjects
+                </button>
+            </div>
+        </div>
+
+        <div class="p-8">
+            <!-- GRADES TAB -->
+            <div id="panel-grades" class="school-panel">
+                <div class="grid lg:grid-cols-3 gap-8">
+                    <!-- Add Grade Form -->
+                    <div class="bg-slate-50 p-6 rounded-2xl border border-slate-200">
+                        <h3 class="font-bold text-slate-700 mb-4 flex items-center gap-2">
+                            <i class="fa-solid fa-plus-circle text-violet-500"></i> Add New Grade
+                        </h3>
+                        <form id="add-grade-form" class="space-y-4">
+                            <div>
+                                <input type="text" name="name" placeholder="Grade Name (e.g. Class 5)" required
+                                    class="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-violet-500 text-sm">
+                            </div>
+                            <button type="submit"
+                                class="w-full bg-violet-600 hover:bg-violet-700 text-white py-3 rounded-xl font-bold transition-all shadow-md">
+                                Add Grade
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Grades List -->
+                    <div class="lg:col-span-2">
+                        <h3 class="font-bold text-slate-700 mb-4">All Grades</h3>
+                        <div id="grades-list" class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                            <div class="text-center py-10 text-slate-400">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SUBJECTS TAB -->
+            <div id="panel-subjects" class="school-panel hidden">
+                <div class="grid lg:grid-cols-3 gap-8">
+                    <!-- Add Subject Form -->
+                    <div class="bg-slate-50 p-6 rounded-2xl border border-slate-200">
+                        <h3 class="font-bold text-slate-700 mb-4 flex items-center gap-2">
+                            <i class="fa-solid fa-plus-circle text-violet-500"></i> Add New Subject
+                        </h3>
+                        <form id="add-subject-form" class="space-y-3">
+                            <select name="grade_id" required
+                                class="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-violet-500 text-sm"
+                                id="subject-grade-select">
+                                <option value="">Select Grade</option>
+                            </select>
+                            <input type="text" name="name" placeholder="Subject Name (e.g. Mathematics)" required
+                                class="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-violet-500 text-sm">
+                            <div class="grid grid-cols-2 gap-2">
+                                <input type="time" name="schedule_time" placeholder="Start Time"
+                                    class="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-violet-500 text-sm">
+                                <input type="number" name="duration_minutes" placeholder="Duration (min)" value="45"
+                                    class="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-violet-500 text-sm">
+                            </div>
+                            <select name="teacher_id"
+                                class="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-violet-500 text-sm"
+                                id="teacher-select">
+                                <option value="">Assign Teacher</option>
+                            </select>
+                            <button type="submit"
+                                class="w-full bg-violet-600 hover:bg-violet-700 text-white py-3 rounded-xl font-bold transition-all shadow-md">
+                                Add Subject
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Subjects List -->
+                    <div class="lg:col-span-2">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="font-bold text-slate-700">All Subjects</h3>
+                            <select id="filter-grade"
+                                class="px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm"
+                                onchange="loadSubjects()">
+                                <option value="">All Grades</option>
+                            </select>
+                        </div>
+                        <div id="subjects-list" class="space-y-3 max-h-[500px] overflow-y-auto pr-2">
+                            <div class="text-center py-10 text-slate-400">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div>
 
+<script>
+    // School Management JavaScript
+    let teachersData = [];
+    let gradesData = [];
+    let subjectsData = [];
+
+    // --- TABS ---
+    function switchSchoolTab(tab) {
+        document.querySelectorAll('.school-tab').forEach(t => {
+            t.classList.remove('bg-white/20');
+            t.classList.add('bg-white/10', 'text-white/70');
+        });
+        document.querySelectorAll('.school-panel').forEach(p => p.classList.add('hidden'));
+
+        document.getElementById('tab-' + tab).classList.remove('bg-white/10', 'text-white/70');
+        document.getElementById('tab-' + tab).classList.add('bg-white/20');
+        document.getElementById('panel-' + tab).classList.remove('hidden');
+
+        if (tab === 'grades') loadGrades();
+        if (tab === 'subjects') {
+            loadSubjects();
+        }
+    }
+
+    // --- LOADERS ---
+    async function loadGrades() {
+        console.log('Loading grades...');
+        try {
+            const res = await fetch('/school/admin/grades');
+            const data = await res.json();
+
+            if (data.grades) {
+                gradesData = data.grades;
+                const list = document.getElementById('grades-list');
+
+                // Render List
+                if (data.grades.length === 0) {
+                    list.innerHTML = '<div class="col-span-3 text-center py-10 text-slate-400">No grades yet.</div>';
+                } else {
+                    list.innerHTML = data.grades.map(g => `
+                    <div class="bg-white border ${g.is_active ? 'border-slate-200' : 'border-red-200 opacity-50'} p-4 rounded-xl flex items-center justify-between group">
+                        <div>
+                            <div class="font-bold text-slate-800 text-sm">${g.name}</div>
+                            <div class="text-[10px] text-slate-400">${g.subject_count} subjects • ${g.student_count} students</div>
+                        </div>
+                        <div class="flex gap-2">
+                             <button onclick="openEditGrade(${g.id})" class="text-slate-300 hover:text-indigo-500 transition-colors p-1">
+                                <i class="fa-solid fa-pen"></i>
+                            </button>
+                            <button onclick="deleteGrade(${g.id})" class="text-slate-300 hover:text-red-500 transition-colors p-1">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+                }
+
+                // Render Dropdowns
+                const options = '<option value="">Select Grade</option>' + data.grades.map(g =>
+                    `<option value="${g.id}">${g.name}</option>`
+                ).join('');
+                document.getElementById('subject-grade-select').innerHTML = options;
+
+                // Filter Dropdown
+                document.getElementById('filter-grade').innerHTML = '<option value="">All Grades</option>' +
+                    data.grades.map(g => `<option value="${g.id}">${g.name}</option>`).join('');
+            }
+        } catch (e) { console.error('Error loading grades:', e); }
+    }
+
+    async function loadSubjects() {
+        console.log('Loading subjects...');
+        // We need grades loaded to map grade names if not populated by backend, but backend does it.
+        // But we need to ensure filtering dropdown is populated.
+        if (gradesData.length === 0) await loadGrades();
+
+        try {
+            const gradeId = document.getElementById('filter-grade').value;
+            const url = gradeId ? `/school/admin/subjects?grade_id=${gradeId}` : '/school/admin/subjects';
+            const res = await fetch(url);
+            const data = await res.json();
+
+            if (data.subjects) {
+                subjectsData = data.subjects;
+                const list = document.getElementById('subjects-list');
+                if (data.subjects.length === 0) {
+                    list.innerHTML = '<div class="text-center py-10 text-slate-400">No subjects yet.</div>';
+                } else {
+                    list.innerHTML = data.subjects.map(s => `
+                    <div class="bg-white border border-slate-200 p-4 rounded-xl flex items-center justify-between">
+                        <div class="flex items-center gap-4">
+                            <div class="w-12 h-12 rounded-xl bg-violet-100 text-violet-600 flex items-center justify-center">
+                                <i class="fa-solid fa-book text-lg"></i>
+                            </div>
+                            <div>
+                                <div class="font-bold text-slate-800">${s.name}</div>
+                                <div class="text-xs text-slate-500">${s.grade_name || 'No grade'}</div>
+                                <div class="text-[10px] text-slate-400 mt-1">
+                                    ${s.schedule_time || 'No time'} • ${s.duration_minutes}min
+                                    ${s.teacher_name ? ' • <span class="text-green-600">👨‍🏫 ' + s.teacher_name + '</span>' : ' • <span class="text-orange-500">No teacher</span>'}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="openEditSubject(${s.id})" class="text-slate-300 hover:text-indigo-500 transition-colors p-2">
+                                <i class="fa-solid fa-pen"></i>
+                            </button>
+                            <button onclick="deleteSubject(${s.id})" class="text-slate-300 hover:text-red-500 transition-colors p-2">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+                }
+            }
+            loadTeachers(); // Also refresh teachers
+        } catch (e) { console.error('Error loading subjects:', e); }
+    }
+
+    async function loadTeachers(gradeId = null, subjectName = null) {
+        console.log(`Loading teachers for GradeID: ${gradeId}, Subject: ${subjectName}`);
+        try {
+            let url = '/school/admin/teachers';
+            const params = new URLSearchParams();
+            if (gradeId) params.append('grade_id', gradeId);
+            if (subjectName) params.append('subject', subjectName);
+
+            if ([...params].length > 0) url += `?${params.toString()}`;
+
+            const res = await fetch(url);
+            const data = await res.json();
+
+            if (data.teachers) {
+                teachersData = data.teachers;
+                const count = data.teachers.length;
+                let label = 'Assign Teacher';
+                if (gradeId && subjectName) label = `Select Teacher (${count} match both)`;
+                else if (gradeId) label = `Select Teacher (${count} match grade)`;
+                else if (subjectName) label = `Select Teacher (${count} match subject)`;
+
+                const options = `<option value="">${label}</option>` +
+                    data.teachers.map(t => `<option value="${t.id}">${t.display_name} (${t.subjects})</option>`).join('');
+
+                // Update correct dropdown
+                if (!document.getElementById('edit-subject-modal').classList.contains('hidden')) {
+                    document.getElementById('edit-subject-teacher').innerHTML = options;
+                } else {
+                    document.getElementById('teacher-select').innerHTML = options;
+                }
+
+                // Alert for debugging if needed, or just relying on console
+                // console.log("Teachers loaded:", data.teachers);
+            }
+        } catch (e) { console.error('Error loading teachers:', e); }
+    }
+
+    async function loadPendingTutors() {
+        try {
+            const res = await fetch('/school/admin/tutors/pending');
+            const data = await res.json();
+            const list = document.getElementById('pending-tutors-list');
+            const section = document.getElementById('pending-tutors-section');
+            const countBadge = document.getElementById('pending-count');
+
+            if (data.tutors && data.tutors.length > 0) {
+                if (section) section.style.display = 'block';
+                if (countBadge) countBadge.innerText = data.tutors.length;
+                if (list) {
+                    list.innerHTML = data.tutors.map(t => `
+                        <tr class="hover:bg-gray-50 transition-colors">
+                            <td class="p-4">
+                                <div class="font-bold text-gray-800">${t.display_name}</div>
+                                <div class="text-xs text-gray-500">Exp: ${t.experience_years} years</div>
+                            </td>
+                            <td class="p-4">
+                                <div class="text-sm text-gray-700">${t.email}</div>
+                                <div class="text-xs text-gray-500">${t.phone}</div>
+                            </td>
+                            <td class="p-4 text-sm text-gray-600">${t.qualification}</td>
+                            <td class="p-4">
+                                <div class="text-xs font-semibold bg-blue-100 text-blue-700 px-2 py-1 rounded mb-1 inline-block">
+                                    ${t.subjects || 'All Subjects'}
+                                </div>
+                                <div class="text-xs text-gray-500">${t.teaching_grades || 'All Grades'}</div>
+                            </td>
+                            <td class="p-4">
+                                ${t.id_proof_url ?
+                            `<a href="${t.id_proof_url}" target="_blank" class="text-purple-600 hover:underline text-sm"><i class="fa-solid fa-file-pdf"></i> View ID</a>`
+                            : '<span class="text-gray-400 text-xs">No ID</span>'}
+                            </td>
+                            <td class="p-4 text-right space-x-2">
+                                <button onclick="approveTutor(${t.id})" class="px-3 py-1 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 font-bold text-sm">
+                                    <i class="fa-solid fa-check"></i> Approve
+                                </button>
+                                <button onclick="rejectTutor(${t.id})" class="px-3 py-1 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 font-bold text-sm">
+                                    <i class="fa-solid fa-xmark"></i> Reject
+                                </button>
+                            </td>
+                        </tr>
+                    `).join('');
+                }
+            } else {
+                if (section) section.style.display = 'none';
+            }
+        } catch (e) { console.error('Error loading pending tutors:', e); }
+    }
+
+    async function approveTutor(id) {
+        if (!confirm('Approve this tutor?')) return;
+        try {
+            const res = await fetch(`/school/admin/tutors/${id}/approve`, { method: 'POST' });
+            const data = await res.json();
+            if (data.success) {
+                alert(data.message);
+                loadPendingTutors();
+                loadTeachers();
+            } else {
+                alert(data.error);
+            }
+        } catch (e) { console.error(e); }
+    }
+
+    async function rejectTutor(id) {
+        if (!confirm('Reject this tutor application? This cannot be undone.')) return;
+        try {
+            const res = await fetch(`/school/admin/tutors/${id}/reject`, { method: 'POST' });
+            const data = await res.json();
+            if (data.success) {
+                alert(data.message);
+                loadPendingTutors();
+            } else {
+                alert(data.error);
+            }
+        } catch (e) { console.error(e); }
+    }
+
+    // --- EVENTS ---
+
+    // Watch for grade change to filter teachers
+    document.getElementById('subject-grade-select').addEventListener('change', function () {
+        const subjectName = document.querySelector('#add-subject-form input[name="name"]').value;
+        loadTeachers(this.value, subjectName);
+    });
+
+    // Watch for Subject Name input to filter teachers
+    document.querySelector('#add-subject-form input[name="name"]').addEventListener('input', function () {
+        const gradeId = document.getElementById('subject-grade-select').value;
+        loadTeachers(gradeId, this.value);
+    });
+
+    // Initialization
+    document.addEventListener('DOMContentLoaded', () => {
+        // Only if we are on the super admin page
+        const subjectsTab = document.getElementById('panel-subjects');
+        if (subjectsTab) {
+            // Load initial data
+            loadGrades();
+            loadPendingTutors();
+            loadTeachers();
+        }
+    });
+
+    // --- MODALS ---
+    function openEditGrade(id) {
+        const grade = gradesData.find(g => g.id === id);
+        if (!grade) return;
+
+        document.getElementById('edit-grade-id').value = grade.id;
+        document.getElementById('edit-grade-name').value = grade.name;
+        document.getElementById('edit-grade-active').checked = grade.is_active;
+        document.getElementById('edit-grade-modal').classList.remove('hidden');
+    }
+
+    async function openEditSubject(id) {
+        const subject = subjectsData.find(s => s.id === id);
+        if (!subject) return;
+
+        document.getElementById('edit-subject-id').value = subject.id;
+        document.getElementById('edit-subject-name').value = subject.name;
+        document.getElementById('edit-subject-time').value = subject.schedule_time || '';
+        document.getElementById('edit-subject-duration').value = subject.duration_minutes || 45;
+
+        // Load teachers suitable for this subject's grade
+        if (subject.grade_id) {
+            await loadTeachers(subject.grade_id, subject.name);
+        } else {
+            await loadTeachers();
+        }
+
+        // Set value after options are updated
+        setTimeout(() => {
+            document.getElementById('edit-subject-teacher').value = subject.teacher_id || '';
+        }, 300);
+
+        document.getElementById('edit-subject-active').checked = subject.is_active;
+        document.getElementById('edit-subject-modal').classList.remove('hidden');
+    }
+
+    function closeModal(id) {
+        document.getElementById(id).classList.add('hidden');
+    }
+
+    // --- FORMS ---
+    document.getElementById('edit-grade-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const id = document.getElementById('edit-grade-id').value;
+        const name = document.getElementById('edit-grade-name').value;
+        const is_active = document.getElementById('edit-grade-active').checked;
+
+        await fetch(`/school/admin/grades/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, is_active })
+        });
+        closeModal('edit-grade-modal');
+        loadGrades();
+    });
+
+    document.getElementById('edit-subject-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const id = document.getElementById('edit-subject-id').value;
+        const name = document.getElementById('edit-subject-name').value;
+        const schedule_time = document.getElementById('edit-subject-time').value;
+        const duration_minutes = document.getElementById('edit-subject-duration').value;
+        const teacher_id = document.getElementById('edit-subject-teacher').value;
+        const is_active = document.getElementById('edit-subject-active').checked;
+
+        await fetch(`/school/admin/subjects/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                name,
+                schedule_time,
+                duration_minutes: parseInt(duration_minutes),
+                teacher_id: teacher_id || null,
+                is_active
+            })
+        });
+        closeModal('edit-subject-modal');
+        loadSubjects();
+    });
+
+
+    async function deleteGrade(id) {
+        if (!confirm('Delete this grade and ALL its subjects?')) return;
+        await fetch(`/school/admin/grades/${id}`, { method: 'DELETE' });
+        loadGrades();
+    }
+
+    async function deleteSubject(id) {
+        if (!confirm('Delete this subject?')) return;
+        await fetch(`/school/admin/subjects/${id}`, { method: 'DELETE' });
+        loadSubjects();
+    }
+
+    document.getElementById('add-grade-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const form = new FormData(e.target);
+        await fetch('/school/admin/grades', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: form.get('name') })
+        });
+        e.target.reset();
+        loadGrades();
+    });
+
+    document.getElementById('add-subject-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const form = new FormData(e.target);
+        await fetch('/school/admin/subjects', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                name: form.get('name'),
+                grade_id: form.get('grade_id'),
+                schedule_time: form.get('schedule_time'),
+                duration_minutes: parseInt(form.get('duration_minutes')) || 45,
+                teacher_id: form.get('teacher_id') || null
+            })
+        });
+        e.target.reset();
+        loadSubjects();
+        loadTeachers(); // Reset dropdown
+    });
+</script>
+
 <style>
-    .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-    .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 4px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-track {
+        background: transparent;
+    }
 </style>
 
 {% endblock %}

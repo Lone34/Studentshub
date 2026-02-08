@@ -11,6 +11,13 @@ class User(UserMixin, db.Model):
     role = db.Column(db.String(50), default='user')
     credits = db.Column(db.Integer, default=0)
     manager_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    
+    # Student profile fields
+    full_name = db.Column(db.String(150), nullable=True)
+    email = db.Column(db.String(150), nullable=True)
+    phone = db.Column(db.String(20), nullable=True)
+    grade_id = db.Column(db.Integer, db.ForeignKey('grade.id'), nullable=True)  # Enrolled grade for school
+    
     service_accounts = db.relationship('ServiceAccount', backref='owner', lazy=True, foreign_keys='ServiceAccount.owner_id')
 
 class ServiceAccount(db.Model):
@@ -101,6 +108,7 @@ class Tutor(db.Model):
     
     # Teaching details
     subjects = db.Column(db.String(500), nullable=False)  # Comma-separated: "Math,Physics,Chemistry"
+    teaching_grades = db.Column(db.String(500), nullable=True)  # Comma-separated: "Class 9, Class 10"
     languages = db.Column(db.String(200), default="English")  # Languages they can teach in
     
     # Status
@@ -167,3 +175,91 @@ class TutoringSession(db.Model):
     
     # Relationships
     student = db.relationship('User', backref=db.backref('tutoring_sessions', lazy=True))
+
+
+# ============================================
+# ONLINE SCHOOL MODELS
+# ============================================
+
+class Grade(db.Model):
+    """School grades from Nursery to 12th"""
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), nullable=False)  # e.g., "Nursery", "Class 10"
+    display_order = db.Column(db.Integer, default=0)  # For sorting
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    subjects = db.relationship('Subject', backref='grade', lazy=True, cascade='all, delete-orphan')
+    students = db.relationship('User', backref='enrolled_grade', lazy=True, foreign_keys='User.grade_id')
+
+
+class Subject(db.Model):
+    """Subjects for each grade with schedule times"""
+    id = db.Column(db.Integer, primary_key=True)
+    grade_id = db.Column(db.Integer, db.ForeignKey('grade.id'), nullable=False)
+    name = db.Column(db.String(100), nullable=False)  # e.g., "English", "Mathematics"
+    description = db.Column(db.Text, nullable=True)
+    
+    # Schedule (time of day for this subject's class)
+    schedule_time = db.Column(db.String(10), nullable=True)  # e.g., "10:00" (24-hour format)
+    duration_minutes = db.Column(db.Integer, default=45)
+    
+    # Days the class runs (comma-separated: "mon,tue,wed,thu,fri")
+    schedule_days = db.Column(db.String(50), default="mon,tue,wed,thu,fri")
+    
+    # Assigned teacher (uses existing Tutor model)
+    teacher_id = db.Column(db.Integer, db.ForeignKey('tutor.id'), nullable=True)
+    teacher = db.relationship('Tutor', backref=db.backref('teaching_subjects', lazy=True))
+    
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    classes = db.relationship('SchoolClass', backref='subject', lazy=True, cascade='all, delete-orphan')
+
+
+class SchoolClass(db.Model):
+    """Live class sessions for the online school"""
+    id = db.Column(db.Integer, primary_key=True)
+    subject_id = db.Column(db.Integer, db.ForeignKey('subject.id'), nullable=False)
+    teacher_id = db.Column(db.Integer, db.ForeignKey('tutor.id'), nullable=False)
+    
+    # Room identification
+    room_id = db.Column(db.String(50), unique=True, nullable=False)  # UUID for video room
+    
+    # Status: scheduled -> live -> ended
+    status = db.Column(db.String(20), default='scheduled')
+    
+    # Timing
+    scheduled_date = db.Column(db.Date, nullable=False)  # The date of this class
+    started_at = db.Column(db.DateTime, nullable=True)
+    ended_at = db.Column(db.DateTime, nullable=True)
+    
+    # Stats
+    peak_attendance = db.Column(db.Integer, default=0)
+    
+    # Recording
+    recording_url = db.Column(db.String(500), nullable=True)
+    
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    teacher = db.relationship('Tutor', backref=db.backref('school_classes', lazy=True))
+    attendees = db.relationship('ClassAttendance', backref='school_class', lazy=True, cascade='all, delete-orphan')
+
+
+class ClassAttendance(db.Model):
+    """Tracks student attendance in school classes"""
+    id = db.Column(db.Integer, primary_key=True)
+    class_id = db.Column(db.Integer, db.ForeignKey('school_class.id'), nullable=False)
+    student_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    
+    # Timing
+    joined_at = db.Column(db.DateTime, default=datetime.utcnow)
+    left_at = db.Column(db.DateTime, nullable=True)
+    duration_minutes = db.Column(db.Integer, default=0)
+    
+    # Relationships
+    student = db.relationship('User', backref=db.backref('class_attendance', lazy=True))
+

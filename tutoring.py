@@ -74,7 +74,13 @@ def tutor_register():
         qualification = request.form.get('qualification', '').strip()
         experience_years = request.form.get('experience_years', 0)
         college = request.form.get('college', '').strip()
-        subjects = request.form.get('subjects', '').strip()
+        subjects_list = request.form.getlist('subjects')
+        custom_subject = request.form.get('custom_subject', '').strip()
+        if custom_subject:
+            subjects_list.append(custom_subject)
+        subjects = ", ".join([s.strip() for s in subjects_list if s.strip()])
+        teaching_grades = request.form.getlist('teaching_grades')  # Get list of selected grades
+        teaching_grades_str = ", ".join(teaching_grades) if teaching_grades else ""
         languages = request.form.get('languages', 'English').strip()
         bio = request.form.get('bio', '').strip()
         
@@ -107,6 +113,9 @@ def tutor_register():
         
         if not subjects:
             errors.append('At least one subject is required')
+            
+        if not teaching_grades_str:
+            errors.append('Please select at least one grade you can teach')
         
         if errors:
             for error in errors:
@@ -136,6 +145,7 @@ def tutor_register():
             experience_years=int(experience_years) if experience_years else 0,
             college=college,
             subjects=subjects,
+            teaching_grades=teaching_grades_str,
             languages=languages,
             bio=bio,
             id_proof_path=id_proof_path,

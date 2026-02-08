@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+    .grade-card {
+        background: white;
+        border-radius: 20px;
+        padding: 2rem;
+        border: 2px solid #f1f5f9;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+
+    .grade-card:hover {
+        transform: translateY(-4px);
+        border-color: #8b5cf6;
+        box-shadow: 0 20px 40px rgba(139, 92, 246, 0.15);
+    }
+
+    .grade-card.selected {
+        border-color: #8b5cf6;
+        background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+    }
+</style>
+
+<div class="min-h-screen py-12 px-4">
+    <div class="max-w-5xl mx-auto">
+        <!-- Header -->
+        <div class="text-center mb-12">
+            <div
+                class="w-20 h-20 bg-gradient-to-br from-violet-500 to-purple-600 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-xl">
+                <i class="fa-solid fa-school text-white text-3xl"></i>
+            </div>
+            <h1 class="text-4xl font-extrabold text-slate-800 mb-3">Welcome to Online School</h1>
+            <p class="text-xl text-slate-500 max-w-2xl mx-auto">
+                Select your grade to access live classes, schedules, and learning materials.
+            </p>
+        </div>
+
+        <!-- Grade Selection Form -->
+        <form method="POST" action="{{ url_for('school.select_grade') }}" id="gradeForm">
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-8">
+                {% for grade in grades %}
+                <div class="grade-card" onclick="selectGrade({{ grade.id }}, this)">
+                    <div class="flex flex-col items-center text-center">
+                        <div
+                            class="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-100 to-purple-100 flex items-center justify-center mb-3">
+                            <span class="text-2xl font-black text-violet-600">
+                                {% if 'Nursery' in grade.name %}🌱
+                                {% elif 'LKG' in grade.name or 'UKG' in grade.name %}🎒
+                                {% elif '1' in grade.name or '2' in grade.name or '3' in grade.name %}📚
+                                {% elif '4' in grade.name or '5' in grade.name %}✏️
+                                {% elif '6' in grade.name or '7' in grade.name or '8' in grade.name %}📖
+                                {% elif '9' in grade.name or '10' in grade.name %}🎯
+                                {% else %}🎓{% endif %}
+                            </span>
+                        </div>
+                        <h3 class="font-bold text-slate-800">{{ grade.name }}</h3>
+                        <p class="text-xs text-slate-400 mt-1">{{ grade.subjects|length }} Subjects</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <input type="hidden" name="grade_id" id="selectedGradeId">
+
+            <div class="text-center">
+                <button type="submit" id="submitBtn" disabled
+                    class="px-8 py-4 bg-gradient-to-r from-violet-600 to-purple-600 text-white font-bold rounded-2xl shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                    <i class="fa-solid fa-arrow-right mr-2"></i>
+                    Continue to My Classes
+                </button>
+            </div>
+        </form>
+
+        <!-- Back Link -->
+        <div class="text-center mt-8">
+            <a href="{{ url_for('dashboard') }}" class="text-slate-500 hover:text-violet-600 font-medium">
+                <i class="fa-solid fa-arrow-left mr-2"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+    let selectedGradeId = null;
+
+    function selectGrade(gradeId, element) {
+        // Remove previous selection
+        document.querySelectorAll('.grade-card').forEach(card => {
+            card.classList.remove('selected');
+        });
+
+        // Add selection to clicked card
+        element.classList.add('selected');
+        selectedGradeId = gradeId;
+
+        // Update hidden input and enable button
+        document.getElementById('selectedGradeId').value = gradeId;
+        document.getElementById('submitBtn').disabled = false;
+    }
+</script>
+{% endblock %}

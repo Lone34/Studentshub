@@ -1,0 +1,15 @@
+# Python
+__pycache__/
+*.pyc
+
+# Virtual environments
+venv/
+env/
+
+# Databases & runtime data
+instance/
+*.db
+*.sqlite3
+
+# Uploads
+uploads/

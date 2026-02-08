@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+    .class-card {
+        background: white;
+        border-radius: 20px;
+        padding: 1.5rem;
+        border: 1px solid #f1f5f9;
+        transition: all 0.3s ease;
+    }
+
+    .class-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    }
+</style>
+
+<div class="min-h-screen py-8 px-4">
+    <div class="max-w-6xl mx-auto">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-8">
+            <div class="flex items-center gap-4">
+                <a href="{{ url_for('tutoring.tutor_dashboard') }}" class="text-slate-400 hover:text-slate-600">
+                    <i class="fa-solid fa-arrow-left text-xl"></i>
+                </a>
+                <div>
+                    <h1 class="text-3xl font-extrabold text-slate-800">School Classes</h1>
+                    <p class="text-slate-500">Manage your assigned subjects and live classes</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Assigned Subjects -->
+        <h3 class="text-lg font-bold text-slate-700 mb-4">My Assigned Subjects</h3>
+
+        {% if subjects %}
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+            {% for subject in subjects %}
+            <div class="class-card">
+                <div class="flex items-start justify-between mb-4">
+                    <div
+                        class="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-100 to-purple-100 flex items-center justify-center">
+                        <i class="fa-solid fa-chalkboard text-violet-600 text-lg"></i>
+                    </div>
+                    <span class="px-3 py-1 bg-violet-100 text-violet-600 text-xs font-bold rounded-full">
+                        {{ subject.schedule_time or 'No Time Set' }}
+                    </span>
+                </div>
+
+                <h3 class="text-lg font-bold text-slate-800 mb-1">{{ subject.name }}</h3>
+                <p class="text-slate-500 text-sm mb-4">
+                    <i class="fa-solid fa-graduation-cap mr-1"></i> {{ subject.grade.name }}
+                </p>
+
+                <p class="text-xs text-slate-400 mb-4">
+                    Days: {{ subject.schedule_days or 'Not set' | upper }}
+                </p>
+
+                {% set active_class = namespace(id=None) %}
+                {% for c in today_classes %}
+                {% if c.subject_id == subject.id and c.status == 'live' %}
+                {% set active_class.id = c.id %}
+                {% endif %}
+                {% endfor %}
+
+                {% if active_class.id %}
+                <a href="{{ url_for('school.teacher_classroom', class_id=active_class.id) }}"
+                    class="block w-full py-3 bg-gradient-to-r from-red-500 to-pink-500 text-white font-bold rounded-xl text-center hover:shadow-lg transition-all animate-pulse">
+                    <i class="fa-solid fa-video mr-2"></i> Resume Live Class
+                </a>
+                {% else %}
+                <button onclick="startClass({{ subject.id }})"
+                    class="block w-full py-3 bg-gradient-to-r from-violet-600 to-purple-600 text-white font-bold rounded-xl text-center hover:shadow-lg transition-all">
+                    <i class="fa-solid fa-play mr-2"></i> Start Live Class
+                </button>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-16 mb-8 bg-white rounded-2xl border border-slate-200">
+            <div class="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fa-solid fa-chalkboard-user text-slate-300 text-3xl"></i>
+            </div>
+            <h3 class="text-xl font-bold text-slate-600 mb-2">No Subjects Assigned</h3>
+            <p class="text-slate-400">Contact admin to assign you to school subjects.</p>
+        </div>
+        {% endif %}
+
+        <!-- Today's Classes -->
+        {% if today_classes %}
+        <h3 class="text-lg font-bold text-slate-700 mb-4">Today's Classes</h3>
+        <div class="space-y-3">
+            {% for cls in today_classes %}
+            <div class="bg-white rounded-xl p-4 border border-slate-200 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg flex items-center justify-center
+                        {% if cls.status == 'live' %}bg-red-100 text-red-600
+                        {% elif cls.status == 'ended' %}bg-slate-100 text-slate-400
+                        {% else %}bg-violet-100 text-violet-600{% endif %}">
+                        <i
+                            class="fa-solid {% if cls.status == 'live' %}fa-broadcast-tower{% elif cls.status == 'ended' %}fa-check{% else %}fa-clock{% endif %}"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-slate-800">{{ cls.subject.name }}</h4>
+                        <p class="text-xs text-slate-500">{{ cls.subject.grade.name }} • {{ cls.status|title }}</p>
+                    </div>
+                </div>
+
+                {% if cls.status == 'live' %}
+                <a href="{{ url_for('school.teacher_classroom', class_id=cls.id) }}"
+                    class="px-4 py-2 bg-red-500 text-white font-bold rounded-lg text-sm">
+                    <i class="fa-solid fa-arrow-right mr-1"></i> Rejoin
+                </a>
+                {% elif cls.status == 'ended' %}
+                <span class="text-slate-400 text-sm">
+                    <i class="fa-solid fa-users mr-1"></i> {{ cls.peak_attendance }} attended
+                </span>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    function startClass(subjectId) {
+        fetch(`/school/teacher/start-class/${subjectId}`, { method: 'POST' })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.href = `/school/teacher/class/${data.class_id}`;
+                } else {
+                    alert(data.error || 'Failed to start class');
+                }
+            })
+            .catch(err => {
+                console.error('Error:', err);
+                alert('Failed to start class');
+            });
+    }
+</script>
+{% endblock %}
