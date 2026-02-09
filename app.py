@@ -5,15 +5,19 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 import os
 # ----------------------------------------------
-from models import db, User, ServiceAccount, Job, ChatHistory, Document, DocumentUnlock, Tutor, TutoringSession, Grade, Subject
+from models import db, User, ServiceAccount, Job, ChatHistory, Document, DocumentUnlock, Tutor, TutoringSession, Grade, Subject, Feedback
 from sqlalchemy import func, or_
 import chegg_api
 import time
 import hashlib
 from sqlalchemy import desc
+from datetime import datetime
+from dotenv import load_dotenv
+
+load_dotenv() # Load environment variables from .env
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'YOUR_SECRET_KEY_HERE'
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev_default_secret_key')
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///chegg_bot.db'
 
 UPLOAD_FOLDER = 'static/uploads'
@@ -39,6 +43,10 @@ app.register_blueprint(tutoring_bp)
 # --- REGISTER SCHOOL BLUEPRINT ---
 from school import school_bp
 app.register_blueprint(school_bp)
+
+# --- REGISTER PAYMENTS BLUEPRINT ---
+from payments import payments_bp
+app.register_blueprint(payments_bp)
 
 # --- SOCKETIO FOR VIDEO TUTORING ---
 from signaling import init_socketio
@@ -86,35 +94,42 @@ def unblur():
             flash("Please enter a valid Chegg URL.")
             return redirect(url_for('unblur'))
             
-        # 2. Check Credits
-        if current_user.credits < 1:
-            flash("Not enough credits! Please recharge.")
-            return redirect(url_for('unblur'))
+        # 2. Check Access (Just check if they CAN afford it, don't deduct yet)
+        if not current_user.can_access('unblur') and current_user.credits < 1:
+            flash("Upgrade your plan to unlock Unlimited Unblurs, or upload documents to earn credits!", "warning")
+            return redirect(url_for('payments.pricing'))
 
         # 3. Get Super Admin Account (Rotation)
         account = get_super_admin_account()
+
         if not account:
             flash("System Error: No Unblur Accounts Available. Contact Admin.")
             return redirect(url_for('unblur'))
 
         # 4. Process
+        credit_deducted = False
+        if not current_user.can_access('unblur') and current_user.credits >= 1:
+             current_user.credits -= 1
+             credit_deducted = True
+             db.session.commit()
+
         try:
             result, error = chegg_processor.get_question_data(url, account.cookie_data, account.proxy)
             
             if error:
-                # Optional: If error is "Account Cookie Expired", maybe try one more time with a different account
-                flash(f"Error: {error}")
+                # Refund if credit was used
+                if credit_deducted:
+                    current_user.credits += 1
+                    db.session.commit()
+                    flash(f"Error: {error}. Credit refunded.")
+                else:
+                    flash(f"Error: {error}")
                 return redirect(url_for('unblur'))
             
-            # 5. Generate HTML
-            # Note: We added generate_html_string to mayank.py in Step 2
-            # If you didn't, use the existing one and read the file content
+            # ... (HTML generation) ...
             final_html = answer_generator.generate_html_string(result['question_data'])
-            
-            # 6. Deduct Credit
-            current_user.credits -= 1
-            
-            # Log Job (Optional, good for history)
+
+            # Log Job
             job = Job(user_id=current_user.id, subject="Unblur Request", content=url, status="Completed", result_message="Unblurred Successfully")
             db.session.add(job)
             db.session.commit()
@@ -122,7 +137,12 @@ def unblur():
             return render_template('view_answer.html', html_content=final_html, original_url=url)
             
         except Exception as e:
-            flash(f"Processing Failed: {str(e)}")
+            if credit_deducted:
+                current_user.credits += 1
+                db.session.commit()
+                flash(f"Processing Failed: {str(e)}. Credit refunded.")
+            else:
+                flash(f"Processing Failed: {str(e)}")
             return redirect(url_for('unblur'))
 
     return render_template('unblur.html')
@@ -392,9 +412,17 @@ def api_repost_question():
     if not subject_data:
         return jsonify({"error": "Please select a subject"})
     
-    # Check credits
-    if current_user.credits < 1:
-        return jsonify({"error": "Not enough credits! You need 1 credit."})
+    # Check Access (Subscription OR Credits)
+    has_plan = current_user.can_access('expert_ask')
+    credits_needed = 20 * int(data.get('post_count', 1)) # 20 credits per post
+    
+    if not has_plan:
+        if current_user.credits < credits_needed:
+             return jsonify({"error": f"Limit reached. You need a Plan or {credits_needed} Credits to ask an expert."})
+        
+        # Deduct credits if no plan
+        current_user.credits -= credits_needed
+        db.session.commit()
     
     # Get account
     account = db.session.get(ServiceAccount, account_id)
@@ -459,12 +487,38 @@ def api_repost_question():
         post_count = 1
     
     # Check credits
-    if current_user.credits < post_count:
-        return jsonify({"error": f"Not enough credits! You need {post_count} credit(s), have {current_user.credits}."})
+    # Check Access again with count
+    # Note: simple check doesn't handle 'count', but for now assume 1 usage per post call or loop
+    if not current_user.can_access('expert_ask'):
+         return jsonify({"error": "Limit reached."})
     
-    # Deduct credits upfront
-    current_user.credits -= post_count
+    # Increment counters later in loop or batch
+    # For simplicity in this migration, we will increment in the loop and check continuously or just proceed
+    # Since can_access checks current usage, we should be fine.
     
+    # Logic change: detailed quota check
+    if current_user.role not in ['admin', 'super_admin'] and current_user.active_subscription_id:
+        sub = Subscription.query.get(current_user.active_subscription_id)
+        # Check if enough quota remains for post_count
+        limit = 0
+        if sub.plan_type == 'basic_299': limit = 20
+        elif sub.plan_type == 'pro_499': limit = 40
+        elif sub.plan_type == 'school_1200': limit = 20
+        
+        if (sub.expert_used + post_count) > limit:
+             return jsonify({"error": f"Not enough Expert quota. You have {limit - sub.expert_used} remaining."})
+    
+    # Deduct credits upfront -> REPLACED by usage tracking
+    # current_user.credits -= post_count
+    
+    # Deduct credits if no plan
+        # We already deducted above if needed (logic block has commit)
+        pass 
+    
+    credits_deducted = 0
+    if not has_plan:
+        credits_deducted = credits_needed
+
     try:
         success_count = 0
         fail_count = 0
@@ -472,18 +526,22 @@ def api_repost_question():
         
         # Post multiple times based on post_count
         for i in range(post_count):
-            success, msg = chegg_api.post_question_v3(
-                account.cookie_data, 
-                content_html, 
-                int(subj_id), 
-                account.proxy
-            )
-            
-            if success:
-                success_count += 1
-            else:
+            try:
+                success, msg = chegg_api.post_question_v3(
+                    account.cookie_data, 
+                    content_html, 
+                    int(subj_id), 
+                    account.proxy
+                )
+                
+                if success:
+                    success_count += 1
+                else:
+                    fail_count += 1
+                    last_msg = msg
+            except Exception as e:
                 fail_count += 1
-                last_msg = msg
+                last_msg = str(e)
             
             # Log each job
             job = Job(
@@ -491,14 +549,20 @@ def api_repost_question():
                 subject=f"[Repost] {title}", 
                 content=content_html[:200], 
                 status="Completed" if success else "Failed",
-                result_message=msg,
+                result_message=msg if success else last_msg,
                 service_account_name=account.name
             )
             db.session.add(job)
         
-        # Refund failed posts
-        current_user.credits += fail_count
-        db.session.commit()
+        # Refund failed posts (If user paid with credits)
+        # Each post costs 20 credits. Refund 20 * fail_count
+        if credits_deducted > 0 and fail_count > 0:
+            refund_amount = 20 * fail_count
+            current_user.credits += refund_amount
+            db.session.commit()
+            last_msg += f" ({refund_amount} credits refunded)"
+        else:
+            db.session.commit()
         
         if success_count == post_count:
             return jsonify({
@@ -516,9 +580,11 @@ def api_repost_question():
             return jsonify({"error": f"All reposts failed: {last_msg}"})
             
     except Exception as e:
-        current_user.credits += post_count  # Full refund on error
-        db.session.commit()
-        return jsonify({"error": f"Repost failed: {str(e)}"})
+        # Full Refund on critical error
+        if credits_deducted > 0:
+            current_user.credits += credits_deducted
+            db.session.commit()
+        return jsonify({"error": f"Repost failed: {str(e)}. Credits refunded."})
 
 # --- SUPER ADMIN DASHBOARD ---
 @app.route('/lone-admin/', methods=['GET', 'POST'])
@@ -606,19 +672,40 @@ def super_admin_dashboard():
     
     global_jobs = db.session.query(Job, User).join(User, Job.user_id == User.id).order_by(Job.timestamp.desc()).limit(100).all()
 
+    # Fetch pending feedbacks for approval
+    pending_feedbacks = Feedback.query.filter_by(is_approved=False).order_by(Feedback.created_at.desc()).all()
+    
+    # Fetch approved feedbacks for management (limit last 50 to avoid clutter)
+    approved_feedbacks = Feedback.query.filter_by(is_approved=True).order_by(Feedback.created_at.desc()).limit(50).all()
+
     return render_template('super_admin.html', 
                            admins=all_admins, 
                            users=all_users, 
                            my_accounts=my_accounts,      # Pass my accounts separately
                            other_accounts=other_accounts, # Pass others separately
-                           jobs=global_jobs)
+                           jobs=global_jobs,
+                           pending_feedbacks=pending_feedbacks,
+                           approved_feedbacks=approved_feedbacks)
 
 # --- STANDARD ROUTES ---
 @app.route('/')
 def index():
     if current_user.is_authenticated:
         return redirect(url_for('dashboard'))
-    return render_template('landing.html')
+    
+    # Fetch stats for landing page
+    student_count = User.query.filter_by(role='user').count()
+    resource_count = Document.query.count()
+    questions_solved = Job.query.filter_by(status='Completed').count() * 5 + 1200 # Fake boost for demo
+    
+    # Fetch approved feedbacks
+    feedbacks = Feedback.query.filter_by(is_approved=True).order_by(Feedback.created_at.desc()).limit(10).all()
+    
+    return render_template('landing.html', 
+                         student_count=student_count,
+                         resource_count=resource_count,
+                         questions_solved=questions_solved,
+                         feedbacks=feedbacks)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -658,9 +745,10 @@ def register():
     
     # Pass grades and unique subjects to template for dropdown
     grades = Grade.query.filter_by(is_active=True).order_by(Grade.display_order).all()
-    # Get unique subject names
-    subjects = db.session.query(Subject.name).distinct().order_by(Subject.name).all()
-    subject_names = [s[0] for s in subjects]
+    # Get global subjects for tutor registration
+    from school import GlobalSubject
+    global_subjects = GlobalSubject.query.filter_by(is_active=True).order_by(GlobalSubject.name).all()
+    subject_names = [s.name for s in global_subjects]
     return render_template('register.html', grades=grades, subjects=subject_names)
 
 
@@ -772,9 +860,23 @@ def dashboard():
             return redirect(url_for('dashboard'))
         RECENT_POSTS[post_hash] = current_time
 
-        if current_user.credits < post_count:
-            flash(f"Not enough credits! Needed: {post_count}, Have: {current_user.credits}")
-            return redirect(url_for('dashboard'))
+        # Check Access (Subscription)
+        if not current_user.can_access('expert_ask'):
+             flash("Expert Questions limit reached for your plan. Please upgrade.")
+             return redirect(url_for('dashboard'))
+        
+        # Check quota for post_count
+        if current_user.role not in ['admin', 'super_admin'] and current_user.active_subscription_id:
+             sub = Subscription.query.get(current_user.active_subscription_id)
+             # Check limits
+             limit = 0
+             if sub.plan_type == 'basic_299': limit = 20
+             elif sub.plan_type == 'pro_499': limit = 40
+             elif sub.plan_type == 'school_1200': limit = 20
+             
+             if (sub.expert_used + post_count) > limit:
+                 flash(f"Not enough usage quota! Remaining: {limit - sub.expert_used}")
+                 return redirect(url_for('dashboard'))
 
         # --- VALIDATION MODIFIED FOR IMAGE MODE ---
         if not raw_subject or not account_id:
@@ -808,7 +910,17 @@ def dashboard():
 
         success_count = 0
         for i in range(post_count):
-            current_user.credits -= 1
+            # current_user.credits -= 1 # Removed credit deduction
+            
+            # Increment Usage
+            if current_user.role not in ['admin', 'super_admin'] and current_user.active_subscription_id:
+                sub = Subscription.query.get(current_user.active_subscription_id)
+                sub.expert_used += 1
+                db.session.commit()
+            if current_user.role not in ['admin', 'super_admin'] and current_user.active_subscription_id:
+                sub = Subscription.query.get(current_user.active_subscription_id)
+                sub.expert_used += 1
+                db.session.commit()
             
             # --- LOGIC TO HANDLE BOTH MODES ---
             if post_mode == 'image':
@@ -837,8 +949,13 @@ def dashboard():
                 success_count += 1
             else:
                 job.status = "Failed"
-                current_user.credits += 1 
-                msg = f"{msg} (Credit Refunded)"
+                # Refund Usage
+                if current_user.role not in ['admin', 'super_admin'] and current_user.active_subscription_id:
+                    sub = Subscription.query.get(current_user.active_subscription_id)
+                    sub.expert_used = max(0, sub.expert_used - 1)
+                    db.session.commit()
+                    
+                msg = f"{msg} (Quota Refunded)"
 
             job.result_message = msg
             db.session.commit()
@@ -1037,10 +1154,10 @@ def api_ai_tutor_chat():
     if not question:
         return jsonify({"error": "Please enter a question"})
     
-    # Check credits
-    if current_user.credits < 1:
-        return jsonify({"error": "Not enough credits! You need 1 credit per question."})
-    
+    # Check Access (Subscription)
+    if not current_user.can_access('ai_tutor'):
+        return jsonify({"error": "Daily/Monthly AI limit reached or no active plan. Please upgrade."})
+
     # Get responses from BOTH AIs
     chatgpt_response, chatgpt_category, chatgpt_error = get_ai_response('chatgpt', question)
     gemini_response, gemini_category, gemini_error = get_ai_response('gemini', question)
@@ -1048,8 +1165,11 @@ def api_ai_tutor_chat():
     # Use the category from whichever succeeded
     category = chatgpt_category or gemini_category or 'general'
     
-    # Deduct only 1 credit for both responses
-    current_user.credits -= 1
+    # Increment Usage (if not admin)
+    if current_user.role not in ['admin', 'super_admin'] and current_user.active_subscription_id:
+        sub = Subscription.query.get(current_user.active_subscription_id)
+        sub.ai_used += 1
+        db.session.commit()
     
     # Save ChatGPT response to history if successful
     if chatgpt_response:
@@ -1161,6 +1281,17 @@ def library_upload():
             flash('File too large! Maximum size is 20MB')
             return redirect(url_for('library_upload'))
         
+        # Calculate file hash to prevent duplicates
+        file.seek(0)
+        file_hash = hashlib.md5(file.read()).hexdigest()
+        file.seek(0) # Reset pointer
+        
+        # Check if hash exists for this user
+        existing_doc = Document.query.filter_by(user_id=current_user.id, file_hash=file_hash).first()
+        if existing_doc:
+             flash('You have already uploaded this document! No credits awarded.', 'warning')
+             return redirect(url_for('library'))
+
         # Save file
         file_path, file_type, error = save_uploaded_file(file, current_user.id)
         if error:
@@ -1174,7 +1305,8 @@ def library_upload():
             description=description,
             doc_type=doc_type,
             file_path=file_path,
-            file_type=file_type
+            file_type=file_type,
+            file_hash=file_hash
         )
         db.session.add(doc)
         
@@ -1318,6 +1450,84 @@ def api_check_balance():
     except Exception as e:
         print(f"[Balance Check Error] {e}")
         return jsonify({"balance": "API Error"})
+
+# --- USER PROFILE ROUTE ---
+@app.route('/profile', methods=['GET', 'POST'])
+@login_required
+def profile():
+    if request.method == 'POST':
+        full_name = request.form.get('full_name')
+        bio = request.form.get('bio')
+        
+        current_user.full_name = full_name
+        current_user.bio = bio
+        
+        # Profile Picture
+        if 'profile_picture' in request.files:
+            file = request.files['profile_picture']
+            if file and '.' in file.filename:
+                ext = file.filename.rsplit('.', 1)[1].lower()
+                if ext in {'png', 'jpg', 'jpeg', 'gif'}:
+                    filename = secure_filename(file.filename)
+                    # Directory: static/uploads/profiles
+                    upload_folder = os.path.join(app.root_path, 'static/uploads/profiles')
+                    os.makedirs(upload_folder, exist_ok=True)
+                    
+                    unique_filename = f"user_{current_user.id}_{int(time.time())}.{ext}"
+                    file.save(os.path.join(upload_folder, unique_filename))
+                    
+                    current_user.profile_picture = f"uploads/profiles/{unique_filename}"
+        
+        db.session.commit()
+        flash('Profile updated successfully!', 'success')
+        return redirect(url_for('profile'))
+        
+    return render_template('profile.html', user=current_user)
+
+# --- FEEDBACK ROUTES ---
+@app.route('/submit_feedback', methods=['POST'])
+@login_required
+def submit_feedback():
+    content = request.form.get('content', '').strip()
+    
+    word_count = len(content.split())
+    if word_count < 10:
+        flash(f"Feedback is too short ({word_count} words). Please write at least 10 words.", "warning")
+        # Redirect back to referring page
+        return redirect(request.referrer or url_for('dashboard'))
+        
+    feedback = Feedback(user_id=current_user.id, content=content)
+    db.session.add(feedback)
+    db.session.commit()
+    
+    flash("Thank you! Your feedback has been submitted for review.")
+    return redirect(request.referrer or url_for('dashboard'))
+
+@app.route('/admin/approve_feedback/<int:id>', methods=['POST'])
+@login_required
+def approve_feedback(id):
+    if current_user.role not in ['admin', 'super_admin']:
+        flash("Unauthorized access.", "danger")
+        return redirect(url_for('dashboard'))
+        
+    feedback = Feedback.query.get_or_404(id)
+    feedback.is_approved = True
+    db.session.commit()
+    flash("Feedback approved successfully.")
+    return redirect(url_for('super_admin_dashboard'))
+
+@app.route('/admin/delete_feedback/<int:id>', methods=['POST'])
+@login_required
+def delete_feedback(id):
+    if current_user.role not in ['admin', 'super_admin']:
+        flash("Unauthorized access.", "danger")
+        return redirect(url_for('dashboard'))
+        
+    feedback = Feedback.query.get_or_404(id)
+    db.session.delete(feedback)
+    db.session.commit()
+    flash("Feedback deleted.")
+    return redirect(url_for('super_admin_dashboard'))
 
 if __name__ == '__main__':
     with app.app_context():

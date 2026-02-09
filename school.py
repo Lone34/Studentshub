@@ -2,11 +2,13 @@
 Online School Blueprint
 Handles grades, subjects, and live classroom functionality
 """
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, session
 from flask_login import login_required, current_user
 from models import db, Grade, Subject, SchoolClass, ClassAttendance, Tutor, User
 from datetime import datetime, date
 import uuid
+# Import signaling helper
+from signaling import get_room_count
 import os
 
 school_bp = Blueprint('school', __name__, url_prefix='/school')
@@ -19,43 +21,66 @@ school_bp = Blueprint('school', __name__, url_prefix='/school')
 @school_bp.route('/')
 @login_required
 def index():
-    """Main school page - shows student's enrolled grade subjects"""
+    """Main school page - shows student's scheduled classes"""
+    if not current_user.can_access('school'):
+        flash("You need the School Plan (₹1200) to access online classes.")
+        return redirect(url_for('payments.pricing'))
+
     if not current_user.grade_id:
         # Student hasn't enrolled in a grade
         grades = Grade.query.filter_by(is_active=True).order_by(Grade.display_order).all()
         return render_template('school/select_grade.html', grades=grades)
     
-    # Get student's grade and its subjects
+    # Get student's grade
     grade = Grade.query.get(current_user.grade_id)
     if not grade:
         flash("Your enrolled grade was not found. Please select a grade.")
         return redirect(url_for('school.select_grade'))
     
-    # Get today's schedule
-    today = datetime.now().strftime('%a').lower()[:3]  # mon, tue, wed, etc.
-    subjects = Subject.query.filter_by(
-        grade_id=grade.id, 
-        is_active=True
-    ).order_by(Subject.schedule_time).all()
+    # Get classes for this grade
+    all_classes = SchoolClass.query.filter_by(grade_id=grade.id).order_by(SchoolClass.scheduled_date, SchoolClass.start_time).all()
     
-    # Filter subjects that run today
-    today_subjects = [s for s in subjects if today in (s.schedule_days or '').lower()]
+    upcoming = []
+    ongoing = []
+    completed = []
     
-    # Get live classes for today
-    live_classes = SchoolClass.query.filter(
-        SchoolClass.subject_id.in_([s.id for s in today_subjects]),
-        SchoolClass.scheduled_date == date.today(),
-        SchoolClass.status.in_(['scheduled', 'live'])
-    ).all()
+    now = datetime.now()
+    today = date.today()
     
-    # Create a lookup for easy template access
-    live_class_map = {lc.subject_id: lc for lc in live_classes}
-    
+    for cls in all_classes:
+        # Determine status
+        is_expired = False
+        try:
+            # check if time is passed
+            end_dt = datetime.combine(cls.scheduled_date, datetime.strptime(cls.end_time, '%H:%M').time())
+            if now > end_dt:
+                is_expired = True
+        except:
+            is_expired = False
+
+        if cls.status == 'completed':
+            completed.append(cls)
+        elif cls.status in ['ongoing', 'live']:
+            if is_expired:
+                if cls.status == 'live':
+                    cls.status = 'completed'
+                    cls.ended_at = datetime.utcnow()
+                    db.session.commit()
+                completed.append(cls)
+            else:
+                ongoing.append(cls)
+        else:
+            # Scheduled or other
+            if is_expired:
+                completed.append(cls) # It's past
+            else:
+                upcoming.append(cls)
+            
     return render_template('school/index.html', 
                          grade=grade, 
-                         subjects=today_subjects,
-                         all_subjects=subjects,
-                         live_class_map=live_class_map,
+                         upcoming=upcoming,
+                         ongoing=ongoing,
+                         completed=completed,
                          today=today)
 
 
@@ -63,6 +88,10 @@ def index():
 @login_required
 def select_grade():
     """Allow student to select/change their enrolled grade"""
+    if not current_user.can_access('school'):
+        flash("You need the School Plan to select a grade.")
+        return redirect(url_for('payments.pricing'))
+
     if request.method == 'POST':
         grade_id = request.form.get('grade_id')
         if grade_id:
@@ -82,6 +111,10 @@ def select_grade():
 @login_required
 def join_class(class_id):
     """Join a live school class"""
+    if not current_user.can_access('school'):
+        flash("Upgrade to School Plan to join classes.")
+        return redirect(url_for('payments.pricing'))
+
     school_class = SchoolClass.query.get_or_404(class_id)
     subject = school_class.subject
     
@@ -116,7 +149,8 @@ def join_class(class_id):
                          school_class=school_class,
                          subject=subject,
                          teacher=teacher,
-                         is_teacher=False)
+                         is_teacher=False,
+                         student_name=current_user.full_name or current_user.username)
 
 
 # ============================================
@@ -126,88 +160,105 @@ def join_class(class_id):
 @school_bp.route('/teacher/dashboard')
 @login_required
 def teacher_dashboard():
-    """Teacher's view of their school classes"""
-    # Get tutor profile for current user (via email match or separate login)
+    """Teacher's view of their scheduled classes"""
+    # Get tutor profile for current user
     tutor = Tutor.query.filter_by(email=current_user.email).first() if current_user.email else None
     
     if not tutor:
-        # Try to find by matching username pattern
-        tutor = Tutor.query.filter_by(is_approved=True).first()  # Fallback for testing
+        tutor = Tutor.query.filter_by(is_approved=True).first()  # Fallback
     
     if not tutor:
         flash("You don't have a teacher account.")
         return redirect(url_for('dashboard'))
     
-    # Get subjects assigned to this teacher
-    subjects = Subject.query.filter_by(teacher_id=tutor.id, is_active=True).all()
+    # Get classes assigned to this teacher
+    # Filter by date? Let's show all for now, sorted by date/time
+    all_classes = SchoolClass.query.filter_by(teacher_id=tutor.id).order_by(SchoolClass.scheduled_date.desc(), SchoolClass.start_time).all()
     
-    # Get today's classes
+    # Separate into relevant lists
+    today_classes = []
+    upcoming_classes = []
+    history_classes = []
+    
     today = date.today()
-    today_classes = SchoolClass.query.filter(
-        SchoolClass.teacher_id == tutor.id,
-        SchoolClass.scheduled_date == today
-    ).all()
+    now = datetime.now()
     
-    return render_template('school/teacher_dashboard.html',
-                         tutor=tutor,
-                         subjects=subjects,
-                         today_classes=today_classes)
+    for cls in all_classes:
+        # Auto-expire if time is passed
+        is_expired = False
+        try:
+            end_dt = datetime.combine(cls.scheduled_date, datetime.strptime(cls.end_time, '%H:%M').time())
+            if now > end_dt:
+                is_expired = True
+                # If it was live, mark as completed in DB to persist this state
+                if cls.status == 'live':
+                    cls.status = 'completed'
+                    cls.ended_at = datetime.utcnow()
+                    db.session.commit()
+        except:
+            is_expired = False
+
+        if cls.scheduled_date == today:
+            today_classes.append(cls)
+        elif cls.scheduled_date > today:
+            upcoming_classes.append(cls)
+        else:
+            history_classes.append(cls)
+            
+    # For now, just pass all_classes or structure it
+    return render_template('school/teacher_dashboard.html', 
+                         tutor=tutor, 
+                         today_classes=today_classes,
+                         upcoming_classes=upcoming_classes,
+                         history_classes=history_classes)
 
 
-@school_bp.route('/teacher/start-class/<int:subject_id>', methods=['POST'])
-@login_required
-def start_class(subject_id):
-    """Teacher starts a live class for a subject"""
-    subject = Subject.query.get_or_404(subject_id)
+@school_bp.route('/teacher/start-class/<int:class_id>', methods=['POST'])
+def start_class(class_id):
+    """Teacher starts a scheduled class"""
+    school_class = SchoolClass.query.get_or_404(class_id)
     
-    # Verify teacher owns this subject
-    tutor = Tutor.query.filter_by(email=current_user.email).first() if current_user.email else None
-    if not tutor or subject.teacher_id != tutor.id:
+    # Verify teacher owns this class
+    tutor = None
+    if current_user.is_authenticated and current_user.email:
+        tutor = Tutor.query.filter_by(email=current_user.email).first()
+    elif 'tutor_id' in session:
+        tutor = db.session.get(Tutor, session['tutor_id'])
+
+    if not tutor or school_class.teacher_id != tutor.id:
         return jsonify({"error": "Unauthorized"}), 403
     
-    # Check for existing live class today
-    existing = SchoolClass.query.filter_by(
-        subject_id=subject_id,
-        scheduled_date=date.today(),
-        status='live'
-    ).first()
+    # Update status
+    school_class.status = 'live'
+    if not school_class.started_at:
+        school_class.started_at = datetime.utcnow()
     
-    if existing:
-        return jsonify({
-            "success": True,
-            "room_id": existing.room_id,
-            "class_id": existing.id
-        })
-    
-    # Create new class session
-    room_id = f"school_{uuid.uuid4().hex[:12]}"
-    school_class = SchoolClass(
-        subject_id=subject_id,
-        teacher_id=tutor.id,
-        room_id=room_id,
-        scheduled_date=date.today(),
-        status='live',
-        started_at=datetime.utcnow()
-    )
-    db.session.add(school_class)
+    # Ensure room_id exists (it should from creation)
+    if not school_class.room_id:
+        school_class.room_id = f"school_{uuid.uuid4().hex[:12]}"
+        
     db.session.commit()
     
     return jsonify({
         "success": True,
-        "room_id": room_id,
+        "room_id": school_class.room_id,
         "class_id": school_class.id
     })
 
 
 @school_bp.route('/teacher/class/<int:class_id>')
-@login_required
 def teacher_classroom(class_id):
     """Teacher's view of the classroom (broadcasting)"""
     school_class = SchoolClass.query.get_or_404(class_id)
     subject = school_class.subject
     
     # Verify teacher
-    tutor = Tutor.query.filter_by(email=current_user.email).first() if current_user.email else None
+    tutor = None
+    if current_user.is_authenticated and current_user.email:
+        tutor = Tutor.query.filter_by(email=current_user.email).first()
+    elif 'tutor_id' in session:
+        tutor = db.session.get(Tutor, session['tutor_id'])
+
     if not tutor or school_class.teacher_id != tutor.id:
         flash("Unauthorized access.")
         return redirect(url_for('school.teacher_dashboard'))
@@ -219,18 +270,31 @@ def teacher_classroom(class_id):
                          is_teacher=True)
 
 
+@school_bp.route('/api/class/<int:class_id>/attendance')
+def get_class_attendance(class_id):
+    """Get current live attendance count for a class"""
+    school_class = SchoolClass.query.get_or_404(class_id)
+    # Get count from signaling server
+    count = get_room_count(school_class.room_id)
+    return jsonify({'count': count})
+
+
 @school_bp.route('/teacher/end-class/<int:class_id>', methods=['POST'])
-@login_required
 def end_class(class_id):
     """Teacher ends a live class"""
     school_class = SchoolClass.query.get_or_404(class_id)
     
     # Verify teacher
-    tutor = Tutor.query.filter_by(email=current_user.email).first() if current_user.email else None
+    tutor = None
+    if current_user.is_authenticated and current_user.email:
+        tutor = Tutor.query.filter_by(email=current_user.email).first()
+    elif 'tutor_id' in session:
+        tutor = db.session.get(Tutor, session['tutor_id'])
+
     if not tutor or school_class.teacher_id != tutor.id:
         return jsonify({"error": "Unauthorized"}), 403
     
-    school_class.status = 'ended'
+    school_class.status = 'completed' # Use 'completed' to match new status enum
     school_class.ended_at = datetime.utcnow()
     
     # Calculate peak attendance
@@ -250,34 +314,30 @@ def end_class(class_id):
 @login_required
 def api_schedule():
     """Get today's schedule for the student's grade"""
+    if not current_user.can_access('school'):
+        return jsonify({"error": "Plan upgrade required"}), 403
+
     if not current_user.grade_id:
         return jsonify({"error": "Not enrolled in a grade"})
     
-    today = datetime.now().strftime('%a').lower()[:3]
-    subjects = Subject.query.filter_by(
+    today = date.today()
+    classes = SchoolClass.query.filter_by(
         grade_id=current_user.grade_id,
-        is_active=True
-    ).order_by(Subject.schedule_time).all()
+        scheduled_date=today
+    ).order_by(SchoolClass.start_time).all()
     
     schedule = []
-    for subject in subjects:
-        if today in (subject.schedule_days or '').lower():
-            # Check if class is live
-            live_class = SchoolClass.query.filter_by(
-                subject_id=subject.id,
-                scheduled_date=date.today(),
-                status='live'
-            ).first()
-            
-            schedule.append({
-                "id": subject.id,
-                "name": subject.name,
-                "time": subject.schedule_time,
-                "duration": subject.duration_minutes,
-                "teacher": subject.teacher.display_name if subject.teacher else "TBA",
-                "is_live": live_class is not None,
-                "class_id": live_class.id if live_class else None
-            })
+    for cls in classes:
+        schedule.append({
+            "id": cls.subject_id, # Keep compatibility or change to class_id
+            "name": cls.subject.name,
+            "time": cls.start_time,
+            "duration": cls.end_time, # Just show end time or calc duration
+            "teacher": cls.teacher.display_name if cls.teacher else "TBA",
+            "is_live": cls.status == 'live',
+            "class_id": cls.id,
+            "status": cls.status
+        })
     
     return jsonify({"schedule": schedule})
 
@@ -397,7 +457,7 @@ def admin_list_subjects():
     if grade_id:
         query = query.filter_by(grade_id=grade_id)
     
-    subjects = query.order_by(Subject.grade_id, Subject.schedule_time).all()
+    subjects = query.order_by(Subject.grade_id, Subject.name).all()
     
     return jsonify({
         "subjects": [{
@@ -405,11 +465,7 @@ def admin_list_subjects():
             "name": s.name,
             "grade_id": s.grade_id,
             "grade_name": s.grade.name if s.grade else None,
-            "schedule_time": s.schedule_time,
-            "schedule_days": s.schedule_days,
-            "duration_minutes": s.duration_minutes,
-            "teacher_id": s.teacher_id,
-            "teacher_name": s.teacher.display_name if s.teacher else None,
+            "description": s.description,
             "is_active": s.is_active
         } for s in subjects]
     })
@@ -419,7 +475,7 @@ def admin_list_subjects():
 @login_required
 @admin_required
 def admin_create_subject():
-    """Create a new subject"""
+    """Create a new subject (Master Data)"""
     data = request.get_json()
     
     name = data.get('name', '').strip()
@@ -432,16 +488,151 @@ def admin_create_subject():
         name=name,
         grade_id=grade_id,
         description=data.get('description'),
-        schedule_time=data.get('schedule_time'),
-        schedule_days=data.get('schedule_days', 'mon,tue,wed,thu,fri'),
-        duration_minutes=data.get('duration_minutes', 45),
-        teacher_id=data.get('teacher_id'),
         is_active=data.get('is_active', True)
     )
     db.session.add(subject)
     db.session.commit()
     
     return jsonify({"success": True, "id": subject.id, "message": f"Subject '{name}' created"})
+
+
+# --- CLASSES (SCHEDULE) ---
+@school_bp.route('/admin/classes', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def admin_classes():
+    """CRUD for SchoolClasses (The Schedule)"""
+    if request.method == 'POST':
+        data = request.get_json()
+        
+        # Validate required fields
+        required = ['grade_id', 'subject_id', 'date', 'start_time', 'end_time']
+        if not all(k in data for k in required):
+            return jsonify({"error": "Missing required fields"}), 400
+            
+        try:
+            sch_date = datetime.strptime(data['date'], '%Y-%m-%d').date()
+            
+            new_class = SchoolClass(
+                grade_id=data['grade_id'],
+                subject_id=data['subject_id'],
+                teacher_id=data.get('teacher_id') or None, # Optional
+                scheduled_date=sch_date,
+                start_time=data['start_time'],
+                end_time=data['end_time'],
+                status='upcoming',
+                room_id=str(uuid.uuid4())
+            )
+            db.session.add(new_class)
+            db.session.commit()
+            return jsonify({"success": True, "message": "Class scheduled successfully."})
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+
+    # GET: List classes (optionally filter by grade/date)
+    grade_id = request.args.get('grade_id')
+    query = SchoolClass.query.order_by(SchoolClass.scheduled_date.desc(), SchoolClass.start_time)
+    
+    if grade_id:
+        query = query.filter_by(grade_id=grade_id)
+        
+    classes = query.all()
+    return jsonify({
+        "classes": [{
+            "id": c.id,
+            "grade_id": c.grade_id,
+            "grade_name": c.grade.name if c.grade else "Unknown",
+            "subject_id": c.subject_id,
+            "subject_name": c.subject.name if c.subject else "Unknown",
+            "teacher_id": c.teacher_id,
+            "teacher_name": c.teacher.display_name if c.teacher else "No Tutor",
+            "date": c.scheduled_date.strftime('%Y-%m-%d'),
+            "start_time": c.start_time,
+            "end_time": c.end_time,
+            "status": c.status
+        } for c in classes]
+    })
+
+
+@school_bp.route('/admin/classes/<int:id>', methods=['PUT', 'DELETE'])
+@login_required
+@admin_required
+def admin_manage_class(id):
+    school_class = SchoolClass.query.get_or_404(id)
+    
+    if request.method == 'DELETE':
+        db.session.delete(school_class)
+        db.session.commit()
+        return jsonify({"success": True})
+        
+    # PUT: Update details (e.g. assign tutor)
+    data = request.get_json()
+    if 'teacher_id' in data:
+        school_class.teacher_id = data['teacher_id'] or None
+    if 'status' in data: 
+        school_class.status = data['status']
+    if 'start_time' in data:
+        school_class.start_time = data['start_time']
+    if 'end_time' in data:
+        school_class.end_time = data['end_time']
+    if 'date' in data:
+        school_class.scheduled_date = datetime.strptime(data['date'], '%Y-%m-%d').date()
+        
+    db.session.commit()
+    return jsonify({"success": True})
+
+
+# --- TUTOR MATCHING ---
+@school_bp.route('/admin/tutors/match', methods=['GET'])
+@login_required
+@admin_required
+def admin_match_tutors():
+    """Find tutors matching Grade AND Subject"""
+    grade_id = request.args.get('grade_id')
+    subject_id = request.args.get('subject_id')
+    
+    if not grade_id or not subject_id:
+        return jsonify({"tutors": []})
+        
+    grade = Grade.query.get(grade_id)
+    subject = Subject.query.get(subject_id)
+    
+    if not grade or not subject:
+        return jsonify({"tutors": []})
+        
+    # Filter Logic:
+    # 1. Tutor must be approved
+    # 2. Tutor.teaching_grades must contain grade.name
+    # 3. Tutor.subjects must contain subject.name
+    
+    all_tutors = Tutor.query.filter_by(is_approved=True).all()
+    matched = []
+    
+    for t in all_tutors:
+        # Check Grade
+        if not t.teaching_grades: continue
+        t_grades = [g.strip().lower() for g in t.teaching_grades.split(',')]
+        if grade.name.lower() not in t_grades:
+            continue
+            
+        # Check Subject
+        if not t.subjects: continue
+        t_subs = [s.strip().lower() for s in t.subjects.split(',')]
+        # Simple containment check
+        is_match = False
+        for sub in t_subs:
+            if sub in subject.name.lower() or subject.name.lower() in sub:
+                is_match = True
+                break
+        
+        if is_match:
+            matched.append({
+                "id": t.id,
+                "name": t.display_name,
+                "subjects": t.subjects
+            })
+        
+    return jsonify({"tutors": matched})
 
 
 @school_bp.route('/admin/subjects/<int:subject_id>', methods=['PUT'])
@@ -456,14 +647,6 @@ def admin_update_subject(subject_id):
         subject.name = data['name'].strip()
     if 'description' in data:
         subject.description = data['description']
-    if 'schedule_time' in data:
-        subject.schedule_time = data['schedule_time']
-    if 'schedule_days' in data:
-        subject.schedule_days = data['schedule_days']
-    if 'duration_minutes' in data:
-        subject.duration_minutes = data['duration_minutes']
-    if 'teacher_id' in data:
-        subject.teacher_id = data['teacher_id'] or None
     if 'is_active' in data:
         subject.is_active = data['is_active']
     
@@ -622,4 +805,49 @@ def admin_seed_grades():
     
     db.session.commit()
     return jsonify({"success": True, "message": f"Created {len(default_grades)} grades"})
+
+
+# --- GLOBAL SUBJECTS (Master List) ---
+class GlobalSubject(db.Model):
+    """Standard list of subjects (e.g. Math, Science) independent of grades"""
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), unique=True, nullable=False)
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+@school_bp.route('/admin/global-subjects', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def admin_global_subjects():
+    """CRUD for Global Subjects"""
+    if request.method == 'POST':
+        data = request.get_json()
+        name = data.get('name', '').strip()
+        if not name:
+            return jsonify({"error": "Name is required"}), 400
+            
+        if GlobalSubject.query.filter_by(name=name).first():
+            return jsonify({"error": "Subject already exists"}), 400
+            
+        subject = GlobalSubject(name=name)
+        db.session.add(subject)
+        db.session.commit()
+        return jsonify({"success": True, "message": f"Global Subject '{name}' created"})
+
+    # GET
+    subjects = GlobalSubject.query.order_by(GlobalSubject.name).all()
+    return jsonify({
+        "subjects": [{"id": s.id, "name": s.name, "is_active": s.is_active} for s in subjects]
+    })
+
+@school_bp.route('/admin/global-subjects/<int:id>', methods=['DELETE'])
+@login_required
+@admin_required
+def delete_global_subject(id):
+    subject = GlobalSubject.query.get_or_404(id)
+    db.session.delete(subject)
+    db.session.commit()
+    return jsonify({"success": True, "message": "Global Subject deleted"})
+
+
 

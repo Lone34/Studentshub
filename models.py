@@ -16,9 +16,72 @@ class User(UserMixin, db.Model):
     full_name = db.Column(db.String(150), nullable=True)
     email = db.Column(db.String(150), nullable=True)
     phone = db.Column(db.String(20), nullable=True)
+    bio = db.Column(db.Text, nullable=True)
+    profile_picture = db.Column(db.String(255), nullable=True) # Path to image
     grade_id = db.Column(db.Integer, db.ForeignKey('grade.id'), nullable=True)  # Enrolled grade for school
     
+    # Subscription
+    active_subscription_id = db.Column(db.Integer, db.ForeignKey('subscription.id'), nullable=True)
+    
     service_accounts = db.relationship('ServiceAccount', backref='owner', lazy=True, foreign_keys='ServiceAccount.owner_id')
+
+    def can_access(self, feature):
+        """
+        Checks if the user can access a specific feature based on their subscription.
+        Features: 'ai_tutor', 'expert_ask', 'video_tutor', 'school', 'unblur', 'notes'
+        """
+        # 1. Super Admin / Admin Bypass
+        if self.role in ['admin', 'super_admin']:
+            return True
+
+        # 2. Check for Active Subscription
+        if not self.active_subscription_id:
+            return False
+            
+        sub = Subscription.query.get(self.active_subscription_id)
+        if not sub or not sub.is_active or sub.end_date < datetime.utcnow():
+            return False
+
+        # 3. Plan Limits
+        # Plans: 'basic_299', 'pro_499', 'school_1200'
+        
+        # --- SCHOOL ACCESS ---
+        if feature == 'school':
+            return sub.plan_type == 'school_1200'
+
+        # --- UNLIMITED FEATURES ---
+        if feature in ['unblur', 'notes']:
+            return True # All paid plans have unlimited unblur/notes
+
+        # --- AI TUTOR LIMITS (Monthly) ---
+        if feature == 'ai_tutor':
+            limit = 0
+            if sub.plan_type == 'basic_299': limit = 10
+            elif sub.plan_type == 'pro_499': limit = 50
+            elif sub.plan_type == 'school_1200': limit = 20
+            
+            return sub.ai_used < limit
+
+        # --- EXPERT ASK LIMITS (Monthly) ---
+        if feature == 'expert_ask':
+            limit = 0
+            if sub.plan_type == 'basic_299': limit = 20
+            elif sub.plan_type == 'pro_499': limit = 40
+            elif sub.plan_type == 'school_1200': limit = 20
+            
+            return sub.expert_used < limit
+
+        # --- VIDEO TUTOR LIMITS (Monthly) ---
+        if feature == 'video_tutor':
+            limit = 0
+            if sub.plan_type == 'basic_299': limit = 5
+            elif sub.plan_type == 'pro_499': limit = 10
+            elif sub.plan_type == 'school_1200': limit = 10
+            
+            return sub.tutor_sessions_used < limit
+            
+        return False
+
 
 class ServiceAccount(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -65,6 +128,7 @@ class Document(db.Model):
     downloads = db.Column(db.Integer, default=0)
     is_approved = db.Column(db.Boolean, default=True)  # For moderation
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    file_hash = db.Column(db.String(64), nullable=True) # MD5/SHA256 hash for duplicate detection
     
     user = db.relationship('User', backref=db.backref('documents', lazy=True))
 
@@ -75,8 +139,19 @@ class DocumentUnlock(db.Model):
     document_id = db.Column(db.Integer, db.ForeignKey('document.id'), nullable=False)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
     
-    user = db.relationship('User', backref=db.backref('unlocked_docs', lazy=True))
+    user = db.relationship('User', backref=db.backref('unlocks', lazy=True))
     document = db.relationship('Document', backref=db.backref('unlocks', lazy=True))
+
+class Feedback(db.Model):
+    """Stores user feedback for the landing page"""
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    is_approved = db.Column(db.Boolean, default=False)
+    rating = db.Column(db.Integer, default=5)
+    
+    user = db.relationship('User', backref=db.backref('feedbacks', lazy=True))
 
 
 # ============================================
@@ -195,23 +270,11 @@ class Grade(db.Model):
 
 
 class Subject(db.Model):
-    """Subjects for each grade with schedule times"""
+    """Subjects for each grade (Master Data)"""
     id = db.Column(db.Integer, primary_key=True)
     grade_id = db.Column(db.Integer, db.ForeignKey('grade.id'), nullable=False)
     name = db.Column(db.String(100), nullable=False)  # e.g., "English", "Mathematics"
     description = db.Column(db.Text, nullable=True)
-    
-    # Schedule (time of day for this subject's class)
-    schedule_time = db.Column(db.String(10), nullable=True)  # e.g., "10:00" (24-hour format)
-    duration_minutes = db.Column(db.Integer, default=45)
-    
-    # Days the class runs (comma-separated: "mon,tue,wed,thu,fri")
-    schedule_days = db.Column(db.String(50), default="mon,tue,wed,thu,fri")
-    
-    # Assigned teacher (uses existing Tutor model)
-    teacher_id = db.Column(db.Integer, db.ForeignKey('tutor.id'), nullable=True)
-    teacher = db.relationship('Tutor', backref=db.backref('teaching_subjects', lazy=True))
-    
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
@@ -220,19 +283,24 @@ class Subject(db.Model):
 
 
 class SchoolClass(db.Model):
-    """Live class sessions for the online school"""
+    """Live class sessions for the online school (Scheduled Event)"""
     id = db.Column(db.Integer, primary_key=True)
+    grade_id = db.Column(db.Integer, db.ForeignKey('grade.id'), nullable=False) # Direct link to grade
     subject_id = db.Column(db.Integer, db.ForeignKey('subject.id'), nullable=False)
-    teacher_id = db.Column(db.Integer, db.ForeignKey('tutor.id'), nullable=False)
+    teacher_id = db.Column(db.Integer, db.ForeignKey('tutor.id'), nullable=True) # Optional at creation
     
     # Room identification
     room_id = db.Column(db.String(50), unique=True, nullable=False)  # UUID for video room
     
-    # Status: scheduled -> live -> ended
-    status = db.Column(db.String(20), default='scheduled')
+    # Status: upcoming -> ongoing -> completed
+    status = db.Column(db.String(20), default='upcoming')
     
     # Timing
     scheduled_date = db.Column(db.Date, nullable=False)  # The date of this class
+    start_time = db.Column(db.String(10), nullable=False) # e.g. "10:00"
+    end_time = db.Column(db.String(10), nullable=False)   # e.g. "11:00"
+    
+    # Actual timestamps (for history)
     started_at = db.Column(db.DateTime, nullable=True)
     ended_at = db.Column(db.DateTime, nullable=True)
     
@@ -246,6 +314,7 @@ class SchoolClass(db.Model):
     
     # Relationships
     teacher = db.relationship('Tutor', backref=db.backref('school_classes', lazy=True))
+    grade = db.relationship('Grade', backref=db.backref('school_classes', lazy=True))
     attendees = db.relationship('ClassAttendance', backref='school_class', lazy=True, cascade='all, delete-orphan')
 
 
@@ -262,4 +331,38 @@ class ClassAttendance(db.Model):
     
     # Relationships
     student = db.relationship('User', backref=db.backref('class_attendance', lazy=True))
+
+
+# ============================================
+# PAYMENT & SUBSCRIPTION MODELS
+# ============================================
+
+class Subscription(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    plan_type = db.Column(db.String(50), nullable=False) # 'basic_299', 'pro_499', 'school_1200'
+    start_date = db.Column(db.DateTime, default=datetime.utcnow)
+    end_date = db.Column(db.DateTime, nullable=False)
+    is_active = db.Column(db.Boolean, default=True)
+    
+    # Usage Counters (Reset monthly)
+    ai_used = db.Column(db.Integer, default=0)
+    expert_used = db.Column(db.Integer, default=0)
+    tutor_sessions_used = db.Column(db.Integer, default=0)
+    
+    payment_id = db.Column(db.String(100), nullable=True) # Reference to Transaction
+    
+    user = db.relationship('User', backref=db.backref('subscriptions', lazy=True), foreign_keys=[user_id])
+
+class Transaction(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    amount = db.Column(db.Float, nullable=False)
+    currency = db.Column(db.String(10), default='INR')
+    provider = db.Column(db.String(50), nullable=False) # 'stripe', 'razorpay'
+    transaction_id = db.Column(db.String(100), unique=True, nullable=False)
+    status = db.Column(db.String(20), default='pending') # 'pending', 'success', 'failed'
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    user = db.relationship('User', backref=db.backref('transactions', lazy=True))
 

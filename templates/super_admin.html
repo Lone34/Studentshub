@@ -272,9 +272,17 @@
                     class="school-tab bg-white/20 text-white px-4 py-2 rounded-lg text-xs font-bold transition-all">
                     <i class="fa-solid fa-layer-group mr-1"></i> Grades
                 </button>
+                <button onclick="switchSchoolTab('global-subjects')" id="tab-global-subjects"
+                    class="school-tab bg-white/10 text-white/70 px-4 py-2 rounded-lg text-xs font-bold transition-all">
+                    <i class="fa-solid fa-globe mr-1"></i> Global Subjects
+                </button>
                 <button onclick="switchSchoolTab('subjects')" id="tab-subjects"
                     class="school-tab bg-white/10 text-white/70 px-4 py-2 rounded-lg text-xs font-bold transition-all">
-                    <i class="fa-solid fa-book mr-1"></i> Subjects
+                    <i class="fa-solid fa-book mr-1"></i> Grade Subjects
+                </button>
+                <button onclick="switchSchoolTab('classes')" id="tab-classes"
+                    class="school-tab bg-white/10 text-white/70 px-4 py-2 rounded-lg text-xs font-bold transition-all">
+                    <i class="fa-solid fa-calendar-days mr-1"></i> Class Schedule
                 </button>
             </div>
         </div>
@@ -309,33 +317,53 @@
                     </div>
                 </div>
             </div>
+            <!-- GLOBAL SUBJECTS TAB -->
+            <div id="panel-global-subjects" class="school-panel hidden">
+                <div class="grid lg:grid-cols-3 gap-8">
+                    <!-- Add Global Subject Form -->
+                    <div class="bg-slate-50 p-6 rounded-2xl border border-slate-200">
+                        <h3 class="font-bold text-slate-700 mb-4 flex items-center gap-2">
+                            <i class="fa-solid fa-plus-circle text-violet-500"></i> Add Global Subject
+                        </h3>
+                        <form id="add-global-subject-form" class="space-y-4">
+                            <div>
+                                <input type="text" name="name" placeholder="Subject Name (e.g. Physics)" required
+                                    class="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-violet-500 text-sm">
+                            </div>
+                            <button type="submit"
+                                class="w-full bg-violet-600 hover:bg-violet-700 text-white py-3 rounded-xl font-bold transition-all shadow-md">
+                                Add Global Subject
+                            </button>
+                        </form>
+                    </div>
 
-            <!-- SUBJECTS TAB -->
+                    <!-- Global Subjects List -->
+                    <div class="lg:col-span-2">
+                        <h3 class="font-bold text-slate-700 mb-4">All Global Subjects</h3>
+                        <div id="global-subjects-list"
+                            class="grid grid-cols-2 md:grid-cols-3 gap-3 max-h-[500px] overflow-y-auto pr-2">
+                            <div class="text-center py-10 text-slate-400">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GRADE SUBJECTS TAB (Previously Master) -->
             <div id="panel-subjects" class="school-panel hidden">
                 <div class="grid lg:grid-cols-3 gap-8">
                     <!-- Add Subject Form -->
                     <div class="bg-slate-50 p-6 rounded-2xl border border-slate-200">
                         <h3 class="font-bold text-slate-700 mb-4 flex items-center gap-2">
-                            <i class="fa-solid fa-plus-circle text-violet-500"></i> Add New Subject
+                            <i class="fa-solid fa-plus-circle text-violet-500"></i> Assign Subject to Grade
                         </h3>
                         <form id="add-subject-form" class="space-y-3">
                             <select name="grade_id" required
-                                class="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-violet-500 text-sm"
-                                id="subject-grade-select">
+                                class="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-violet-500 text-sm">
                                 <option value="">Select Grade</option>
                             </select>
-                            <input type="text" name="name" placeholder="Subject Name (e.g. Mathematics)" required
+                            <select name="name" required id="assign-subject-select"
                                 class="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-violet-500 text-sm">
-                            <div class="grid grid-cols-2 gap-2">
-                                <input type="time" name="schedule_time" placeholder="Start Time"
-                                    class="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-violet-500 text-sm">
-                                <input type="number" name="duration_minutes" placeholder="Duration (min)" value="45"
-                                    class="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-violet-500 text-sm">
-                            </div>
-                            <select name="teacher_id"
-                                class="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-violet-500 text-sm"
-                                id="teacher-select">
-                                <option value="">Assign Teacher</option>
+                                <option value="">Select Global Subject</option>
                             </select>
                             <button type="submit"
                                 class="w-full bg-violet-600 hover:bg-violet-700 text-white py-3 rounded-xl font-bold transition-all shadow-md">
@@ -360,9 +388,207 @@
                     </div>
                 </div>
             </div>
+
+            <!-- CLASSES TAB (SCHEDULE) -->
+            <div id="panel-classes" class="school-panel hidden">
+                <div class="grid lg:grid-cols-3 gap-8">
+                    <!-- Schedule Class Form -->
+                    <div class="bg-slate-50 p-6 rounded-2xl border border-slate-200 h-fit">
+                        <h3 class="font-bold text-slate-700 mb-4 flex items-center gap-2">
+                            <i class="fa-solid fa-calendar-plus text-violet-500"></i> Schedule Class
+                        </h3>
+                        <form id="schedule-class-form" class="space-y-3">
+                            <!-- 1. Select Grade -->
+                            <select name="grade_id" required id="schedule-grade-select"
+                                onchange="loadSubjectsForSchedule(this.value)"
+                                class="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-violet-500 text-sm">
+                                <option value="">1. Select Grade</option>
+                            </select>
+
+                            <!-- 2. Select Subject (Filtered by Grade) -->
+                            <select name="subject_id" required id="schedule-subject-select" disabled
+                                onchange="loadMatchingTutors(this.value)"
+                                class="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-violet-500 text-sm disabled:bg-slate-100 disabled:text-slate-400">
+                                <option value="">2. Select Subject</option>
+                            </select>
+
+                            <!-- 3. Select Teacher (Filtered by Grade + Subject) -->
+                            <select name="teacher_id" id="schedule-teacher-select" disabled
+                                class="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-violet-500 text-sm disabled:bg-slate-100 disabled:text-slate-400">
+                                <option value="">3. Assign Tutor (Optional)</option>
+                            </select>
+
+                            <!-- 4. Date & Time -->
+                            <input type="date" name="date" required
+                                class="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-violet-500 text-sm">
+
+                            <div class="grid grid-cols-2 gap-2">
+                                <div class="space-y-1">
+                                    <label class="text-[10px] uppercase font-bold text-slate-400">Start</label>
+                                    <input type="time" name="start_time" required
+                                        class="w-full px-4 py-2 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-violet-500 text-sm">
+                                </div>
+                                <div class="space-y-1">
+                                    <label class="text-[10px] uppercase font-bold text-slate-400">End</label>
+                                    <input type="time" name="end_time" required
+                                        class="w-full px-4 py-2 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-violet-500 text-sm">
+                                </div>
+                            </div>
+
+                            <button type="submit"
+                                class="w-full bg-violet-600 hover:bg-violet-700 text-white py-3 rounded-xl font-bold transition-all shadow-md mt-2">
+                                Schedule Class
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Classes List -->
+                    <div class="lg:col-span-2">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="font-bold text-slate-700">Scheduled Classes</h3>
+                            <select id="filter-class-grade"
+                                class="px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm"
+                                onchange="loadClasses()">
+                                <option value="">All Grades</option>
+                            </select>
+                        </div>
+                        <div id="classes-list" class="space-y-3 max-h-[600px] overflow-y-auto pr-2">
+                            <div class="text-center py-10 text-slate-400">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- FEEDBACK MANAGEMENT SECTION -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <div class="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden mt-8 mb-12">
+        <div class="bg-gradient-to-r from-emerald-500 to-teal-600 px-8 py-5 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-white">
+                    <i class="fa-solid fa-comments text-xl"></i>
+                </div>
+                <div>
+                    <h2 class="text-white font-bold text-lg">Feedback Approval</h2>
+                    <p class="text-emerald-100 text-xs">Review and approve user testimonials for the landing page</p>
+                </div>
+            </div>
+            <span class="bg-white/20 text-white px-3 py-1 rounded-lg text-xs font-bold">
+                {{ pending_feedbacks|length if pending_feedbacks is defined else '0' }} Pending
+            </span>
+        </div>
+
+        <div class="p-8">
+            {% if pending_feedbacks %}
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {% for feedback in pending_feedbacks %}
+                <div
+                    class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div
+                            class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-600">
+                            {{ feedback.user.username[0]|upper }}
+                        </div>
+                        <div>
+                            <div class="font-bold text-slate-800 text-sm">{{ feedback.user.username }}</div>
+                            <div class="text-xs text-slate-400">
+                                {% if feedback.user.role == 'user' %}Student{% else %}{{ feedback.user.role|capitalize
+                                }}{% endif %} • {{ feedback.created_at.strftime('%Y-%m-%d') }}
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-slate-600 text-sm mb-6 leading-relaxed italic">"{{ feedback.content }}"</p>
+                    <div class="flex gap-2">
+                        <form action="{{ url_for('approve_feedback', id=feedback.id) }}" method="POST" class="flex-1">
+                            <button type="submit"
+                                class="w-full bg-emerald-500 hover:bg-emerald-600 text-white py-2 rounded-lg text-xs font-bold transition-colors">
+                                <i class="fa-solid fa-check mr-1"></i> Approve
+                            </button>
+                        </form>
+                        <form action="{{ url_for('delete_feedback', id=feedback.id) }}" method="POST" class="flex-1">
+                            <button type="submit"
+                                class="w-full bg-white border border-slate-200 text-slate-500 hover:bg-red-50 hover:text-red-500 hover:border-red-200 py-2 rounded-lg text-xs font-bold transition-all">
+                                <i class="fa-solid fa-trash mr-1"></i> Reject
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-12 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                <i class="fa-solid fa-check-circle text-4xl text-slate-300 mb-4"></i>
+                <p class="text-slate-500 font-medium">No pending feedback to review.</p>
+                <p class="text-slate-400 text-xs mt-1">Great job! You're all caught up.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- APPROVED FEEDBACK MANAGEMENT SECTION -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <div class="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden mt-8 mb-12">
+        <div class="bg-gradient-to-r from-blue-500 to-indigo-600 px-8 py-5 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-white">
+                    <i class="fa-solid fa-thumbs-up text-xl"></i>
+                </div>
+                <div>
+                    <h2 class="text-white font-bold text-lg">Approved Feedback</h2>
+                    <p class="text-blue-100 text-xs">Manage publicly visible testimonials</p>
+                </div>
+            </div>
+            <span class="bg-white/20 text-white px-3 py-1 rounded-lg text-xs font-bold">
+                {{ approved_feedbacks|length if approved_feedbacks is defined else '0' }} Active
+            </span>
+        </div>
+
+        <div class="p-8">
+            {% if approved_feedbacks %}
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {% for feedback in approved_feedbacks %}
+                <div
+                    class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow relative group">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div
+                            class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-600 overflow-hidden">
+                            {% if feedback.user.profile_picture %}
+                            <img src="{{ url_for('static', filename=feedback.user.profile_picture) }}"
+                                alt="{{ feedback.user.username }}" class="w-full h-full object-cover">
+                            {% else %}
+                            {{ feedback.user.username[0]|upper }}
+                            {% endif %}
+                        </div>
+                        <div>
+                            <div class="font-bold text-slate-800 text-sm">{{ feedback.user.username }}</div>
+                            <div class="text-xs text-slate-400">
+                                {% if feedback.user.role == 'user' %}Student{% else %}{{ feedback.user.role|capitalize
+                                }}{% endif %} • {{ feedback.created_at.strftime('%Y-%m-%d') }}
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-slate-600 text-sm mb-6 leading-relaxed italic">"{{ feedback.content }}"</p>
+
+                    <form action="{{ url_for('delete_feedback', id=feedback.id) }}" method="POST"
+                        onsubmit="return confirm('Delete this approved feedback? It will be removed from landing page.');">
+                        <button type="submit"
+                            class="w-full bg-white border border-slate-200 text-slate-400 hover:bg-red-50 hover:text-red-500 hover:border-red-200 py-2 rounded-lg text-xs font-bold transition-all">
+                            <i class="fa-solid fa-trash mr-1"></i> Delete
+                        </button>
+                    </form>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-12 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                <p class="text-slate-500 font-medium">No approved feedback yet.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
 </div>
 
 <script>
@@ -384,9 +610,9 @@
         document.getElementById('panel-' + tab).classList.remove('hidden');
 
         if (tab === 'grades') loadGrades();
-        if (tab === 'subjects') {
-            loadSubjects();
-        }
+        if (tab === 'global-subjects') loadGlobalSubjects();
+        if (tab === 'subjects') loadSubjects();
+        if (tab === 'classes') loadClasses();
     }
 
     // --- LOADERS ---
@@ -395,16 +621,36 @@
         try {
             const res = await fetch('/school/admin/grades');
             const data = await res.json();
-
             if (data.grades) {
                 gradesData = data.grades;
-                const list = document.getElementById('grades-list');
+                populateGradeDropdowns(data.grades);
+                renderGradesList(data.grades);
+            }
+        } catch (e) { console.error(e); }
+    }
 
-                // Render List
-                if (data.grades.length === 0) {
-                    list.innerHTML = '<div class="col-span-3 text-center py-10 text-slate-400">No grades yet.</div>';
-                } else {
-                    list.innerHTML = data.grades.map(g => `
+    function populateGradeDropdowns(grades) {
+        // 1. Add Subject Form
+        const options = '<option value="">Select Grade</option>' + grades.map(g => `<option value="${g.id}">${g.name}</option>`).join('');
+        const formGradeSelect = document.querySelector('#add-subject-form select[name="grade_id"]');
+        if (formGradeSelect) formGradeSelect.innerHTML = options;
+
+        // 2. Schedule Class Form
+        const scheduleGradeSelect = document.querySelector('#schedule-grade-select');
+        if (scheduleGradeSelect) scheduleGradeSelect.innerHTML = options;
+
+        // 3. Filters
+        const filterOptions = '<option value="">All Grades</option>' + grades.map(g => `<option value="${g.id}">${g.name}</option>`).join('');
+        if (document.getElementById('filter-grade')) document.getElementById('filter-grade').innerHTML = filterOptions;
+        if (document.getElementById('filter-class-grade')) document.getElementById('filter-class-grade').innerHTML = filterOptions;
+    }
+
+    function renderGradesList(grades) {
+        const list = document.getElementById('grades-list');
+        if (grades.length === 0) {
+            list.innerHTML = '<div class="col-span-3 text-center py-10 text-slate-400">No grades yet.</div>';
+        } else {
+            list.innerHTML = grades.map(g => `
                     <div class="bg-white border ${g.is_active ? 'border-slate-200' : 'border-red-200 opacity-50'} p-4 rounded-xl flex items-center justify-between group">
                         <div>
                             <div class="font-bold text-slate-800 text-sm">${g.name}</div>
@@ -420,25 +666,12 @@
                         </div>
                     </div>
                 `).join('');
-                }
-
-                // Render Dropdowns
-                const options = '<option value="">Select Grade</option>' + data.grades.map(g =>
-                    `<option value="${g.id}">${g.name}</option>`
-                ).join('');
-                document.getElementById('subject-grade-select').innerHTML = options;
-
-                // Filter Dropdown
-                document.getElementById('filter-grade').innerHTML = '<option value="">All Grades</option>' +
-                    data.grades.map(g => `<option value="${g.id}">${g.name}</option>`).join('');
-            }
-        } catch (e) { console.error('Error loading grades:', e); }
+        }
     }
 
+    // --- SUBJECTS (MASTER) ---
     async function loadSubjects() {
         console.log('Loading subjects...');
-        // We need grades loaded to map grade names if not populated by backend, but backend does it.
-        // But we need to ensure filtering dropdown is populated.
         if (gradesData.length === 0) await loadGrades();
 
         try {
@@ -462,10 +695,6 @@
                             <div>
                                 <div class="font-bold text-slate-800">${s.name}</div>
                                 <div class="text-xs text-slate-500">${s.grade_name || 'No grade'}</div>
-                                <div class="text-[10px] text-slate-400 mt-1">
-                                    ${s.schedule_time || 'No time'} • ${s.duration_minutes}min
-                                    ${s.teacher_name ? ' • <span class="text-green-600">👨‍🏫 ' + s.teacher_name + '</span>' : ' • <span class="text-orange-500">No teacher</span>'}
-                                </div>
                             </div>
                         </div>
                         <div class="flex gap-2">
@@ -480,8 +709,159 @@
                 `).join('');
                 }
             }
-            loadTeachers(); // Also refresh teachers
         } catch (e) { console.error('Error loading subjects:', e); }
+    }
+
+    // --- CLASSES (SCHEDULE) ---
+    async function loadClasses() {
+        try {
+            const gradeId = document.getElementById('filter-class-grade').value;
+            const url = gradeId ? `/school/admin/classes?grade_id=${gradeId}` : '/school/admin/classes';
+            const res = await fetch(url);
+            const data = await res.json();
+
+            const list = document.getElementById('classes-list');
+            if (data.classes && data.classes.length > 0) {
+                list.innerHTML = data.classes.map(c => `
+                    <div class="bg-white border border-slate-200 p-4 rounded-xl flex items-center justify-between">
+                        <div class="flex items-center gap-4">
+                            <div class="w-12 h-12 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center">
+                                <i class="fa-solid fa-clock text-lg"></i>
+                            </div>
+                            <div>
+                                <div class="font-bold text-slate-800">${c.subject_name} <span class="text-xs font-normal text-slate-400">(${c.grade_name})</span></div>
+                                <div class="text-xs text-slate-500 flex gap-2 items-center">
+                                    <span><i class="fa-regular fa-calendar"></i> ${c.date}</span>
+                                    <span><i class="fa-regular fa-clock"></i> ${c.start_time} - ${c.end_time}</span>
+                                </div>
+                                <div class="text-[10px] mt-1">
+                                    ${c.teacher_name && c.teacher_name !== 'No Tutor' ? `<span class="text-green-600 font-bold">👨‍🏫 ${c.teacher_name}</span>` : '<span class="text-orange-500">Unassigned</span>'}
+                                    <span class="ml-2 px-2 py-0.5 rounded-full text-[9px] ${c.status === 'upcoming' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-500'} uppercase">${c.status}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <button onclick="deleteClass(${c.id})" class="text-slate-300 hover:text-red-500 transition-colors p-2">
+                             <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
+                `).join('');
+            } else {
+                list.innerHTML = '<div class="text-center py-10 text-slate-400">No scheduled classes.</div>';
+            }
+        } catch (e) { console.error(e); }
+    }
+
+    // --- GLOBAL SUBJECTS ---
+    async function loadGlobalSubjects() {
+        try {
+            const res = await fetch('/school/admin/global-subjects');
+            const data = await res.json();
+            const list = document.getElementById('global-subjects-list');
+            const assignSelect = document.getElementById('assign-subject-select');
+
+            if (data.subjects && data.subjects.length > 0) {
+                // Populate List
+                list.innerHTML = data.subjects.map(s => `
+                    <div class="bg-white border border-slate-200 p-4 rounded-xl flex items-center justify-between group">
+                        <div class="font-bold text-slate-800 text-sm">${s.name}</div>
+                        <button onclick="deleteGlobalSubject(${s.id})" class="text-slate-300 hover:text-red-500 transition-colors p-1">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
+                `).join('');
+
+                // Populate Assign Dropdown
+                if (assignSelect) {
+                    assignSelect.innerHTML = '<option value="">Select Global Subject</option>' +
+                        data.subjects.map(s => `<option value="${s.name}">${s.name}</option>`).join('');
+                }
+            } else {
+                list.innerHTML = '<div class="col-span-3 text-center py-10 text-slate-400">No global subjects yet.</div>';
+                if (assignSelect) assignSelect.innerHTML = '<option value="">No subjects available</option>';
+            }
+        } catch (e) { console.error(e); }
+    }
+
+    document.getElementById('add-global-subject-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const form = new FormData(e.target);
+        try {
+            const res = await fetch('/school/admin/global-subjects', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: form.get('name') })
+            });
+            const data = await res.json();
+            if (data.success) {
+                e.target.reset();
+                loadGlobalSubjects();
+                alert(data.message);
+            } else {
+                alert(data.error);
+            }
+        } catch (e) { console.error(e); }
+    });
+
+    async function deleteGlobalSubject(id) {
+        if (!confirm('Delete this global subject?')) return;
+        try {
+            await fetch(`/school/admin/global-subjects/${id}`, { method: 'DELETE' });
+            loadGlobalSubjects();
+        } catch (e) { console.error(e); }
+    }
+
+    // --- DYNAMIC FILTERING LOGIC ---
+
+    // 1. When Grade Selected in Schedule Form -> Load Subjects
+    async function loadSubjectsForSchedule(gradeId) {
+        const subjectSelect = document.getElementById('schedule-subject-select');
+        const teacherSelect = document.getElementById('schedule-teacher-select');
+
+        subjectSelect.innerHTML = '<option value="">Loading...</option>';
+        subjectSelect.disabled = true;
+        teacherSelect.innerHTML = '<option value="">3. Assign Tutor (Optional)</option>';
+        teacherSelect.disabled = true;
+
+        if (!gradeId) {
+            subjectSelect.innerHTML = '<option value="">2. Select Subject</option>';
+            return;
+        }
+
+        try {
+            const res = await fetch(`/school/admin/subjects?grade_id=${gradeId}`);
+            const data = await res.json();
+
+            if (data.subjects) {
+                subjectSelect.innerHTML = '<option value="">2. Select Subject</option>' +
+                    data.subjects.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+                subjectSelect.disabled = false;
+            }
+        } catch (e) { console.error(e); }
+    }
+
+    // 2. When Subject Selected in Schedule Form -> Load Matching Tutors
+    async function loadMatchingTutors(subjectId) {
+        const gradeId = document.getElementById('schedule-grade-select').value;
+        const teacherSelect = document.getElementById('schedule-teacher-select');
+
+        if (!subjectId || !gradeId) {
+            teacherSelect.disabled = true;
+            return;
+        }
+
+        teacherSelect.innerHTML = '<option value="">Loading...</option>';
+        teacherSelect.disabled = true;
+
+        try {
+            const res = await fetch(`/school/admin/tutors/match?grade_id=${gradeId}&subject_id=${subjectId}`);
+            const data = await res.json();
+
+            const count = data.tutors ? data.tutors.length : 0;
+            teacherSelect.innerHTML = `<option value="">3. Select Tutor (${count} matches)</option>` +
+                (data.tutors || []).map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+
+            teacherSelect.disabled = false;
+        } catch (e) { console.error(e); }
     }
 
     async function loadTeachers(gradeId = null, subjectName = null) {
@@ -601,154 +981,188 @@
         } catch (e) { console.error(e); }
     }
 
-    // --- EVENTS ---
-
-    // Watch for grade change to filter teachers
-    document.getElementById('subject-grade-select').addEventListener('change', function () {
-        const subjectName = document.querySelector('#add-subject-form input[name="name"]').value;
-        loadTeachers(this.value, subjectName);
-    });
-
-    // Watch for Subject Name input to filter teachers
-    document.querySelector('#add-subject-form input[name="name"]').addEventListener('input', function () {
-        const gradeId = document.getElementById('subject-grade-select').value;
-        loadTeachers(gradeId, this.value);
-    });
-
-    // Initialization
+    // --- INITIALIZATION & EVENTS ---
     document.addEventListener('DOMContentLoaded', () => {
-        // Only if we are on the super admin page
+        console.log("Initializing Super Admin Dashboard...");
+
+        // 1. Load Data
         const subjectsTab = document.getElementById('panel-subjects');
-        if (subjectsTab) {
-            // Load initial data
+        if (subjectsTab || document.getElementById('panel-grades')) {
             loadGrades();
+            loadGlobalSubjects();
             loadPendingTutors();
             loadTeachers();
         }
-    });
 
-    // --- MODALS ---
-    function openEditGrade(id) {
-        const grade = gradesData.find(g => g.id === id);
-        if (!grade) return;
+        // 2. Attach Event Listeners
 
-        document.getElementById('edit-grade-id').value = grade.id;
-        document.getElementById('edit-grade-name').value = grade.name;
-        document.getElementById('edit-grade-active').checked = grade.is_active;
-        document.getElementById('edit-grade-modal').classList.remove('hidden');
-    }
-
-    async function openEditSubject(id) {
-        const subject = subjectsData.find(s => s.id === id);
-        if (!subject) return;
-
-        document.getElementById('edit-subject-id').value = subject.id;
-        document.getElementById('edit-subject-name').value = subject.name;
-        document.getElementById('edit-subject-time').value = subject.schedule_time || '';
-        document.getElementById('edit-subject-duration').value = subject.duration_minutes || 45;
-
-        // Load teachers suitable for this subject's grade
-        if (subject.grade_id) {
-            await loadTeachers(subject.grade_id, subject.name);
-        } else {
-            await loadTeachers();
+        // Filter Teachers by Grade
+        if (document.getElementById('subject-grade-select')) {
+            document.getElementById('subject-grade-select').addEventListener('change', function () {
+                const subjectSelect = document.getElementById('assign-subject-select');
+                const subjectName = subjectSelect ? subjectSelect.value : '';
+                loadTeachers(this.value, subjectName);
+            });
         }
 
-        // Set value after options are updated
-        setTimeout(() => {
-            document.getElementById('edit-subject-teacher').value = subject.teacher_id || '';
-        }, 300);
+        // Filter Teachers by Subject
+        const assignSubjectSelect = document.getElementById('assign-subject-select');
+        if (assignSubjectSelect) {
+            assignSubjectSelect.addEventListener('change', function () {
+                const gradeId = document.getElementById('subject-grade-select').value;
+                loadTeachers(gradeId, this.value);
+            });
+        }
 
-        document.getElementById('edit-subject-active').checked = subject.is_active;
-        document.getElementById('edit-subject-modal').classList.remove('hidden');
+        // Edit Grade Form
+        const editGradeForm = document.getElementById('edit-grade-form');
+        if (editGradeForm) {
+            editGradeForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const id = document.getElementById('edit-grade-id').value;
+                const name = document.getElementById('edit-grade-name').value;
+                const is_active = document.getElementById('edit-grade-active').checked;
+
+                await fetch(`/school/admin/grades/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, is_active })
+                });
+                closeModal('edit-grade-modal');
+                loadGrades();
+            });
+        }
+
+        // Edit Subject Form
+        const editSubjectForm = document.getElementById('edit-subject-form');
+        if (editSubjectForm) {
+            editSubjectForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const id = document.getElementById('edit-subject-id').value;
+                const name = document.getElementById('edit-subject-name').value;
+                const is_active = document.getElementById('edit-subject-active').checked;
+
+                await fetch(`/school/admin/subjects/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, is_active })
+                });
+                closeModal('edit-subject-modal');
+                loadSubjects();
+            });
+        }
+
+        // Add Grade Form
+        const addGradeForm = document.getElementById('add-grade-form');
+        if (addGradeForm) {
+            addGradeForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const form = new FormData(e.target);
+                await fetch('/school/admin/grades', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: form.get('name') })
+                });
+                e.target.reset();
+                loadGrades();
+            });
+        }
+
+        // ADD SUBJECT FORM (CRITICAL FIX)
+        const addSubjectForm = document.getElementById('add-subject-form');
+        if (addSubjectForm) {
+            console.log("Attaching listener to add-subject-form");
+            addSubjectForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                console.log("Submitting Subject...");
+                const form = new FormData(e.target);
+                try {
+                    const res = await fetch('/school/admin/subjects', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            name: form.get('name'),
+                            grade_id: form.get('grade_id')
+                        })
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        e.target.reset();
+                        loadSubjects();
+                        alert(data.message);
+                    } else {
+                        alert(data.error || 'Failed to add subject');
+                    }
+                } catch (err) {
+                    console.error(err);
+                    alert('An error occurred while adding the subject.');
+                }
+            });
+        } else {
+            console.error("add-subject-form NOT FOUND");
+        }
+
+        // Schedule Class Form
+        const scheduleForm = document.getElementById('schedule-class-form');
+        if (scheduleForm) {
+            scheduleForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                const form = new FormData(e.target);
+                try {
+                    const res = await fetch('/school/admin/classes', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            grade_id: form.get('grade_id'),
+                            subject_id: form.get('subject_id'),
+                            teacher_id: form.get('teacher_id') || null,
+                            date: form.get('date'),
+                            start_time: form.get('start_time'),
+                            end_time: form.get('end_time')
+                        })
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        alert(data.message);
+                        loadClasses();
+                        // Optional: Reset form partially
+                        // e.target.reset(); 
+                    } else {
+                        alert(data.error);
+                    }
+                } catch (e) { console.error(e); }
+            });
+        }
+    }); // Close DOMContentLoaded
+
+    async function deleteClass(id) {
+        if (!confirm('Cancel this scheduled class?')) return;
+        try {
+            await fetch(`/school/admin/classes/${id}`, { method: 'DELETE' });
+            loadClasses();
+        } catch (e) { console.error(e); }
     }
 
-    function closeModal(id) {
-        document.getElementById(id).classList.add('hidden');
-    }
 
-    // --- FORMS ---
-    document.getElementById('edit-grade-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const id = document.getElementById('edit-grade-id').value;
-        const name = document.getElementById('edit-grade-name').value;
-        const is_active = document.getElementById('edit-grade-active').checked;
-
-        await fetch(`/school/admin/grades/${id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, is_active })
-        });
-        closeModal('edit-grade-modal');
-        loadGrades();
+    // Watch for Subject Name input in EDIT modal to filter teachers dynamically
+    document.getElementById('edit-subject-name').addEventListener('input', function () {
+        // We need the grade of the subject being edited.
+        // It's not directly in the form, but we can look it up from subjectsData using the ID
+        const id = parseInt(document.getElementById('edit-subject-id').value);
+        const subject = subjectsData.find(s => s.id === id);
+        const gradeId = subject ? subject.grade_id : null;
+        loadTeachers(gradeId, this.value);
     });
-
-    document.getElementById('edit-subject-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const id = document.getElementById('edit-subject-id').value;
-        const name = document.getElementById('edit-subject-name').value;
-        const schedule_time = document.getElementById('edit-subject-time').value;
-        const duration_minutes = document.getElementById('edit-subject-duration').value;
-        const teacher_id = document.getElementById('edit-subject-teacher').value;
-        const is_active = document.getElementById('edit-subject-active').checked;
-
-        await fetch(`/school/admin/subjects/${id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                name,
-                schedule_time,
-                duration_minutes: parseInt(duration_minutes),
-                teacher_id: teacher_id || null,
-                is_active
-            })
-        });
-        closeModal('edit-subject-modal');
-        loadSubjects();
-    });
-
-
-    async function deleteGrade(id) {
-        if (!confirm('Delete this grade and ALL its subjects?')) return;
-        await fetch(`/school/admin/grades/${id}`, { method: 'DELETE' });
+    // --- INITIALIZATION ---
+    document.addEventListener('DOMContentLoaded', () => {
+        // Load initial tab data
         loadGrades();
-    }
+        loadGlobalSubjects();
 
-    async function deleteSubject(id) {
-        if (!confirm('Delete this subject?')) return;
-        await fetch(`/school/admin/subjects/${id}`, { method: 'DELETE' });
-        loadSubjects();
-    }
-
-    document.getElementById('add-grade-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const form = new FormData(e.target);
-        await fetch('/school/admin/grades', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name: form.get('name') })
-        });
-        e.target.reset();
-        loadGrades();
-    });
-
-    document.getElementById('add-subject-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const form = new FormData(e.target);
-        await fetch('/school/admin/subjects', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                name: form.get('name'),
-                grade_id: form.get('grade_id'),
-                schedule_time: form.get('schedule_time'),
-                duration_minutes: parseInt(form.get('duration_minutes')) || 45,
-                teacher_id: form.get('teacher_id') || null
-            })
-        });
-        e.target.reset();
-        loadSubjects();
-        loadTeachers(); // Reset dropdown
+        // Auto-refresh pending tutors
+        loadPendingTutors();
+        setInterval(loadPendingTutors, 30000);
     });
 </script>
 
@@ -766,5 +1180,72 @@
         background: transparent;
     }
 </style>
+
+
+<!-- EDIT GRADE MODAL -->
+<div id="edit-grade-modal"
+    class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden z-50 flex items-center justify-center">
+    <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md mx-4 animate-fade-in">
+        <h3 class="font-bold text-slate-800 text-lg mb-4">Edit Grade</h3>
+        <form id="edit-grade-form" class="space-y-4">
+            <input type="hidden" id="edit-grade-id">
+            <div>
+                <label class="text-xs font-bold text-slate-400 uppercase">Grade Name</label>
+                <input type="text" id="edit-grade-name" required
+                    class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-indigo-500 text-sm font-bold text-slate-700">
+            </div>
+            <div class="flex items-center gap-3">
+                <input type="checkbox" id="edit-grade-active"
+                    class="w-5 h-5 rounded text-indigo-600 focus:ring-indigo-500">
+                <label for="edit-grade-active" class="text-sm font-medium text-slate-700">Active Status</label>
+            </div>
+            <div class="grid grid-cols-2 gap-3 pt-2">
+                <button type="button" onclick="closeModal('edit-grade-modal')"
+                    class="w-full py-3 rounded-xl font-bold text-slate-500 hover:bg-slate-100 transition-colors">
+                    Cancel
+                </button>
+                <button type="submit"
+                    class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl font-bold transition-all shadow-lg shadow-indigo-500/20">
+                    Save Changes
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- EDIT SUBJECT MODAL -->
+<div id="edit-subject-modal"
+    class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden z-50 flex items-center justify-center">
+    <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md mx-4 animate-fade-in">
+        <h3 class="font-bold text-slate-800 text-lg mb-4">Edit Subject</h3>
+        <form id="edit-subject-form" class="space-y-4">
+            <input type="hidden" id="edit-subject-id">
+            <div>
+                <label class="text-xs font-bold text-slate-400 uppercase">Subject Name</label>
+                <input type="text" id="edit-subject-name" required
+                    class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-indigo-500 text-sm font-bold text-slate-700">
+            </div>
+
+            <div class="flex items-center gap-3">
+                <input type="checkbox" id="edit-subject-active"
+                    class="w-5 h-5 rounded text-indigo-600 focus:ring-indigo-500">
+                <label for="edit-subject-active" class="text-sm font-medium text-slate-700">Active Status</label>
+            </div>
+            <div class="grid grid-cols-2 gap-3 pt-2">
+                <button type="button" onclick="closeModal('edit-subject-modal')"
+                    class="w-full py-3 rounded-xl font-bold text-slate-500 hover:bg-slate-100 transition-colors">
+                    Cancel
+                </button>
+                <button type="submit"
+                    class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl font-bold transition-all shadow-lg shadow-indigo-500/20">
+                    Save Changes
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+
 
 {% endblock %}

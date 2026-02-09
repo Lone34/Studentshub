@@ -5,11 +5,11 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from functools import wraps
-from datetime import datetime
+from datetime import datetime, date
 import uuid
 import os
 
-from models import db, Tutor, TutoringSession, User
+from models import db, Tutor, TutoringSession, User, SchoolClass
 
 tutoring_bp = Blueprint('tutoring', __name__, url_prefix='/tutoring')
 
@@ -21,6 +21,9 @@ ALLOWED_EXTENSIONS = {'pdf', 'png', 'jpg', 'jpeg'}
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+
 
 
 # ============================================
@@ -247,13 +250,94 @@ def tutor_dashboard():
         'total_minutes': tutor.total_minutes,
         'total_earnings': tutor.total_earnings,
         'rating': tutor.rating,
-        'is_available': tutor.is_available
+        'is_available': tutor.is_available,
+        'current_date': date.today()
     }
     
+    today = date.today()
+    current_dt = datetime.now()
+    
+    # Get raw classes
+    raw_classes = SchoolClass.query.filter_by(teacher_id=tutor.id).filter(SchoolClass.scheduled_date >= today).order_by(SchoolClass.scheduled_date, SchoolClass.start_time).all()
+    
+    # Process classes to add status derived from time
+    school_classes = []
+    for cls in raw_classes:
+        # Clone or wrap to add attributes without modifying DB object state
+        # Since we just need to read in template, we can attach attributes if not committed
+        # But safer to create a dict or wrapper
+        
+        class_data = cls
+        class_data.derived_status = 'scheduled'
+        
+        if cls.status == 'live':
+             class_data.derived_status = 'live'
+        elif cls.status == 'completed':
+             class_data.derived_status = 'completed'
+        else:
+            # Check time
+            try:
+                # Parse times
+                start_time = datetime.strptime(cls.start_time, '%H:%M').time()
+                end_time = datetime.strptime(cls.end_time, '%H:%M').time()
+                
+                # Combine with scheduled date
+                start_dt = datetime.combine(cls.scheduled_date, start_time)
+                end_dt = datetime.combine(cls.scheduled_date, end_time)
+                
+                if current_dt > end_dt:
+                     class_data.derived_status = 'completed_time' # Time passed
+                elif current_dt >= start_dt:
+                     class_data.derived_status = 'ready' # Time is here!
+                else:
+                     class_data.derived_status = 'future' # Not yet
+            except Exception as e:
+                print(f"Error parsing time for class {cls.id}: {e}")
+                class_data.derived_status = 'future' # Fallback
+        school_classes.append(class_data)
+
     return render_template('tutoring/dashboard.html', 
                          tutor=tutor, 
                          sessions=recent_sessions,
-                         stats=stats)
+                         school_classes=school_classes,
+                         stats=stats,
+                         current_dt=current_dt)
+
+
+@tutoring_bp.route('/tutor/profile/edit', methods=['GET', 'POST'])
+@tutor_login_required
+def edit_tutor_profile():
+    tutor = get_current_tutor()
+    
+    if request.method == 'POST':
+        full_name = request.form.get('full_name')
+        bio = request.form.get('bio')
+        display_name = request.form.get('display_name')
+        
+        tutor.full_name = full_name
+        tutor.bio = bio
+        tutor.display_name = display_name
+        
+        # Profile Picture
+        if 'profile_picture' in request.files:
+            file = request.files['profile_picture']
+            if file and allowed_file(file.filename):
+                filename = secure_filename(file.filename)
+                from flask import current_app
+                upload_folder = os.path.join(current_app.root_path, 'static/uploads/profiles')
+                os.makedirs(upload_folder, exist_ok=True)
+                
+                ext = filename.rsplit('.', 1)[1].lower()
+                unique_filename = f"tutor_{tutor.id}_{uuid.uuid4().hex[:8]}.{ext}"
+                file.save(os.path.join(upload_folder, unique_filename))
+                
+                tutor.profile_image = f"uploads/profiles/{unique_filename}"
+        
+        db.session.commit()
+        flash('Profile updated successfully!', 'success')
+        return redirect(url_for('tutoring.edit_tutor_profile'))
+        
+    return render_template('tutoring/profile.html', tutor=tutor)
 
 
 @tutoring_bp.route('/toggle-availability', methods=['POST'])

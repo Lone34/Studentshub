@@ -1,40 +1,5 @@
 {% extends "base.html" %}
 {% block content %}
-<style>
-    .subject-card {
-        background: white;
-        border-radius: 20px;
-        padding: 1.5rem;
-        border: 1px solid #f1f5f9;
-        transition: all 0.3s ease;
-    }
-
-    .subject-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-    }
-
-    .live-indicator {
-        animation: pulse 2s infinite;
-    }
-
-    @keyframes pulse {
-
-        0%,
-        100% {
-            opacity: 1;
-        }
-
-        50% {
-            opacity: 0.5;
-        }
-    }
-
-    .time-badge {
-        font-variant-numeric: tabular-nums;
-    }
-</style>
-
 <div class="min-h-screen py-8 px-4">
     <div class="max-w-6xl mx-auto">
         <!-- Header -->
@@ -45,7 +10,7 @@
                 </a>
                 <div>
                     <h1 class="text-3xl font-extrabold text-slate-800">{{ grade.name }}</h1>
-                    <p class="text-slate-500">Today's Classes • {{ today|capitalize }}</p>
+                    <p class="text-slate-500">Your Class Schedule</p>
                 </div>
             </div>
             <a href="{{ url_for('school.select_grade') }}"
@@ -54,92 +19,109 @@
             </a>
         </div>
 
-        <!-- Today's Schedule -->
-        <div class="bg-gradient-to-br from-violet-600 to-purple-700 rounded-3xl p-6 mb-8 text-white">
-            <div class="flex items-center justify-between mb-4">
-                <h2 class="text-xl font-bold flex items-center gap-2">
-                    <i class="fa-solid fa-calendar-day"></i> Today's Schedule
-                </h2>
-                <span class="text-violet-200 text-sm">{{ subjects|length }} Classes</span>
+        <!-- ONGOING CLASSES (LIVE) -->
+        {% if ongoing %}
+        <div class="mb-8 animate-fade-in-up">
+            <h2 class="text-xl font-bold text-slate-700 mb-4 flex items-center gap-2">
+                <span class="w-3 h-3 bg-red-500 rounded-full animate-pulse"></span> Ongoing Classes
+            </h2>
+            <div class="grid gap-4 md:grid-cols-2">
+                {% for cls in ongoing %}
+                <div
+                    class="bg-gradient-to-r from-red-500 to-pink-600 rounded-2xl p-6 text-white shadow-lg shadow-red-200">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h3 class="text-2xl font-bold">{{ cls.subject.name }}</h3>
+                            <p class="text-red-100"><i class="fa-solid fa-chalkboard-user mr-1"></i> {{
+                                cls.teacher.display_name if cls.teacher else 'No Tutor' }}</p>
+                        </div>
+                        <span class="px-3 py-1 bg-white/20 backdrop-blur rounded-lg text-sm font-bold animate-pulse">
+                            <i class="fa-solid fa-video mr-1"></i> LIVE
+                        </span>
+                    </div>
+                    <div class="flex justify-between items-center mt-4">
+                        <div class="text-sm text-red-100">
+                            Started at {{ cls.start_time }}
+                        </div>
+                        <a href="{{ url_for('school.join_class', class_id=cls.id) }}"
+                            class="px-6 py-2 bg-white text-red-600 font-bold rounded-xl hover:bg-red-50 transition-colors shadow-sm">
+                            Join Now
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
             </div>
+        </div>
+        {% endif %}
 
-            {% if subjects %}
-            <div class="flex flex-wrap gap-3">
-                {% for subject in subjects %}
-                <div class="bg-white/20 backdrop-blur px-4 py-2 rounded-xl flex items-center gap-2">
-                    <span class="font-bold time-badge">{{ subject.schedule_time or 'TBA' }}</span>
-                    <span class="text-violet-200">•</span>
-                    <span>{{ subject.name }}</span>
-                    {% if subject.id in live_class_map %}
-                    <span class="w-2 h-2 bg-red-400 rounded-full live-indicator ml-2"></span>
-                    {% endif %}
+        <!-- UPCOMING CLASSES -->
+        <div class="mb-8">
+            <h2 class="text-xl font-bold text-slate-700 mb-4 flex items-center gap-2">
+                <i class="fa-regular fa-calendar-check text-violet-500"></i> Upcoming Classes
+            </h2>
+            {% if upcoming %}
+            <div class="grid gap-4 md:grid-cols-3">
+                {% for cls in upcoming %}
+                <div class="bg-white rounded-2xl p-5 border border-slate-200 hover:shadow-md transition-all group">
+                    <div class="flex justify-between items-start mb-3">
+                        <div
+                            class="w-10 h-10 rounded-lg bg-violet-100 text-violet-600 flex items-center justify-center font-bold">
+                            {{ cls.subject.name[:1] }}
+                        </div>
+                        <div class="text-xs font-bold text-slate-400 bg-slate-50 px-2 py-1 rounded">
+                            {{ cls.scheduled_date.strftime('%b %d') }}
+                        </div>
+                    </div>
+                    <h3 class="font-bold text-lg text-slate-800 mb-1 group-hover:text-violet-600 transition-colors">{{
+                        cls.subject.name }}</h3>
+                    <p class="text-sm text-slate-500 mb-3">
+                        <i class="fa-regular fa-clock mr-1"></i> {{ cls.start_time }} - {{ cls.end_time }}
+                    </p>
+                    <div class="text-xs text-slate-400 flex items-center gap-1">
+                        <i class="fa-solid fa-user-tie"></i> {{ cls.teacher.display_name if cls.teacher else 'TBA' }}
+                    </div>
                 </div>
                 {% endfor %}
             </div>
             {% else %}
-            <p class="text-violet-200">No classes scheduled for today.</p>
+            <div class="text-center py-10 bg-slate-50 rounded-2xl border border-dashed border-slate-300">
+                <p class="text-slate-400">No upcoming classes scheduled.</p>
+            </div>
             {% endif %}
         </div>
 
-        <!-- Subject Cards -->
-        <h3 class="text-lg font-bold text-slate-700 mb-4">All Subjects</h3>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {% for subject in all_subjects %}
-            <div class="subject-card">
-                <div class="flex items-start justify-between mb-4">
-                    <div
-                        class="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-100 to-purple-100 flex items-center justify-center">
-                        <i class="fa-solid fa-book text-violet-600 text-lg"></i>
+        <!-- COMPLETED CLASSES -->
+        {% if completed %}
+        <div class="mb-8 opacity-75">
+            <h2 class="text-lg font-bold text-slate-600 mb-4 flex items-center gap-2">
+                <i class="fa-solid fa-check-circle text-slate-400"></i> Completed
+            </h2>
+            <div class="space-y-3">
+                {% for cls in completed %}
+                <div class="bg-slate-50 rounded-xl p-4 flex items-center justify-between border border-slate-100">
+                    <div class="flex items-center gap-4">
+                        <div class="text-slate-400 font-bold text-sm w-16">{{ cls.scheduled_date.strftime('%b %d') }}
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-slate-700">{{ cls.subject.name }}</h4>
+                            <p class="text-xs text-slate-500">{{ cls.teacher.display_name if cls.teacher else 'No Tutor'
+                                }}</p>
+                        </div>
                     </div>
-                    {% if subject.id in live_class_map %}
-                    <span
-                        class="px-3 py-1 bg-red-500 text-white text-xs font-bold rounded-full flex items-center gap-1">
-                        <span class="w-2 h-2 bg-white rounded-full live-indicator"></span> LIVE
-                    </span>
+                    {% if cls.recording_url %}
+                    <a href="{{ cls.recording_url }}" target="_blank"
+                        class="text-xs font-bold text-violet-600 hover:underline">
+                        <i class="fa-solid fa-play-circle"></i> Watch Recording
+                    </a>
                     {% else %}
-                    <span class="px-3 py-1 bg-slate-100 text-slate-500 text-xs font-bold rounded-full">
-                        {{ subject.schedule_time or 'Time TBA' }}
-                    </span>
+                    <span class="text-xs text-slate-400">Completed</span>
                     {% endif %}
                 </div>
-
-                <h3 class="text-lg font-bold text-slate-800 mb-1">{{ subject.name }}</h3>
-                <p class="text-slate-500 text-sm mb-4">
-                    {% if subject.teacher %}
-                    <i class="fa-solid fa-chalkboard-user mr-1"></i> {{ subject.teacher.display_name }}
-                    {% else %}
-                    <span class="text-slate-400">Teacher not assigned</span>
-                    {% endif %}
-                </p>
-
-                {% if subject.id in live_class_map %}
-                <a href="{{ url_for('school.join_class', class_id=live_class_map[subject.id].id) }}"
-                    class="block w-full py-3 bg-gradient-to-r from-red-500 to-pink-500 text-white font-bold rounded-xl text-center hover:shadow-lg transition-all">
-                    <i class="fa-solid fa-video mr-2"></i> Join Live Class
-                </a>
-                {% else %}
-                <button disabled
-                    class="block w-full py-3 bg-slate-100 text-slate-400 font-bold rounded-xl text-center cursor-not-allowed">
-                    <i class="fa-solid fa-clock mr-2"></i>
-                    <span>Starts at {{ subject.schedule_time or 'TBA' }}</span>
-                    {% if subject.schedule_time %}
-                    <span class="block text-[10px] font-normal opacity-70">(Waiting for teacher to start)</span>
-                    {% endif %}
-                </button>
-                {% endif %}
+                {% endfor %}
             </div>
-            {% endfor %}
-        </div>
-
-        {% if not all_subjects %}
-        <div class="text-center py-16">
-            <div class="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <i class="fa-solid fa-book-open text-slate-300 text-3xl"></i>
-            </div>
-            <h3 class="text-xl font-bold text-slate-600 mb-2">No Subjects Yet</h3>
-            <p class="text-slate-400">Subjects for your grade will appear here once added by the admin.</p>
         </div>
         {% endif %}
+
     </div>
 </div>
 {% endblock %}

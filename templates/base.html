@@ -1,16 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panun School | Student Dashboard</title>
-    
+
     <script src="https://cdn.tailwindcss.com"></script>
-    
+
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&display=swap" rel="stylesheet">
 
     <script>
@@ -32,53 +33,80 @@
 
     <style>
         /* Custom Scrollbar */
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #f8fafc; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f8fafc;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
 
         .glass-nav {
             background: rgba(255, 255, 255, 0.8);
             backdrop-filter: blur(12px);
             border-bottom: 1px solid rgba(226, 232, 240, 0.6);
         }
-        
-        [x-cloak] { display: none !important; }
+
+        [x-cloak] {
+            display: none !important;
+        }
     </style>
 </head>
+
 <body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col font-sans">
 
     <nav class="glass-nav fixed w-full z-50 transition-all duration-300 h-20">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full">
             <div class="flex items-center justify-between h-full">
-                
+
                 <a href="{{ url_for('dashboard') }}" class="flex items-center gap-3 group">
-                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-rose-600 flex items-center justify-center text-white shadow-lg transition-transform group-hover:scale-110">
+                    <div
+                        class="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-rose-600 flex items-center justify-center text-white shadow-lg transition-transform group-hover:scale-110">
                         <i class="fa-solid fa-graduation-cap"></i>
                     </div>
-                    <span class="font-extrabold text-2xl tracking-tight text-slate-800">Panun<span class="text-orange-500">School</span></span>
+                    <span class="font-extrabold text-2xl tracking-tight text-slate-800">Panun<span
+                            class="text-orange-500">School</span></span>
                 </a>
 
                 <div class="flex items-center gap-4">
                     {% if current_user.is_authenticated %}
-                        
-                        <div class="hidden md:flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200 rounded-full shadow-sm">
-                            <div class="w-6 h-6 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center text-xs">
-                                <i class="fa-solid fa-bolt"></i>
-                            </div>
-                            <span class="text-sm font-bold text-slate-700">{{ current_user.credits }} <span class="text-slate-400 font-normal">Credits</span></span>
-                        </div>
 
-                        <div class="flex items-center gap-3">
-                            <a href="{{ url_for('logout') }}" 
-                               class="group px-4 py-2 rounded-xl bg-slate-900 text-white text-xs font-bold hover:bg-slate-800 transition-all flex items-center gap-2 shadow-lg shadow-slate-900/20">
-                                <span>Logout</span>
-                                <i class="fa-solid fa-arrow-right-from-bracket group-hover:translate-x-1 transition-transform"></i>
-                            </a>
+                    <div
+                        class="hidden md:flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200 rounded-full shadow-sm">
+                        <div
+                            class="w-6 h-6 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center text-xs">
+                            <i class="fa-solid fa-bolt"></i>
                         </div>
+                        <span class="text-sm font-bold text-slate-700">{{ current_user.credits }} <span
+                                class="text-slate-400 font-normal">Credits</span></span>
+                    </div>
+
+                    <div class="flex items-center gap-3">
+                        <a href="{{ url_for('profile') }}"
+                            class="group px-4 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 text-xs font-bold hover:bg-slate-50 transition-all flex items-center gap-2 shadow-sm">
+                            <span>My Profile</span>
+                            <i class="fa-solid fa-user group-hover:text-primary transition-colors"></i>
+                        </a>
+                        <a href="{{ url_for('logout') }}"
+                            class="group px-4 py-2 rounded-xl bg-slate-900 text-white text-xs font-bold hover:bg-slate-800 transition-all flex items-center gap-2 shadow-lg shadow-slate-900/20">
+                            <span>Logout</span>
+                            <i
+                                class="fa-solid fa-arrow-right-from-bracket group-hover:translate-x-1 transition-transform"></i>
+                        </a>
+                    </div>
 
                     {% else %}
-                        <a href="{{ url_for('login') }}" class="text-sm font-bold text-slate-600 hover:text-orange-600">Login</a>
+                    <a href="{{ url_for('login') }}"
+                        class="text-sm font-bold text-slate-600 hover:text-orange-600">Login</a>
                     {% endif %}
                 </div>
 
@@ -90,16 +118,17 @@
 
     <main class="flex-grow container mx-auto px-4 pb-8 relative z-10">
         {% with messages = get_flashed_messages() %}
-            {% if messages %}
-                <div class="max-w-4xl mx-auto mb-6 space-y-2 animate-bounce-in">
-                    {% for message in messages %}
-                        <div class="flex items-center gap-3 bg-white border-l-4 border-orange-500 text-slate-600 px-5 py-4 rounded-r-xl shadow-sm">
-                            <i class="fa-solid fa-bell text-orange-500"></i>
-                            <span class="font-medium text-sm">{{ message }}</span>
-                        </div>
-                    {% endfor %}
-                </div>
-            {% endif %}
+        {% if messages %}
+        <div class="max-w-4xl mx-auto mb-6 space-y-2 animate-bounce-in">
+            {% for message in messages %}
+            <div
+                class="flex items-center gap-3 bg-white border-l-4 border-orange-500 text-slate-600 px-5 py-4 rounded-r-xl shadow-sm">
+                <i class="fa-solid fa-bell text-orange-500"></i>
+                <span class="font-medium text-sm">{{ message }}</span>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
         {% endwith %}
 
         {% block content %}{% endblock %}
@@ -110,4 +139,5 @@
     </footer>
 
 </body>
+
 </html>

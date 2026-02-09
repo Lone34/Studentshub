@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pricing — PanunSchool</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <style>
+        /* Reuse styles from landing.html */
+        :root {
+            --bg: 222 47% 6%;
+            --fg: 210 40% 96%;
+            --card: 222 40% 10%;
+            --primary: 25 95% 55%;
+            --primary-fg: 0 0% 100%;
+            --secondary: 222 30% 14%;
+            --muted: 222 30% 14%;
+            --muted-fg: 215 20% 55%;
+            --accent: 175 80% 45%;
+            --purple: 265 80% 60%;
+        }
+
+        body {
+            background: hsl(var(--bg));
+            color: hsl(var(--fg));
+            font-family: 'Outfit', sans-serif;
+            margin: 0;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem;
+        }
+
+        .glass-card {
+            background: hsl(222 40% 10%/0.4);
+            backdrop-filter: blur(16px);
+            border: 1px solid hsl(222 30% 22%/0.6);
+            border-radius: 0.75rem;
+            padding: 2rem;
+            transition: all .4s;
+        }
+
+        .glass-card:hover {
+            border-color: hsl(222 30% 30%/0.8);
+            transform: translateY(-5px);
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s;
+            cursor: pointer;
+            border: none;
+            width: 100%;
+            margin-top: 0.5rem;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, hsl(25, 95%, 55%), hsl(350, 80%, 55%));
+            color: white;
+        }
+
+        .btn-outline {
+            border: 1px solid hsl(var(--muted-fg));
+            color: hsl(var(--fg));
+        }
+
+        .btn-razorpay {
+            background: #3399cc;
+            color: white;
+        }
+
+        .text-gradient {
+            background: linear-gradient(135deg, hsl(25, 95%, 55%), hsl(350, 80%, 55%));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        h1,
+        h2,
+        h3 {
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+            margin-bottom: 2rem;
+        }
+
+        li {
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.95rem;
+            color: hsl(var(--muted-fg));
+        }
+
+        .check {
+            color: hsl(var(--accent));
+        }
+
+        .price {
+            font-size: 2.5rem;
+            font-weight: 700;
+            font-family: 'Space Grotesk';
+            color: hsl(var(--fg));
+        }
+
+        .period {
+            font-size: 1rem;
+            color: hsl(var(--muted-fg));
+            font-weight: 400;
+        }
+
+        .recommended {
+            border-color: hsl(var(--primary));
+            box-shadow: 0 0 30px hsl(var(--primary)/0.1);
+            position: relative;
+        }
+
+        .badge {
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, hsl(25, 95%, 55%), hsl(350, 80%, 55%));
+            color: white;
+            padding: 0.25rem 1rem;
+            border-radius: 1rem;
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+    </style>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+</head>
+
+<body>
+
+    <div class="container">
+        <div style="text-align: center; margin-bottom: 2rem;">
+            <a href="{{ url_for('index') }}" style="color: hsl(var(--muted-fg)); font-size: 0.9rem;"><i
+                    class="fas fa-arrow-left"></i> Back to Home</a>
+            <h1 style="font-size: 3rem; margin-top: 1rem;">Choose Your <span class="text-gradient">Plan</span></h1>
+            <p style="color: hsl(var(--muted-fg)); max-width: 600px; margin: 1rem auto;">Unlock the full potential of
+                PanunSchool with our affordable subscription plans.</p>
+
+            {% with messages = get_flashed_messages() %}
+            {% if messages %}
+            <div
+                style="background: hsl(var(--primary)/0.1); border: 1px solid hsl(var(--primary)); padding: 1rem; border-radius: 0.5rem; margin: 1rem auto; max-width: 800px;">
+                {{ messages[0] }}
+            </div>
+            {% endif %}
+            {% endwith %}
+        </div>
+
+        <div class="grid">
+            <!-- BASIC PLAN -->
+            <div class="glass-card">
+                <h3>Basic Plan</h3>
+                <div class="price">₹299 <span class="period">/mo</span></div>
+                <p style="color: hsl(var(--muted-fg)); margin-bottom: 1.5rem;">Essential tools for daily study.</p>
+                <ul>
+                    <li><i class="fas fa-check check"></i> 5 Tutor Sessions / month</li>
+                    <li><i class="fas fa-check check"></i> 10 AI Queries / month</li>
+                    <li><i class="fas fa-check check"></i> 20 Expert Questions (Ask/Repost)</li>
+                    <li><i class="fas fa-check check"></i> Unlimited Unblur & Notes</li>
+                    <li><i class="fas fa-times" style="color: #666"></i> No Access to Online School</li>
+                </ul>
+
+                <form action="{{ url_for('payments.stripe_checkout', plan_id='basic_299') }}" method="POST">
+                    <button type="submit" class="btn btn-primary">Pay with Stripe</button>
+                </form>
+                <button onclick="payRazorpay('basic_299')" class="btn btn-razorpay">Pay with Razorpay</button>
+            </div>
+
+            <!-- PRO PLAN -->
+            <div class="glass-card recommended">
+                <div class="badge">MOST POPULAR</div>
+                <h3>Pro Plan</h3>
+                <div class="price">₹499 <span class="period">/mo</span></div>
+                <p style="color: hsl(var(--muted-fg)); margin-bottom: 1.5rem;">More power for serious students.</p>
+                <ul>
+                    <li><i class="fas fa-check check"></i> 10 Tutor Sessions / month</li>
+                    <li><i class="fas fa-check check"></i> 50 AI Queries / month</li>
+                    <li><i class="fas fa-check check"></i> 40 Expert Questions (Ask/Repost)</li>
+                    <li><i class="fas fa-check check"></i> Unlimited Unblur & Notes</li>
+                    <li><i class="fas fa-times" style="color: #666"></i> No Access to Online School</li>
+                </ul>
+
+                <form action="{{ url_for('payments.stripe_checkout', plan_id='pro_499') }}" method="POST">
+                    <button type="submit" class="btn btn-primary">Pay with Stripe</button>
+                </form>
+                <button onclick="payRazorpay('pro_499')" class="btn btn-razorpay">Pay with Razorpay</button>
+            </div>
+
+            <!-- SCHOOL PLAN -->
+            <div class="glass-card" style="border-color: hsl(var(--purple)/0.5);">
+                <h3 style="color: hsl(var(--purple));">School Plan</h3>
+                <div class="price">₹1200 <span class="period">/mo</span></div>
+                <p style="color: hsl(var(--muted-fg)); margin-bottom: 1.5rem;">Full access to live online classes.</p>
+                <ul>
+                    <li><i class="fas fa-check check"></i> <strong>Full Access to School Section</strong></li>
+                    <li><i class="fas fa-check check"></i> 10 Tutor Sessions / month</li>
+                    <li><i class="fas fa-check check"></i> 20 AI Queries / month</li>
+                    <li><i class="fas fa-check check"></i> 20 Expert Questions (Ask/Repost)</li>
+                    <li><i class="fas fa-check check"></i> Unlimited Unblur & Notes</li>
+                </ul>
+
+                <form action="{{ url_for('payments.stripe_checkout', plan_id='school_1200') }}" method="POST">
+                    <button type="submit" class="btn btn-primary" style="background: hsl(var(--purple));">Pay with
+                        Stripe</button>
+                </form>
+                <button onclick="payRazorpay('school_1200')" class="btn btn-razorpay">Pay with Razorpay</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function payRazorpay(planId) {
+            fetch(`/checkout/razorpay/${planId}`, { method: 'POST' })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.error) {
+                        alert('Error: ' + data.error);
+                        return;
+                    }
+
+                    var options = {
+                        "key": data.key,
+                        "amount": data.amount,
+                        "currency": "INR",
+                        "name": data.name,
+                        "description": data.description,
+                        "order_id": data.order_id,
+                        "handler": function (response) {
+                            // Redirect to success URL
+                            window.location.href = data.callback_url + "&razorpay_payment_id=" + response.razorpay_payment_id;
+                        },
+                        "prefill": data.prefill,
+                        "theme": { "color": "#3399cc" }
+                    };
+                    var rzp1 = new Razorpay(options);
+                    rzp1.open();
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert('Something went wrong.');
+                });
+        }
+    </script>
+
+</body>
+
+</html>

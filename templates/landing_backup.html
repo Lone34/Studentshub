@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% block content %}
+
+<!-- Custom Styles for Landing Page -->
+<style>
+    .gradient-text {
+        background: linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .blob {
+        position: absolute;
+        filter: blur(80px);
+        z-index: -1;
+        animation: float 10s infinite ease-in-out;
+    }
+
+    .blob-1 {
+        top: -10%;
+        left: -10%;
+        width: 500px;
+        height: 500px;
+        background: rgba(255, 107, 107, 0.2);
+    }
+
+    .blob-2 {
+        bottom: -10%;
+        right: -10%;
+        width: 500px;
+        height: 500px;
+        background: rgba(78, 205, 196, 0.2);
+        animation-delay: 2s;
+    }
+
+    .blob-3 {
+        top: 40%;
+        left: 30%;
+        width: 300px;
+        height: 300px;
+        background: rgba(167, 139, 250, 0.2);
+        animation-delay: 4s;
+    }
+
+    @keyframes float {
+
+        0%,
+        100% {
+            transform: translate(0, 0) rotate(0deg);
+        }
+
+        33% {
+            transform: translate(30px, -50px) rotate(10deg);
+        }
+
+        66% {
+            transform: translate(-20px, 20px) rotate(-5deg);
+        }
+    }
+
+    .glass-card {
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.5);
+    }
+</style>
+
+<div class="relative overflow-hidden min-h-screen">
+
+    <!-- Background Elements -->
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+
+    <!-- Hero Section -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-16">
+        <div class="text-center max-w-4xl mx-auto">
+            <div class="inline-flex items-center px-4 py-2 rounded-full glass-card mb-8 shadow-sm animate-fade-in">
+                <span class="w-2 h-2 rounded-full bg-green-500 mr-2 animate-pulse"></span>
+                <span class="text-xs font-bold text-slate-600 uppercase tracking-wider">Live & Ready for 2026</span>
+            </div>
+
+            <h1 class="text-6xl md:text-7xl font-black text-slate-900 mb-6 leading-tight animate-fade-in"
+                style="animation-delay: 0.1s;">
+                Master Your Studies with <br>
+                <span class="gradient-text">Opti's Work</span>
+            </h1>
+
+            <p class="text-xl md:text-2xl text-slate-500 mb-10 max-w-2xl mx-auto leading-relaxed animate-fade-in"
+                style="animation-delay: 0.2s;">
+                The ultimate student hub. Access expert answers, live tutoring, AI assistance, and premium resources all
+                in one place.
+            </p>
+
+            <div class="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in" style="animation-delay: 0.3s;">
+                <a href="{{ url_for('register') }}"
+                    class="px-8 py-4 bg-slate-900 text-white font-bold rounded-2xl shadow-xl hover:bg-slate-800 hover:scale-105 transition-all flex items-center justify-center gap-3">
+                    Get Started Free <i class="fa-solid fa-arrow-right"></i>
+                </a>
+                <a href="{{ url_for('login') }}"
+                    class="px-8 py-4 glass-card text-slate-700 font-bold rounded-2xl hover:bg-white/90 hover:scale-105 transition-all flex items-center justify-center gap-3">
+                    Student Login
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Features Grid -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+
+            <!-- Feature 1 -->
+            <div class="glass-card p-8 rounded-3xl hover:-translate-y-2 transition-transform duration-500 group">
+                <div
+                    class="w-14 h-14 rounded-2xl bg-orange-100 text-orange-500 flex items-center justify-center text-2xl mb-6 group-hover:scale-110 transition-transform">
+                    <i class="fa-solid fa-bolt"></i>
+                </div>
+                <h3 class="text-2xl font-bold text-slate-800 mb-3">Instant Answers</h3>
+                <p class="text-slate-500 leading-relaxed">
+                    Get textbook solutions from Chegg and other expert platforms in seconds. Unblur answers instantly.
+                </p>
+            </div>
+
+            <!-- Feature 2 -->
+            <div class="glass-card p-8 rounded-3xl hover:-translate-y-2 transition-transform duration-500 group">
+                <div
+                    class="w-14 h-14 rounded-2xl bg-purple-100 text-purple-500 flex items-center justify-center text-2xl mb-6 group-hover:scale-110 transition-transform">
+                    <i class="fa-solid fa-chalkboard-user"></i>
+                </div>
+                <h3 class="text-2xl font-bold text-slate-800 mb-3">Live Tutoring</h3>
+                <p class="text-slate-500 leading-relaxed">
+                    Connect with verified tutors for 1-on-1 video sessions. Master difficult concepts with personalized
+                    help.
+                </p>
+            </div>
+
+            <!-- Feature 3 -->
+            <div class="glass-card p-8 rounded-3xl hover:-translate-y-2 transition-transform duration-500 group">
+                <div
+                    class="w-14 h-14 rounded-2xl bg-emerald-100 text-emerald-500 flex items-center justify-center text-2xl mb-6 group-hover:scale-110 transition-transform">
+                    <i class="fa-solid fa-robot"></i>
+                </div>
+                <h3 class="text-2xl font-bold text-slate-800 mb-3">AI Powered</h3>
+                <p class="text-slate-500 leading-relaxed">
+                    Leverage dual AI models (ChatGPT & Gemini) to explain complex topics and generate study notes.
+                </p>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}

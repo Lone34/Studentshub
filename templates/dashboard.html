@@ -65,6 +65,41 @@
         {% endif %}
     </div>
 
+    <!-- Subscription Status -->
+    <div
+        class="mb-8 p-6 bg-white rounded-3xl border border-slate-100 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6">
+        <div>
+            <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                <i class="fa-solid fa-crown text-amber-500"></i> Current Plan:
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-amber-500 to-orange-600">
+                    {% if user.role in ['admin', 'super_admin'] %}
+                    Unlimited Admin Access
+                    {% elif user.active_subscription_id %}
+                    Premium Member
+                    {% else %}
+                    Free Tier
+                    {% endif %}
+                </span>
+            </h2>
+            <p class="text-slate-500 text-sm mt-1">
+                {% if user.active_subscription_id %}
+                Your subscription is active. Enjoy full access!
+                {% elif user.role in ['admin', 'super_admin'] %}
+                You have unrestricted access to all features.
+                {% else %}
+                You are on the limited usage free tier. Upgrade to unlock more.
+                {% endif %}
+            </p>
+        </div>
+
+        {% if not user.active_subscription_id and user.role not in ['admin', 'super_admin'] %}
+        <a href="{{ url_for('payments.pricing') }}"
+            class="px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-600 text-white font-bold rounded-xl shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 transition transform hover:-translate-y-0.5">
+            Upgrade Now <i class="fa-solid fa-arrow-right ml-2"></i>
+        </a>
+        {% endif %}
+    </div>
+
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
 
         <div onclick="openTool()"
@@ -194,6 +229,20 @@
             class="px-4 py-2 bg-slate-50 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-100 transition">
             View Full History
         </button>
+    </div>
+
+    <!-- Feedback Section -->
+    <div class="lg:col-span-3 bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+        <h4 class="font-bold text-slate-900 mb-4"><i class="fa-solid fa-comment-dots text-orange-500 mr-2"></i> Share
+            Your Experience</h4>
+        <form action="{{ url_for('submit_feedback') }}" method="POST" class="flex flex-col gap-4">
+            <textarea name="content" rows="3" placeholder="Tell us how we helped you! (Minimum 10 words to be featured)"
+                class="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm focus:outline-none focus:border-orange-500"></textarea>
+            <button type="submit"
+                class="self-end px-6 py-2 bg-slate-800 text-white rounded-xl font-bold text-sm hover:bg-slate-700 transition">
+                Submit Feedback
+            </button>
+        </form>
     </div>
 </div>
 </div>

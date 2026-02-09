@@ -62,6 +62,10 @@
                             class="w-3 h-3 rounded-full {% if tutor.is_available %}bg-white{% else %}bg-gray-300{% endif %}"></span>
                         <span id="availabilityText">{{ 'Online' if tutor.is_available else 'Offline' }}</span>
                     </button>
+                    <a href="{{ url_for('tutoring.edit_tutor_profile') }}"
+                        class="px-4 py-2 bg-white/20 rounded-xl hover:bg-white/30 transition-all text-sm font-medium flex items-center gap-2">
+                        <i class="fa-solid fa-user-pen"></i> Edit Profile
+                    </a>
                     <a href="{{ url_for('tutoring.tutor_logout') }}"
                         class="px-4 py-2 bg-white/20 rounded-xl hover:bg-white/30 transition-all">
                         <i class="fa-solid fa-right-from-bracket"></i>
@@ -203,8 +207,70 @@
                 </div>
             </div>
 
-            <!-- Right Column: Recent Sessions -->
-            <div class="lg:col-span-2">
+            <!-- Right Column: Classes and Sessions -->
+            <div class="lg:col-span-2 space-y-6">
+
+                <!-- School Classes Section -->
+                <div class="bg-white rounded-2xl border border-gray-100 shadow-sm">
+                    <div class="p-6 border-b border-gray-100 flex justify-between items-center">
+                        <h3 class="font-bold text-gray-800 flex items-center gap-2">
+                            <i class="fa-solid fa-chalkboard text-indigo-500"></i> My School Classes
+                        </h3>
+                    </div>
+                    <div class="divide-y divide-gray-50">
+                        {% if school_classes %}
+                        {% for cls in school_classes %}
+                        <div class="p-4 hover:bg-gray-50 transition-colors">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-4">
+                                    <div
+                                        class="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center font-bold text-indigo-600">
+                                        {{ cls.subject.name[:1] }}
+                                    </div>
+                                    <div>
+                                        <p class="font-bold text-gray-800">{{ cls.subject.name }} ({{ cls.grade.name }})
+                                        </p>
+                                        <p class="text-xs text-gray-500">
+                                            <i class="fa-regular fa-clock mr-1"></i>
+                                            {{ cls.scheduled_date.strftime('%b %d') }} • {{ cls.start_time }} - {{
+                                            cls.end_time }}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div>
+                                    {% if cls.derived_status == 'live' %}
+                                    <a href="{{ url_for('school.teacher_classroom', class_id=cls.id) }}"
+                                        class="px-4 py-2 bg-red-100 text-red-600 rounded-lg text-sm font-bold hover:bg-red-200 transition-colors animate-pulse">
+                                        <i class="fa-solid fa-video mr-1"></i> Live Now
+                                    </a>
+                                    {% elif cls.derived_status == 'completed' or cls.derived_status == 'completed_time'
+                                    %}
+                                    <span
+                                        class="px-3 py-1 bg-gray-100 text-gray-500 rounded-lg text-xs font-bold">Completed</span>
+                                    {% elif cls.derived_status == 'ready' %}
+                                    <button onclick="startSchoolClass({{ cls.id }})"
+                                        class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-bold hover:bg-indigo-700 transition-colors shadow-sm animate-pulse">
+                                        <i class="fa-solid fa-play mr-1"></i> Start Class
+                                    </button>
+                                    {% else %}
+                                    <span
+                                        class="px-3 py-1 bg-slate-100 text-slate-500 rounded-lg text-xs font-bold border border-slate-200">
+                                        Scheduled
+                                    </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                        {% else %}
+                        <div class="p-8 text-center text-gray-400">
+                            No upcoming school classes assigned.
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Recent Tutoring Sessions -->
                 <div class="bg-white rounded-2xl border border-gray-100 shadow-sm">
                     <div class="p-6 border-b border-gray-100">
                         <h3 class="font-bold text-gray-800 flex items-center gap-2">
@@ -229,6 +295,7 @@
                                         </p>
                                     </div>
                                 </div>
+
                                 <div class="text-right">
                                     <span class="inline-block px-3 py-1 rounded-full text-xs font-medium 
                                             {% if session.status == 'completed' %}bg-green-100 text-green-700
@@ -263,12 +330,50 @@
                 </div>
             </div>
         </div>
+        </div>
+
+        <!-- Feedback Section -->
+        <div class="mt-8 bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+            <h3 class="font-bold text-gray-800 mb-4 flex items-center gap-2">
+                <i class="fa-solid fa-comment-dots text-purple-500"></i> Share Your Experience
+            </h3>
+            <form action="{{ url_for('submit_feedback') }}" method="POST" class="flex flex-col gap-4">
+                <textarea name="content" rows="3"
+                    placeholder="How has teaching on Students Hub been? (Minimum 10 words to be featured)"
+                    class="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 text-sm focus:outline-none focus:border-purple-500"></textarea>
+                <div class="flex justify-end">
+                    <button type="submit"
+                        class="px-6 py-2 bg-purple-600 text-white rounded-xl font-bold text-sm hover:bg-purple-700 transition-all shadow-md">
+                        Submit Feedback
+                    </button>
+                </div>
+            </form>
+        </div>
     </main>
 
     <script>
         // Session polling variables
         let pollingInterval = null;
         let lastSessionCount = 0;
+
+        async function startSchoolClass(classId) {
+            if (!confirm("Start this class now?")) return;
+            try {
+                const res = await fetch(`/school/teacher/start-class/${classId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const data = await res.json();
+                if (data.success) {
+                    window.location.href = `/school/teacher/class/${classId}`;
+                } else {
+                    alert(data.error || "Failed to start class");
+                }
+            } catch (e) {
+                console.error(e);
+                alert("Error starting class");
+            }
+        }
 
         async function toggleAvailability() {
             const btn = document.getElementById('availabilityToggle');

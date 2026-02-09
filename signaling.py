@@ -10,11 +10,19 @@ socketio = SocketIO(cors_allowed_origins="*")
 
 # Store connected users per room
 room_users = {}
+# Store user types: sid -> type
+user_types = {}
 
 def init_socketio(app):
     """Initialize SocketIO with the Flask app"""
     socketio.init_app(app, async_mode='eventlet')
     return socketio
+
+def get_room_count(room_id):
+    """Get number of users in a room"""
+    if room_id in room_users:
+        return len(room_users[room_id])
+    return 0
 
 
 # ============================================
@@ -33,15 +41,27 @@ def handle_disconnect():
     """Handle disconnection"""
     print(f"[Socket] Client disconnected: {request.sid}")
     
+    # Get user name
+    user_name = user_names.get(request.sid, 'A student')
+    
     # Find and clean up rooms this user was in
     for room_id, users in list(room_users.items()):
         if request.sid in users:
             users.remove(request.sid)
             # Notify others in room that user left
-            emit('user_left', {'sid': request.sid}, room=room_id)
+            emit('user_left', {
+                'sid': request.sid,
+                'user_name': user_name
+            }, room=room_id)
             
             if len(users) == 0:
                 del room_users[room_id]
+    
+    # Clean up name and type
+    if request.sid in user_names:
+        del user_names[request.sid]
+    if request.sid in user_types:
+        del user_types[request.sid]
 
 
 @socketio.on('join_room')
@@ -62,14 +82,29 @@ def handle_join_room(data):
     if room_id not in room_users:
         room_users[room_id] = []
     
-    room_users[room_id].append(request.sid)
+    # Get existing users BEFORE adding self (to avoid sending self in list)
+    existing_users = []
+    for sid in room_users[room_id]:
+        if sid != request.sid:
+            existing_users.append({
+                'sid': sid,
+                'user_name': user_names.get(sid, 'Unknown'),
+                'user_type': user_types.get(sid, 'unknown')
+            })
+    
+    if request.sid not in room_users[room_id]:
+        room_users[room_id].append(request.sid)
+    
+    user_names[request.sid] = user_name
+    user_types[request.sid] = user_type
     
     print(f"[Socket] {user_name} ({user_type}) joined room {room_id}")
     
-    # Notify user they joined successfully
+    # Notify user they joined successfully AND send existing users
     emit('room_joined', {
         'room_id': room_id,
-        'users_in_room': len(room_users[room_id])
+        'users_in_room': len(room_users[room_id]),
+        'existing_users': existing_users
     })
     
     # Notify others in room that someone joined
@@ -88,11 +123,21 @@ def handle_leave_room(data):
     if room_id:
         leave_room(room_id)
         
+        user_name = user_names.get(request.sid, 'A student')
+        
         if room_id in room_users and request.sid in room_users[room_id]:
             room_users[room_id].remove(request.sid)
         
-        emit('user_left', {'sid': request.sid}, room=room_id)
+        emit('user_left', {
+            'sid': request.sid,
+            'user_name': user_name
+        }, room=room_id)
         print(f"[Socket] Client {request.sid} left room {room_id}")
+        
+        if request.sid in user_names:
+            del user_names[request.sid]
+        if request.sid in user_types:
+            del user_types[request.sid]
 
 
 # ============================================
@@ -104,13 +149,19 @@ def handle_offer(data):
     """Relay WebRTC offer to other peer"""
     room_id = data.get('room_id')
     offer = data.get('offer')
+    to_sid = data.get('to')
     
     if room_id and offer:
-        emit('offer', {
+        payload = {
             'offer': offer,
             'from': request.sid
-        }, room=room_id, include_self=False)
-        print(f"[Socket] Offer relayed in room {room_id}")
+        }
+        if to_sid:
+            emit('offer', payload, room=to_sid)
+            print(f"[Socket] Offer directed from {request.sid} to {to_sid}")
+        else:
+            emit('offer', payload, room=room_id, include_self=False)
+            print(f"[Socket] Offer broadcast in room {room_id}")
 
 
 @socketio.on('answer')
@@ -118,13 +169,19 @@ def handle_answer(data):
     """Relay WebRTC answer to other peer"""
     room_id = data.get('room_id')
     answer = data.get('answer')
+    to_sid = data.get('to')
     
     if room_id and answer:
-        emit('answer', {
+        payload = {
             'answer': answer,
             'from': request.sid
-        }, room=room_id, include_self=False)
-        print(f"[Socket] Answer relayed in room {room_id}")
+        }
+        if to_sid:
+            emit('answer', payload, room=to_sid)
+            print(f"[Socket] Answer directed from {request.sid} to {to_sid}")
+        else:
+            emit('answer', payload, room=room_id, include_self=False)
+            print(f"[Socket] Answer broadcast in room {room_id}")
 
 
 @socketio.on('ice_candidate')
@@ -132,12 +189,17 @@ def handle_ice_candidate(data):
     """Relay ICE candidate to other peer"""
     room_id = data.get('room_id')
     candidate = data.get('candidate')
+    to_sid = data.get('to')
     
     if room_id and candidate:
-        emit('ice_candidate', {
+        payload = {
             'candidate': candidate,
             'from': request.sid
-        }, room=room_id, include_self=False)
+        }
+        if to_sid:
+            emit('ice_candidate', payload, room=to_sid)
+        else:
+            emit('ice_candidate', payload, room=room_id, include_self=False)
 
 
 # ============================================

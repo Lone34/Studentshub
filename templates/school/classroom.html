@@ -206,16 +206,18 @@
         const roomId = '{{ school_class.room_id }}';
         const classId = {{ school_class.id }};
         const isTeacher = {{ 'true' if is_teacher else 'false' }};
-        const userName = isTeacher ? '{{ teacher.display_name if teacher else "Teacher" }}' : 'Student';
+        const userName = isTeacher ? {{ (teacher.display_name if teacher else "Teacher") | tojson }} : { { student_name | tojson } };
 
         // State
         let localStream = null;
-        let peerConnection = null;
+        let peers = {}; // For teacher: map of socketId -> RTCPeerConnection
+        let peerConnection = null; // For student: single connection to teacher
         let socket = null;
         let micEnabled = true;
         let cameraEnabled = true;
+        let isScreenSharing = false;
 
-        // ICE Servers (same as tutoring)
+        // ICE Servers
         const iceServers = {
             iceServers: [
                 { urls: 'stun:stun.l.google.com:19302' },
@@ -282,38 +284,69 @@
             socket.on('room_joined', (data) => {
                 console.log('✓ Joined room, users:', data.users_in_room);
                 updateStudentCount();
+
+                // If teacher joins and finds students waiting, connect to them
+                if (isTeacher && data.existing_users) {
+                    data.existing_users.forEach(user => {
+                        if (user.user_type === 'student') {
+                            console.log(`Checking existing student: ${user.user_name} (${user.sid})`);
+                            addChatMessage(`${user.user_name} is already in class`, true);
+                            createPeerConnection(user.sid);
+                            createOffer(user.sid);
+                        }
+                    });
+                }
             });
 
             socket.on('user_joined', (data) => {
-                console.log('→ User joined:', data.user_name);
+                console.log('→ User joined:', data.user_name, data.sid);
                 addChatMessage(`${data.user_name} joined the class`, true);
                 updateStudentCount();
 
-                // If teacher and student joins, send offer
+                // If teacher, initiate connection to this specific student
                 if (isTeacher && data.user_type === 'student') {
-                    setTimeout(() => createOffer(), 500);
+                    console.log(`Initiating connection to student ${data.sid}`);
+                    createPeerConnection(data.sid);
+                    createOffer(data.sid);
                 }
             });
 
             socket.on('user_left', (data) => {
-                addChatMessage('A student left the class', true);
+                const name = data.user_name || 'A student';
+                addChatMessage(`${name} left the class`, true);
                 updateStudentCount();
+
+                // Cleanup peer connection
+                if (isTeacher && peers[data.sid]) {
+                    peers[data.sid].close();
+                    delete peers[data.sid];
+                }
             });
 
             // WebRTC signaling
             socket.on('offer', async (data) => {
-                console.log('← Received offer');
-                await handleOffer(data.offer);
+                console.log(`← Received offer from ${data.from}`);
+                // Student accepts offer from teacher
+                if (!isTeacher) {
+                    await handleOffer(data.offer, data.from);
+                }
             });
 
             socket.on('answer', async (data) => {
-                console.log('← Received answer');
-                await handleAnswer(data.answer);
+                console.log(`← Received answer from ${data.from}`);
+                // Teacher accepts answer from student
+                if (isTeacher) {
+                    await handleAnswer(data.answer, data.from);
+                }
             });
 
             socket.on('ice_candidate', async (data) => {
-                if (peerConnection && data.candidate) {
-                    await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
+                const candidate = new RTCIceCandidate(data.candidate);
+                if (isTeacher) {
+                    const pc = peers[data.from];
+                    if (pc) await pc.addIceCandidate(candidate);
+                } else {
+                    if (peerConnection) await peerConnection.addIceCandidate(candidate);
                 }
             });
 
@@ -331,70 +364,89 @@
         }
 
         // WebRTC functions
-        function createPeerConnection() {
-            peerConnection = new RTCPeerConnection(iceServers);
+        function createPeerConnection(targetSid) {
+            const pc = new RTCPeerConnection(iceServers);
 
             if (localStream) {
                 localStream.getTracks().forEach(track => {
-                    peerConnection.addTrack(track, localStream);
+                    pc.addTrack(track, localStream);
                 });
             }
 
-            peerConnection.ontrack = (event) => {
-                console.log('✓ Received remote track');
-                teacherVideo.srcObject = event.streams[0];
-                if (waitingOverlay) waitingOverlay.style.display = 'none';
-            };
-
-            peerConnection.onicecandidate = (event) => {
+            pc.onicecandidate = (event) => {
                 if (event.candidate) {
                     socket.emit('ice_candidate', {
                         room_id: roomId,
-                        candidate: event.candidate
+                        candidate: event.candidate,
+                        to: targetSid // Target specific peer
                     });
                 }
             };
 
-            return peerConnection;
+            // For student: handle incoming stream
+            if (!isTeacher) {
+                pc.ontrack = (event) => {
+                    console.log('✓ Received remote track');
+                    teacherVideo.srcObject = event.streams[0];
+                    if (waitingOverlay) waitingOverlay.style.display = 'none';
+                };
+            }
+
+            if (isTeacher) {
+                peers[targetSid] = pc;
+            } else {
+                peerConnection = pc;
+            }
+
+            return pc;
         }
 
-        async function createOffer() {
-            if (!peerConnection) createPeerConnection();
+        async function createOffer(targetSid) {
+            const pc = peers[targetSid];
+            if (!pc) return;
 
             try {
-                const offer = await peerConnection.createOffer();
-                await peerConnection.setLocalDescription(offer);
-                socket.emit('offer', { room_id: roomId, offer: offer });
-                console.log('→ Sent offer');
+                const offer = await pc.createOffer();
+                await pc.setLocalDescription(offer);
+                socket.emit('offer', {
+                    room_id: roomId,
+                    offer: offer,
+                    to: targetSid // Send ONLY to this student
+                });
+                console.log(`→ Sent offer to ${targetSid}`);
             } catch (err) {
                 console.error('Offer error:', err);
             }
         }
 
-        async function handleOffer(offer) {
-            if (peerConnection) {
-                peerConnection.close();
-                peerConnection = null;
-            }
-
-            createPeerConnection();
+        async function handleOffer(offer, fromSid) {
+            // Student handles offer from teacher
+            const pc = createPeerConnection(fromSid);
 
             try {
-                await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
-                const answer = await peerConnection.createAnswer();
-                await peerConnection.setLocalDescription(answer);
-                socket.emit('answer', { room_id: roomId, answer: answer });
-                console.log('→ Sent answer');
+                await pc.setRemoteDescription(new RTCSessionDescription(offer));
+                const answer = await pc.createAnswer();
+                await pc.setLocalDescription(answer);
+                socket.emit('answer', {
+                    room_id: roomId,
+                    answer: answer,
+                    to: fromSid // Reply to teacher
+                });
+                console.log('→ Sent answer to teacher');
             } catch (err) {
                 console.error('Answer error:', err);
             }
         }
 
-        async function handleAnswer(answer) {
-            try {
-                await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
-            } catch (err) {
-                console.error('Handle answer error:', err);
+        async function handleAnswer(answer, fromSid) {
+            // Teacher handles answer from student
+            const pc = peers[fromSid];
+            if (pc) {
+                try {
+                    await pc.setRemoteDescription(new RTCSessionDescription(answer));
+                } catch (err) {
+                    console.error('Handle answer error:', err);
+                }
             }
         }
 
@@ -421,22 +473,54 @@
 
         async function toggleScreenShare() {
             const btn = document.getElementById('screenBtn');
+
+            if (isScreenSharing) {
+                // Stop screen sharing
+                if (localStream) {
+                    // Revert to camera
+                    const videoTrack = localStream.getVideoTracks()[0];
+                    if (videoTrack) {
+                        // Replace track in all peer connections
+                        for (let sid in peers) {
+                            const pc = peers[sid];
+                            const sender = pc.getSenders().find(s => s.track.kind === 'video');
+                            if (sender) sender.replaceTrack(videoTrack);
+                        }
+                        teacherVideo.srcObject = localStream;
+                    }
+                }
+                btn.classList.remove('active');
+                isScreenSharing = false;
+                return;
+            }
+
             try {
                 const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
                 const screenTrack = screenStream.getVideoTracks()[0];
+                isScreenSharing = true;
 
-                const sender = peerConnection?.getSenders().find(s => s.track?.kind === 'video');
-                if (sender) sender.replaceTrack(screenTrack);
+                // Replace track in all peer connections
+                for (let sid in peers) {
+                    const pc = peers[sid];
+                    const sender = pc.getSenders().find(s => s.track.kind === 'video');
+                    if (sender) sender.replaceTrack(screenTrack);
+                }
 
                 teacherVideo.srcObject = screenStream;
                 btn.classList.add('active');
 
                 screenTrack.onended = () => {
+                    // Auto revert when user clicks "Stop sharing" chrome UI
                     if (localStream) {
                         const videoTrack = localStream.getVideoTracks()[0];
-                        if (sender) sender.replaceTrack(videoTrack);
+                        for (let sid in peers) {
+                            const pc = peers[sid];
+                            const sender = pc.getSenders().find(s => s.track.kind === 'video');
+                            if (sender) sender.replaceTrack(videoTrack);
+                        }
                         teacherVideo.srcObject = localStream;
                         btn.classList.remove('active');
+                        isScreenSharing = false;
                     }
                 };
             } catch (err) {
@@ -446,6 +530,11 @@
 
         function endClass() {
             if (!confirm('End this class for all students?')) return;
+
+            // Close all connections
+            for (let sid in peers) {
+                peers[sid].close();
+            }
 
             fetch(`/school/teacher/end-class/${classId}`, { method: 'POST' })
                 .then(res => res.json())

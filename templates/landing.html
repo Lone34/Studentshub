@@ -1,155 +1,2442 @@
-{% extends "base.html" %}
-{% block content %}
+<!DOCTYPE html>
+<html lang="en">
 
-<!-- Custom Styles for Landing Page -->
-<style>
-    .gradient-text {
-        background: linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%);
-        -webkit-background-clip: text;
-        background-clip: text;
-        -webkit-text-fill-color: transparent;
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PanunSchool — AI-Powered Learning Platform for Students</title>
+  <meta name="description"
+    content="Access live 1-on-1 tutoring, instant AI homework help powered by GPT & Gemini, and a massive library of 15,000+ notes. Join 2,500+ students today." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <style>
+    /* ═══════════ RESET & BASE ═══════════ */
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0
     }
 
-    .blob {
-        position: absolute;
-        filter: blur(80px);
-        z-index: -1;
-        animation: float 10s infinite ease-in-out;
+    :root {
+      --bg: 222 47% 6%;
+      --fg: 210 40% 96%;
+      --card: 222 40% 10%;
+      --card-fg: 210 40% 96%;
+      --primary: 25 95% 55%;
+      --primary-fg: 0 0% 100%;
+      --secondary: 222 30% 14%;
+      --secondary-fg: 210 40% 90%;
+      --muted: 222 30% 14%;
+      --muted-fg: 215 20% 55%;
+      --accent: 175 80% 45%;
+      --accent-fg: 222 47% 6%;
+      --destructive: 0 84% 60%;
+      --border: 222 30% 18%;
+      --radius: 0.75rem;
+      --purple: 265 80% 60%;
     }
 
-    .blob-1 {
-        top: -10%;
-        left: -10%;
-        width: 500px;
-        height: 500px;
-        background: rgba(255, 107, 107, 0.2);
+    html {
+      scroll-behavior: smooth
     }
 
-    .blob-2 {
-        bottom: -10%;
-        right: -10%;
-        width: 500px;
-        height: 500px;
-        background: rgba(78, 205, 196, 0.2);
-        animation-delay: 2s;
+    body {
+      background: hsl(var(--bg));
+      color: hsl(var(--fg));
+      font-family: 'Outfit', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+      line-height: 1.6;
     }
 
-    .blob-3 {
-        top: 40%;
-        left: 30%;
-        width: 300px;
-        height: 300px;
-        background: rgba(167, 139, 250, 0.2);
-        animation-delay: 4s;
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+      font-family: 'Space Grotesk', sans-serif;
+      line-height: 1.2
     }
 
-    @keyframes float {
+    a {
+      text-decoration: none;
+      color: inherit
+    }
 
-        0%,
-        100% {
-            transform: translate(0, 0) rotate(0deg);
-        }
+    img {
+      max-width: 100%;
+      display: block
+    }
 
-        33% {
-            transform: translate(30px, -50px) rotate(10deg);
-        }
+    button {
+      cursor: pointer;
+      border: none;
+      background: none;
+      font: inherit;
+      color: inherit
+    }
 
-        66% {
-            transform: translate(-20px, 20px) rotate(-5deg);
-        }
+    /* ═══════════ UTILITIES ═══════════ */
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 1.5rem
+    }
+
+    .text-gradient-primary {
+      background: linear-gradient(135deg, hsl(25, 95%, 55%), hsl(350, 80%, 55%));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text
+    }
+
+    .text-gradient-accent {
+      background: linear-gradient(135deg, hsl(175, 80%, 45%), hsl(200, 80%, 55%));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text
+    }
+
+    .bg-gradient-hero {
+      background: linear-gradient(135deg, hsl(25, 95%, 55%), hsl(350, 80%, 55%))
+    }
+
+    .bg-gradient-accent {
+      background: linear-gradient(135deg, hsl(175, 80%, 45%), hsl(200, 80%, 55%))
+    }
+
+    .bg-gradient-purple {
+      background: linear-gradient(135deg, hsl(265, 80%, 55%), hsl(290, 70%, 50%))
+    }
+
+    .glass {
+      background: hsl(222 40% 10%/0.6);
+      backdrop-filter: blur(20px);
+      border: 1px solid hsl(222 30% 20%/0.5)
     }
 
     .glass-card {
-        background: rgba(255, 255, 255, 0.7);
-        backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.5);
+      background: hsl(222 40% 10%/0.4);
+      backdrop-filter: blur(16px);
+      border: 1px solid hsl(222 30% 22%/0.6);
+      transition: all .4s
     }
-</style>
 
-<div class="relative overflow-hidden min-h-screen">
+    .glass-card:hover {
+      border-color: hsl(222 30% 30%/0.8)
+    }
 
-    <!-- Background Elements -->
-    <div class="blob blob-1"></div>
-    <div class="blob blob-2"></div>
-    <div class="blob blob-3"></div>
+    .glow-primary {
+      box-shadow: 0 0 40px hsl(25 95% 55%/0.3), 0 0 80px hsl(25 95% 55%/0.1)
+    }
 
-    <!-- Hero Section -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-16">
-        <div class="text-center max-w-4xl mx-auto">
-            <div class="inline-flex items-center px-4 py-2 rounded-full glass-card mb-8 shadow-sm animate-fade-in">
-                <span class="w-2 h-2 rounded-full bg-green-500 mr-2 animate-pulse"></span>
-                <span class="text-xs font-bold text-slate-600 uppercase tracking-wider">Live & Ready for 2026</span>
-            </div>
+    .glow-accent {
+      box-shadow: 0 0 40px hsl(175 80% 45%/0.3), 0 0 80px hsl(175 80% 45%/0.1)
+    }
 
-            <h1 class="text-6xl md:text-7xl font-black text-slate-900 mb-6 leading-tight animate-fade-in"
-                style="animation-delay: 0.1s;">
-                Master Your Studies with <br>
-                <span class="gradient-text">Opti's Work</span>
-            </h1>
+    .glow-purple {
+      box-shadow: 0 0 40px hsl(265 80% 60%/0.3), 0 0 80px hsl(265 80% 60%/0.1)
+    }
 
-            <p class="text-xl md:text-2xl text-slate-500 mb-10 max-w-2xl mx-auto leading-relaxed animate-fade-in"
-                style="animation-delay: 0.2s;">
-                The ultimate student hub. Access expert answers, live tutoring, AI assistance, and premium resources all
-                in one place.
-            </p>
+    .grid-pattern {
+      background-image: linear-gradient(hsl(222 30% 18%/0.4) 1px, transparent 1px), linear-gradient(90deg, hsl(222 30% 18%/0.4) 1px, transparent 1px);
+      background-size: 60px 60px
+    }
 
-            <div class="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in" style="animation-delay: 0.3s;">
-                <a href="{{ url_for('register') }}"
-                    class="px-8 py-4 bg-slate-900 text-white font-bold rounded-2xl shadow-xl hover:bg-slate-800 hover:scale-105 transition-all flex items-center justify-center gap-3">
-                    Get Started Free <i class="fa-solid fa-arrow-right"></i>
-                </a>
-                <a href="{{ url_for('login') }}"
-                    class="px-8 py-4 glass-card text-slate-700 font-bold rounded-2xl hover:bg-white/90 hover:scale-105 transition-all flex items-center justify-center gap-3">
-                    Student Login
-                </a>
-            </div>
+    .dot-pattern {
+      background-image: radial-gradient(hsl(222 30% 25%/0.5) 1px, transparent 1px);
+      background-size: 24px 24px
+    }
+
+    .text-primary {
+      color: hsl(var(--primary))
+    }
+
+    .text-accent {
+      color: hsl(var(--accent))
+    }
+
+    .text-purple {
+      color: hsl(var(--purple))
+    }
+
+    .text-muted {
+      color: hsl(var(--muted-fg))
+    }
+
+    .text-fg {
+      color: hsl(var(--fg))
+    }
+
+    .bg-primary-10 {
+      background: hsl(var(--primary)/0.1)
+    }
+
+    .bg-primary-15 {
+      background: hsl(var(--primary)/0.15)
+    }
+
+    .bg-primary-20 {
+      background: hsl(var(--primary)/0.2)
+    }
+
+    .bg-accent-10 {
+      background: hsl(var(--accent)/0.1)
+    }
+
+    .bg-accent-15 {
+      background: hsl(var(--accent)/0.15)
+    }
+
+    .bg-accent-20 {
+      background: hsl(var(--accent)/0.2)
+    }
+
+    .bg-purple-10 {
+      background: hsl(var(--purple)/0.1)
+    }
+
+    .bg-purple-15 {
+      background: hsl(var(--purple)/0.15)
+    }
+
+    .bg-purple-20 {
+      background: hsl(var(--purple)/0.2)
+    }
+
+    .bg-secondary {
+      background: hsl(var(--secondary))
+    }
+
+    .rounded-2xl {
+      border-radius: 1rem
+    }
+
+    .rounded-3xl {
+      border-radius: 1.5rem
+    }
+
+    .rounded-full {
+      border-radius: 9999px
+    }
+
+    .font-bold {
+      font-weight: 700
+    }
+
+    .font-semibold {
+      font-weight: 600
+    }
+
+    .uppercase {
+      text-transform: uppercase
+    }
+
+    .tracking-wider {
+      letter-spacing: 0.05em
+    }
+
+    .tracking-widest {
+      letter-spacing: 0.1em
+    }
+
+    .text-xs {
+      font-size: 0.75rem
+    }
+
+    .text-sm {
+      font-size: 0.875rem
+    }
+
+    .text-lg {
+      font-size: 1.125rem
+    }
+
+    .text-xl {
+      font-size: 1.25rem
+    }
+
+    .text-2xl {
+      font-size: 1.5rem
+    }
+
+    .text-3xl {
+      font-size: 1.875rem
+    }
+
+    .text-4xl {
+      font-size: 2.25rem
+    }
+
+    .text-5xl {
+      font-size: 3rem
+    }
+
+    .text-7xl {
+      font-size: 4.5rem
+    }
+
+    /* ═══════════ ANIMATIONS ═══════════ */
+    @keyframes float {
+
+      0%,
+      100% {
+        transform: translateY(0)
+      }
+
+      50% {
+        transform: translateY(-20px)
+      }
+    }
+
+    @keyframes pulse-glow {
+
+      0%,
+      100% {
+        opacity: .4
+      }
+
+      50% {
+        opacity: .8
+      }
+    }
+
+    @keyframes scroll-x {
+      0% {
+        transform: translateX(0)
+      }
+
+      100% {
+        transform: translateX(-50%)
+      }
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(40px)
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0)
+      }
+    }
+
+    @keyframes fadeInLeft {
+      from {
+        opacity: 0;
+        transform: translateX(-40px)
+      }
+
+      to {
+        opacity: 1;
+        transform: translateX(0)
+      }
+    }
+
+    @keyframes fadeInRight {
+      from {
+        opacity: 0;
+        transform: translateX(40px)
+      }
+
+      to {
+        opacity: 1;
+        transform: translateX(0)
+      }
+    }
+
+    @keyframes fadeInScale {
+      from {
+        opacity: 0;
+        transform: scale(0.9)
+      }
+
+      to {
+        opacity: 1;
+        transform: scale(1)
+      }
+    }
+
+    @keyframes slideDown {
+      from {
+        transform: translateY(-100%)
+      }
+
+      to {
+        transform: translateY(0)
+      }
+    }
+
+    @keyframes popIn {
+      from {
+        opacity: 0;
+        transform: scale(0)
+      }
+
+      to {
+        opacity: 1;
+        transform: scale(1)
+      }
+    }
+
+    .animate-float {
+      animation: float 6s ease-in-out infinite
+    }
+
+    .animate-pulse-glow {
+      animation: pulse-glow 3s ease-in-out infinite
+    }
+
+    .animate-scroll-x {
+      animation: scroll-x 30s linear infinite
+    }
+
+    /* Scroll-triggered animations */
+    .reveal {
+      opacity: 0;
+      transform: translateY(40px);
+      transition: opacity .7s ease, transform .7s ease
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0)
+    }
+
+    .reveal-left {
+      opacity: 0;
+      transform: translateX(-40px);
+      transition: opacity .7s ease, transform .7s ease
+    }
+
+    .reveal-left.visible {
+      opacity: 1;
+      transform: translateX(0)
+    }
+
+    .reveal-right {
+      opacity: 0;
+      transform: translateX(40px);
+      transition: opacity .7s ease, transform .7s ease
+    }
+
+    .reveal-right.visible {
+      opacity: 1;
+      transform: translateX(0)
+    }
+
+    .reveal-scale {
+      opacity: 0;
+      transform: scale(0.9);
+      transition: opacity .7s ease, transform .7s ease
+    }
+
+    .reveal-scale.visible {
+      opacity: 1;
+      transform: scale(1)
+    }
+
+    /* Stagger delays */
+    .delay-1 {
+      transition-delay: .1s
+    }
+
+    .delay-2 {
+      transition-delay: .2s
+    }
+
+    .delay-3 {
+      transition-delay: .3s
+    }
+
+    .delay-4 {
+      transition-delay: .4s
+    }
+
+    .delay-5 {
+      transition-delay: .5s
+    }
+
+    .delay-6 {
+      transition-delay: .6s
+    }
+
+    .delay-7 {
+      transition-delay: .7s
+    }
+
+    .delay-8 {
+      transition-delay: .8s
+    }
+
+    /* ═══════════ NAVBAR ═══════════ */
+    .navbar {
+      position: fixed;
+      width: 100%;
+      z-index: 50;
+      transition: all .5s;
+      animation: slideDown .6s ease-out
+    }
+
+    .navbar.scrolled {
+      background: hsl(222 40% 10%/0.6);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid hsl(222 30% 20%/0.5);
+      box-shadow: 0 10px 30px hsl(222 47% 6%/0.5)
+    }
+
+    .navbar-inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      height: 80px
+    }
+
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px
+    }
+
+    .nav-logo-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform .3s
+    }
+
+    .nav-logo:hover .nav-logo-icon {
+      transform: scale(1.1)
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 2rem
+    }
+
+    .nav-link {
+      color: hsl(var(--muted-fg));
+      font-weight: 500;
+      transition: color .3s;
+      position: relative
+    }
+
+    .nav-link::after {
+      content: '';
+      position: absolute;
+      bottom: -4px;
+      left: 0;
+      width: 0;
+      height: 2px;
+      background: linear-gradient(135deg, hsl(25, 95%, 55%), hsl(350, 80%, 55%));
+      transition: width .3s
+    }
+
+    .nav-link:hover {
+      color: hsl(var(--fg))
+    }
+
+    .nav-link:hover::after {
+      width: 100%
+    }
+
+    .nav-cta {
+      padding: 10px 24px;
+      border-radius: 12px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all .3s
+    }
+
+    .nav-cta:hover {
+      transform: scale(1.05)
+    }
+
+    .mobile-menu-btn {
+      display: none;
+      color: hsl(var(--fg));
+      font-size: 1.5rem
+    }
+
+    .mobile-menu {
+      display: none;
+      padding: 1.5rem;
+      border-top: 1px solid hsl(var(--border))
+    }
+
+    .mobile-menu.open {
+      display: block
+    }
+
+    .mobile-menu a {
+      display: block;
+      padding: .75rem 0;
+      color: hsl(var(--muted-fg));
+      font-weight: 500
+    }
+
+    @media(max-width:768px) {
+
+      .nav-links,
+      .nav-cta,
+      .nav-login {
+        display: none !important
+      }
+
+      .mobile-menu-btn {
+        display: block
+      }
+
+      .text-7xl {
+        font-size: 2.75rem
+      }
+
+      .text-5xl {
+        font-size: 2rem
+      }
+
+      .text-4xl {
+        font-size: 1.75rem
+      }
+    }
+
+    /* ═══════════ SECTIONS ═══════════ */
+    section {
+      position: relative;
+      overflow: hidden
+    }
+
+    .section-pad {
+      padding: 6rem 0
+    }
+
+    .blur-orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(120px);
+      pointer-events: none
+    }
+
+    /* Hero */
+    .hero {
+      padding-top: 8rem;
+      padding-bottom: 5rem
+    }
+
+    @media(min-width:1024px) {
+      .hero {
+        padding-top: 11rem;
+        padding-bottom: 8rem
+      }
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 4rem;
+      align-items: center
+    }
+
+    @media(min-width:1024px) {
+      .hero-grid {
+        grid-template-columns: 1fr 1fr
+      }
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border-radius: 9999px;
+      font-size: .75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .05em
+    }
+
+    .hero-badge .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: hsl(var(--primary));
+      animation: pulse-glow 2s infinite
+    }
+
+    .hero-title {
+      font-size: 3rem;
+      font-weight: 700;
+      margin-bottom: 1.5rem;
+      line-height: 1.1
+    }
+
+    @media(min-width:1024px) {
+      .hero-title {
+        font-size: 4.5rem
+      }
+    }
+
+    .hero-desc {
+      font-size: 1.125rem;
+      color: hsl(var(--muted-fg));
+      margin-bottom: 2.5rem;
+      max-width: 520px;
+      line-height: 1.7
+    }
+
+    .hero-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem
+    }
+
+    .btn-hero {
+      padding: 16px 32px;
+      border-radius: 1rem;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all .3s;
+      font-size: 1rem
+    }
+
+    .btn-hero:hover {
+      transform: scale(1.05) translateY(-2px)
+    }
+
+    .btn-glass {
+      padding: 16px 32px;
+      border-radius: 1rem;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all .3s
+    }
+
+    .btn-glass:hover {
+      border-color: hsl(var(--primary)/0.5)
+    }
+
+    .hero-social-proof {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-top: 3rem
+    }
+
+    .avatar-stack {
+      display: flex
+    }
+
+    .avatar-stack img {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 2px solid hsl(var(--bg));
+      margin-left: -12px
+    }
+
+    .avatar-stack img:first-child {
+      margin-left: 0
+    }
+
+    .avatar-stack .more {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 2px solid hsl(var(--bg));
+      background: hsl(var(--secondary));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .75rem;
+      font-weight: 700;
+      margin-left: -12px
+    }
+
+    .hero-image-wrap {
+      display: none;
+      position: relative
+    }
+
+    @media(min-width:1024px) {
+      .hero-image-wrap {
+        display: block
+      }
+    }
+
+    .hero-image-wrap img {
+      border-radius: 1.5rem;
+      border: 1px solid hsl(var(--border));
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, .5);
+      transform: rotate(2deg);
+      transition: transform .5s
+    }
+
+    .hero-image-wrap:hover img {
+      transform: rotate(0)
+    }
+
+    .hero-image-glow {
+      position: absolute;
+      inset: -16px;
+      border-radius: 1.5rem;
+      opacity: .2;
+      filter: blur(32px);
+      z-index: -1
+    }
+
+    .hero-float-card {
+      position: absolute;
+      bottom: -24px;
+      left: -24px;
+      padding: 16px;
+      border-radius: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      animation: fadeInLeft 0.6s ease-out .8s both
+    }
+
+    /* Stats grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.5rem
+    }
+
+    @media(min-width:640px) {
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr)
+      }
+    }
+
+    @media(min-width:1024px) {
+      .stats-grid {
+        grid-template-columns: repeat(4, 1fr)
+      }
+    }
+
+    .stat-card {
+      border-radius: 1.5rem;
+      padding: 2rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      transition: transform .5s
+    }
+
+    .stat-card:hover {
+      transform: scale(1.03)
+    }
+
+    .stat-card .glow-bg {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      transition: opacity .5s;
+      filter: blur(60px);
+      transform: scale(0.6)
+    }
+
+    .stat-card:hover .glow-bg {
+      opacity: 1
+    }
+
+    .stat-icon {
+      width: 56px;
+      height: 56px;
+      margin: 0 auto 1rem;
+      border-radius: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform .3s;
+      font-size: 1.5rem
+    }
+
+    .stat-card:hover .stat-icon {
+      transform: scale(1.1)
+    }
+
+    .stat-value {
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 700;
+      font-size: 2.25rem
+    }
+
+    @media(min-width:768px) {
+      .stat-value {
+        font-size: 3rem
+      }
+    }
+
+    /* Feature cards */
+    .features-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.5rem
+    }
+
+    @media(min-width:768px) {
+      .features-grid {
+        grid-template-columns: repeat(2, 1fr)
+      }
+    }
+
+    @media(min-width:1024px) {
+      .features-grid {
+        grid-template-columns: repeat(3, 1fr)
+      }
+    }
+
+    .feature-card {
+      padding: 2rem;
+      border-radius: 1.5rem;
+      display: block;
+      position: relative;
+      overflow: hidden;
+      transition: all .5s
+    }
+
+    .feature-card:hover {
+      transform: scale(1.02) translateY(-8px)
+    }
+
+    .feature-card .glow-bg {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      transition: opacity .5s;
+      filter: blur(60px);
+      transform: scale(0.8);
+      border-radius: 1.5rem
+    }
+
+    .feature-card:hover .glow-bg {
+      opacity: 1
+    }
+
+    .feature-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1.25rem;
+      transition: transform .3s;
+      font-size: 1.5rem
+    }
+
+    .feature-card:hover .feature-icon {
+      transform: scale(1.1)
+    }
+
+    .feature-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 1.25rem;
+      font-weight: 700;
+      font-size: .875rem;
+      transition: gap .3s
+    }
+
+    .feature-card:hover .feature-cta {
+      gap: 12px
+    }
+
+    /* Steps */
+    .steps-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 2rem;
+      position: relative
+    }
+
+    @media(min-width:768px) {
+      .steps-grid {
+        grid-template-columns: repeat(2, 1fr)
+      }
+    }
+
+    @media(min-width:1024px) {
+      .steps-grid {
+        grid-template-columns: repeat(4, 1fr)
+      }
+    }
+
+    .steps-line {
+      display: none;
+      position: absolute;
+      top: 96px;
+      left: 12%;
+      right: 12%;
+      height: 1px;
+      background: linear-gradient(to right, hsl(var(--primary)/0.4), hsl(var(--accent)/0.4), hsl(var(--purple)/0.4))
+    }
+
+    @media(min-width:1024px) {
+      .steps-line {
+        display: block
+      }
+    }
+
+    .step-card {
+      border-radius: 1.5rem;
+      padding: 2rem;
+      height: 100%;
+      transition: all .5s;
+      position: relative;
+      overflow: hidden
+    }
+
+    .step-card:hover {
+      transform: scale(1.03)
+    }
+
+    .step-card .step-glow {
+      position: absolute;
+      bottom: -40px;
+      right: -40px;
+      width: 128px;
+      height: 128px;
+      border-radius: 50%;
+      filter: blur(50px);
+      opacity: 0;
+      transition: opacity .5s
+    }
+
+    .step-card:hover .step-glow {
+      opacity: 1
+    }
+
+    .step-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1.5rem;
+      transition: transform .3s;
+      font-size: 1.25rem
+    }
+
+    .step-card:hover .step-icon {
+      transform: scale(1.1)
+    }
+
+    .step-label {
+      font-family: monospace;
+      font-weight: 700;
+      font-size: .75rem;
+      letter-spacing: .1em;
+      margin-bottom: .5rem
+    }
+
+    /* AI Tutor */
+    .ai-section-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 4rem;
+      align-items: center
+    }
+
+    @media(min-width:1024px) {
+      .ai-section-grid {
+        flex-direction: row
+      }
+    }
+
+    .ai-terminal {
+      border-radius: 1.5rem;
+      padding: 1.5rem;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, .5);
+      position: relative;
+      overflow: hidden;
+      width: 100%
+    }
+
+    .terminal-dots {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 1rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid hsl(var(--border))
+    }
+
+    .terminal-dots span {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%
+    }
+
+    .terminal-msg {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1rem;
+      font-family: monospace;
+      font-size: .875rem
+    }
+
+    .terminal-msg .avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .7rem;
+      font-weight: 700;
+      flex-shrink: 0
+    }
+
+    .terminal-msg .bubble {
+      padding: 12px;
+      border-radius: 12px;
+      line-height: 1.5
+    }
+
+    /* Subjects */
+    .subjects-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1rem
+    }
+
+    @media(min-width:640px) {
+      .subjects-grid {
+        grid-template-columns: repeat(3, 1fr)
+      }
+    }
+
+    @media(min-width:1024px) {
+      .subjects-grid {
+        grid-template-columns: repeat(4, 1fr)
+      }
+    }
+
+    .subject-card {
+      border-radius: 1rem;
+      padding: 1.25rem;
+      transition: all .4s;
+      cursor: default
+    }
+
+    .subject-card:hover {
+      transform: scale(1.04) translateY(-4px)
+    }
+
+    .subject-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: .75rem;
+      transition: transform .3s;
+      font-size: 1.25rem
+    }
+
+    .subject-card:hover .subject-icon {
+      transform: scale(1.1)
+    }
+
+    /* Perks */
+    .perks-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.5rem
+    }
+
+    @media(min-width:768px) {
+      .perks-grid {
+        grid-template-columns: repeat(2, 1fr)
+      }
+    }
+
+    @media(min-width:1024px) {
+      .perks-grid {
+        grid-template-columns: repeat(3, 1fr)
+      }
+    }
+
+    .perk-card {
+      border-radius: 1rem;
+      padding: 1.75rem;
+      transition: all .4s
+    }
+
+    .perk-card:hover {
+      transform: scale(1.02) translateY(-4px)
+    }
+
+    .perk-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1rem;
+      transition: transform .3s;
+      font-size: 1.25rem
+    }
+
+    .perk-card:hover .perk-icon {
+      transform: scale(1.1)
+    }
+
+    /* Testimonials */
+    .testimonials-track {
+      display: flex;
+      gap: 1.5rem;
+      width: max-content
+    }
+
+    .testimonial-card {
+      width: 380px;
+      flex-shrink: 0;
+      padding: 1.5rem;
+      border-radius: 1rem;
+      transition: transform .3s
+    }
+
+    .testimonial-card:hover {
+      transform: scale(1.02)
+    }
+
+    .testimonial-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 1rem
+    }
+
+    .testimonial-header img {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 2px solid hsl(var(--border))
+    }
+
+    .testimonial-stars {
+      margin-left: auto;
+      display: flex;
+      gap: 2px;
+      color: hsl(var(--primary))
+    }
+
+    /* Pricing */
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 2rem;
+      align-items: stretch
+    }
+
+    @media(min-width:768px) {
+      .pricing-grid {
+        grid-template-columns: repeat(3, 1fr)
+      }
+    }
+
+    .pricing-card {
+      border-radius: 1.5rem;
+      padding: 2rem;
+      display: flex;
+      flex-direction: column;
+      transition: all .5s;
+      position: relative
+    }
+
+    .pricing-card:hover {
+      transform: scale(1.03)
+    }
+
+    .pricing-card.highlighted {
+      border: 2px solid hsl(var(--primary)/0.4);
+      transform: scale(1.02)
+    }
+
+    .pricing-card.highlighted:hover {
+      transform: scale(1.05)
+    }
+
+    .pricing-badge {
+      position: absolute;
+      top: -16px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 4px 16px;
+      border-radius: 9999px;
+      font-size: .75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .05em
+    }
+
+    .pricing-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1rem;
+      font-size: 1.25rem
+    }
+
+    .pricing-features {
+      list-style: none;
+      flex: 1;
+      margin-bottom: 2rem
+    }
+
+    .pricing-features li {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      font-size: .875rem;
+      color: hsl(var(--muted-fg));
+      padding: .75rem 0
+    }
+
+    .pricing-features li i {
+      margin-top: 2px;
+      flex-shrink: 0
+    }
+
+    .pricing-cta {
+      width: 100%;
+      padding: 12px 24px;
+      border-radius: 1rem;
+      font-weight: 700;
+      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all .3s
+    }
+
+    /* FAQ */
+    .faq-item {
+      margin-bottom: 1rem
+    }
+
+    .faq-btn {
+      width: 100%;
+      padding: 1.5rem;
+      border-radius: 1rem;
+      text-align: left;
+      transition: all .3s;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem
+    }
+
+    .faq-btn:hover {
+      border-color: hsl(var(--border)/0.8)
+    }
+
+    .faq-btn.active {
+      border-color: hsl(var(--primary)/0.3)
+    }
+
+    .faq-btn.active .faq-plus {
+      transform: rotate(45deg)
+    }
+
+    .faq-q {
+      display: flex;
+      align-items: center;
+      gap: 1rem
+    }
+
+    .faq-plus {
+      font-size: 1.25rem;
+      color: hsl(var(--muted-fg));
+      transition: transform .3s;
+      flex-shrink: 0
+    }
+
+    .faq-answer {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height .4s ease, opacity .3s;
+      opacity: 0
+    }
+
+    .faq-answer.open {
+      max-height: 200px;
+      opacity: 1
+    }
+
+    .faq-answer p {
+      padding: 0 1.5rem 1.5rem 3.75rem;
+      font-size: .875rem;
+      color: hsl(var(--muted-fg));
+      line-height: 1.7
+    }
+
+    /* CTA Section */
+    .cta-box {
+      border-radius: 2rem;
+      padding: 3rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden
+    }
+
+    @media(min-width:768px) {
+      .cta-box {
+        padding: 4rem
+      }
+    }
+
+    .cta-inner-border {
+      position: absolute;
+      inset: 0;
+      border-radius: 2rem;
+      opacity: .5;
+      filter: blur(1px);
+      background: linear-gradient(to right, hsl(var(--primary)/0.2), hsl(var(--accent)/0.1), hsl(var(--purple)/0.2))
+    }
+
+    .cta-bg {
+      position: absolute;
+      inset: 1px;
+      border-radius: calc(2rem - 1px);
+      background: hsl(var(--card))
+    }
+
+    /* Footer */
+    .footer {
+      border-top: 1px solid hsl(var(--border));
+      padding: 4rem 0;
+      position: relative
+    }
+
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 2.5rem;
+      margin-bottom: 3rem
+    }
+
+    @media(min-width:768px) {
+      .footer-grid {
+        grid-template-columns: 2fr 1fr 1fr
+      }
+    }
+
+    .footer-bottom {
+      padding-top: 2rem;
+      border-top: 1px solid hsl(var(--border));
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem
+    }
+
+    .social-links {
+      display: flex;
+      gap: 12px
+    }
+
+    .social-links a {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .75rem;
+      font-weight: 700;
+      transition: all .3s
+    }
+
+    .social-links a:hover {
+      background: hsl(var(--primary));
+      color: hsl(var(--primary-fg))
+    }
+
+    /* Section headers */
+    .section-header {
+      text-align: center;
+      max-width: 768px;
+      margin: 0 auto 5rem
+    }
+
+    .section-label {
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      font-size: .75rem
+    }
+
+    .section-title {
+      font-size: 2.25rem;
+      font-weight: 700;
+      margin-top: .75rem;
+      margin-bottom: 1.5rem
+    }
+
+    @media(min-width:768px) {
+      .section-title {
+        font-size: 3rem
+      }
+    }
+
+    .section-desc {
+      font-size: 1.125rem;
+      color: hsl(var(--muted-fg));
+      line-height: 1.7
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ════════════ NAVBAR ════════════ -->
+  <nav class="navbar" id="navbar">
+    <div class="container">
+      <div class="navbar-inner">
+        <a href="{{ url_for('index') }}" class="nav-logo">
+          <div class="nav-logo-icon bg-gradient-hero glow-primary"><i class="fas fa-graduation-cap"
+              style="color:hsl(var(--primary-fg))"></i></div>
+          <span style="font-family:'Space Grotesk';font-weight:700;font-size:1.25rem">Panun<span
+              class="text-gradient-primary">School</span></span>
+        </a>
+        <div class="nav-links">
+          <a href="#features" class="nav-link">Features</a>
+          <a href="#ai-tutor" class="nav-link">AI Learning</a>
+          <a href="{{ url_for('payments.pricing') }}" class="nav-link">Pricing</a>
+          <a href="#reviews" class="nav-link">Reviews</a>
         </div>
+        <a href="{{ url_for('login') }}" class="nav-login nav-link font-semibold" style="color:hsl(var(--fg))">Log
+          In</a>
+        <a href="{{ url_for('register') }}" class="nav-cta bg-gradient-hero" style="color:hsl(var(--primary-fg))">Get
+          Started <i class="fas fa-arrow-right"></i></a>
+        <button class="mobile-menu-btn" id="menuBtn"><i class="fas fa-bars"></i></button>
+      </div>
     </div>
+    <div class="mobile-menu glass" id="mobileMenu">
+      <a href="#features">Features</a>
+      <a href="#ai-tutor">AI Learning</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#reviews">Reviews</a>
+      <div style="padding-top:1rem;border-top:1px solid hsl(var(--border));margin-top:1rem">
+        <a href="{{ url_for('login') }}" style="font-weight:600;color:hsl(var(--fg))">Log In</a>
+        <a href="{{ url_for('register') }}" class="bg-gradient-hero"
+          style="display:block;text-align:center;padding:12px;border-radius:12px;color:hsl(var(--primary-fg));font-weight:600;margin-top:.75rem">Get
+          Started</a>
+      </div>
+    </div>
+  </nav>
 
-    <!-- Features Grid -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-
-            <!-- Feature 1 -->
-            <div class="glass-card p-8 rounded-3xl hover:-translate-y-2 transition-transform duration-500 group">
-                <div
-                    class="w-14 h-14 rounded-2xl bg-orange-100 text-orange-500 flex items-center justify-center text-2xl mb-6 group-hover:scale-110 transition-transform">
-                    <i class="fa-solid fa-bolt"></i>
-                </div>
-                <h3 class="text-2xl font-bold text-slate-800 mb-3">Instant Answers</h3>
-                <p class="text-slate-500 leading-relaxed">
-                    Get textbook solutions from Chegg and other expert platforms in seconds. Unblur answers instantly.
-                </p>
+  <!-- ════════════ HERO ════════════ -->
+  <section class="hero">
+    <div class="grid-pattern" style="position:absolute;inset:0;opacity:.4"></div>
+    <div class="blur-orb animate-pulse-glow"
+      style="top:80px;right:0;width:500px;height:500px;background:hsl(var(--primary)/0.1)"></div>
+    <div class="blur-orb animate-pulse-glow"
+      style="bottom:0;left:0;width:400px;height:400px;background:hsl(var(--accent)/0.1);animation-delay:1.5s"></div>
+    <div class="blur-orb"
+      style="top:50%;left:50%;transform:translate(-50%,-50%);width:600px;height:600px;background:hsl(var(--purple)/0.05);filter:blur(150px)">
+    </div>
+    <div class="container" style="position:relative;z-index:10">
+      <div class="hero-grid">
+        <div>
+          <div class="hero-badge glass-card text-primary reveal" style="margin-bottom:2rem">
+            <span class="dot"></span>
+            <i class="fas fa-sparkles" style="font-size:.75rem"></i>
+            Admissions Open 2025
+          </div>
+          <h1 class="hero-title reveal delay-1">Master Your <br><span class="text-gradient-primary">Academic
+              Goals.</span></h1>
+          <p class="hero-desc reveal delay-2">Access live 1-on-1 tutoring, instant AI homework help, and a massive
+            library of notes. All in one futuristic dashboard.</p>
+          <div class="hero-buttons reveal delay-3">
+            <a href="{{ url_for('register') }}" class="btn-hero bg-gradient-hero"
+              style="color:hsl(var(--primary-fg))">Join For Free <i class="fas fa-arrow-right"></i></a>
+            <a href="{{ url_for('login') }}" class="btn-glass glass-card" style="color:hsl(var(--fg))"><i
+                class="fas fa-user text-muted"></i>
+              Student Login</a>
+          </div>
+          <div class="hero-social-proof reveal delay-4">
+            <div class="avatar-stack">
+              <img src="https://i.pravatar.cc/100?img=33" alt="Student">
+              <img src="https://i.pravatar.cc/100?img=47" alt="Student">
+              <img src="https://i.pravatar.cc/100?img=12" alt="Student">
+              <div class="more">+2k</div>
             </div>
-
-            <!-- Feature 2 -->
-            <div class="glass-card p-8 rounded-3xl hover:-translate-y-2 transition-transform duration-500 group">
-                <div
-                    class="w-14 h-14 rounded-2xl bg-purple-100 text-purple-500 flex items-center justify-center text-2xl mb-6 group-hover:scale-110 transition-transform">
-                    <i class="fa-solid fa-chalkboard-user"></i>
-                </div>
-                <h3 class="text-2xl font-bold text-slate-800 mb-3">Live Tutoring</h3>
-                <p class="text-slate-500 leading-relaxed">
-                    Connect with verified tutors for 1-on-1 video sessions. Master difficult concepts with personalized
-                    help.
-                </p>
-            </div>
-
-            <!-- Feature 3 -->
-            <div class="glass-card p-8 rounded-3xl hover:-translate-y-2 transition-transform duration-500 group">
-                <div
-                    class="w-14 h-14 rounded-2xl bg-emerald-100 text-emerald-500 flex items-center justify-center text-2xl mb-6 group-hover:scale-110 transition-transform">
-                    <i class="fa-solid fa-robot"></i>
-                </div>
-                <h3 class="text-2xl font-bold text-slate-800 mb-3">AI Powered</h3>
-                <p class="text-slate-500 leading-relaxed">
-                    Leverage dual AI models (ChatGPT & Gemini) to explain complex topics and generate study notes.
-                </p>
-            </div>
-
+            <p class="text-muted text-sm" style="font-weight:500">Join 2,000+ students today</p>
+          </div>
         </div>
+        <div class="hero-image-wrap animate-float">
+          <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=600&h=400&fit=crop"
+            alt="Futuristic learning platform" />
+          <div class="hero-image-glow bg-gradient-hero"></div>
+          <div class="hero-float-card glass-card glow-accent"
+            style="padding:16px;border-radius:1rem;display:flex;align-items:center;gap:16px">
+            <div
+              style="width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center"
+              class="bg-accent-20 text-accent"><i class="fas fa-sparkles" style="font-size:1.25rem"></i></div>
+            <div>
+              <p class="text-xs font-semibold text-muted uppercase tracking-wider">Homework</p>
+              <p class="font-bold text-fg">Completed!</p>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
+  </section>
 
-</div>
+  <!-- ════════════ STATS ════════════ -->
+  <section class="section-pad">
+    <div class="grid-pattern" style="position:absolute;inset:0;opacity:.2"></div>
+    <div class="blur-orb"
+      style="top:50%;left:50%;transform:translate(-50%,-50%);width:800px;height:400px;background:hsl(var(--primary)/0.05);filter:blur(150px)">
+    </div>
+    <div class="container" style="position:relative;z-index:10">
+      <div class="section-header reveal" style="margin-bottom:4rem">
+        <span class="section-label text-primary">Trusted by thousands</span>
+        <h2 class="section-title">Numbers That <span class="text-gradient-primary">Speak</span></h2>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card glass-card reveal delay-1">
+          <div class="glow-bg" style="background:hsl(var(--primary)/0.3)"></div>
+          <div style="position:relative;z-index:10">
+            <div class="stat-icon bg-secondary text-primary"><i class="fas fa-users"></i></div>
+            <div class="stat-value text-primary" data-count="{{ student_count }}" data-suffix="+">0+</div>
+            <p class="font-bold text-fg" style="margin-top:.5rem;font-size:1.125rem;font-family:'Space Grotesk'">Active
+              Students</p>
+            <p class="text-muted text-sm" style="margin-top:.5rem">Learners trust us daily for homework help, exam prep
+              & tutoring</p>
+          </div>
+        </div>
+        <div class="stat-card glass-card reveal delay-2">
+          <div class="glow-bg" style="background:hsl(var(--accent)/0.3)"></div>
+          <div style="position:relative;z-index:10">
+            <div class="stat-icon bg-secondary text-accent"><i class="fas fa-book-open"></i></div>
+            <div class="stat-value text-accent" data-count="{{ resource_count }}" data-suffix="+">0+</div>
+            <p class="font-bold text-fg" style="margin-top:.5rem;font-size:1.125rem;font-family:'Space Grotesk'">
+              Resources Shared</p>
+            <p class="text-muted text-sm" style="margin-top:.5rem">Notes, past papers, solutions & study guides uploaded
+              by students</p>
+          </div>
+        </div>
+        <div class="stat-card glass-card reveal delay-3">
+          <div class="glow-bg" style="background:hsl(var(--purple)/0.3)"></div>
+          <div style="position:relative;z-index:10">
+            <div class="stat-icon bg-secondary text-purple"><i class="fas fa-clock"></i></div>
+            <div class="stat-value text-purple" data-count="{{ questions_solved }}" data-suffix="+">0+</div>
+            <p class="font-bold text-fg" style="margin-top:.5rem;font-size:1.125rem;font-family:'Space Grotesk'">
+              Questions Solved</p>
+            <p class="text-muted text-sm" style="margin-top:.5rem">Homework problems answered by AI & expert tutors in
+              real-time</p>
+          </div>
+        </div>
+        <div class="stat-card glass-card reveal delay-4">
+          <div class="glow-bg" style="background:hsl(var(--primary)/0.3)"></div>
+          <div style="position:relative;z-index:10">
+            <div class="stat-icon bg-secondary text-primary"><i class="fas fa-award"></i></div>
+            <div class="stat-value text-primary" data-count="98" data-suffix="%">0%</div>
+            <p class="font-bold text-fg" style="margin-top:.5rem;font-size:1.125rem;font-family:'Space Grotesk'">
+              Satisfaction Rate</p>
+            <p class="text-muted text-sm" style="margin-top:.5rem">Students report improved grades within the first
+              month</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
 
-{% endblock %}
+  <!-- ════════════ FEATURES ════════════ -->
+  <section id="features" class="section-pad">
+    <div class="dot-pattern" style="position:absolute;inset:0;opacity:.3"></div>
+    <div class="container" style="position:relative;z-index:10">
+      <div class="section-header reveal">
+        <span class="section-label text-primary">Packed with features</span>
+        <h2 class="section-title">Your All-in-One <span class="text-gradient-accent">Learning Hub</span></h2>
+        <p class="section-desc">Stop juggling 10 different apps. PanunSchool puts AI tutoring, live sessions, notes, and
+          exam prep all in one futuristic dashboard designed for how students actually study.</p>
+      </div>
+      <div class="features-grid">
+        <a href="{{ url_for('register') }}" class="feature-card glass-card reveal delay-1">
+          <div class="glow-bg glow-primary"></div>
+          <div style="position:relative;z-index:10">
+            <div class="feature-icon bg-primary-15 text-primary"><i class="fas fa-desktop"></i></div>
+            <h3 class="font-bold text-fg" style="font-size:1.125rem;margin-bottom:.75rem;font-family:'Space Grotesk'">
+              Live 1-on-1 Tutoring</h3>
+            <p class="text-muted text-sm" style="line-height:1.7">Struggling with a tough concept? Book a live video
+              session with a verified expert tutor. Share your screen, use an interactive whiteboard, and get
+              personalized guidance — just like sitting with a tutor IRL.</p>
+            <span class="feature-cta text-primary">Book a Session <i class="fas fa-arrow-right"></i></span>
+          </div>
+        </a>
+        <a href="{{ url_for('school.index') }}" class="feature-card glass-card reveal delay-2">
+          <div class="glow-bg glow-accent"></div>
+          <div style="position:relative;z-index:10">
+            <div class="feature-icon bg-accent-15 text-accent"><i class="fas fa-school"></i></div>
+            <h3 class="font-bold text-fg" style="font-size:1.125rem;margin-bottom:.75rem;font-family:'Space Grotesk'">
+              Online School Classes</h3>
+            <p class="text-muted text-sm" style="line-height:1.7">Join structured, interactive online classes for your
+              grade.
+              Full curriculum coverage, expert teachers, and peer learning in a virtual classroom environment.</p>
+            <span class="feature-cta text-accent">View Schedule <i class="fas fa-arrow-right"></i></span>
+          </div>
+        </a>
+        <a href="{{ url_for('register') }}" class="feature-card glass-card reveal delay-2">
+          <div class="glow-bg glow-accent"></div>
+          <div style="position:relative;z-index:10">
+            <div class="feature-icon bg-accent-15 text-accent"><i class="fas fa-robot"></i></div>
+            <h3 class="font-bold text-fg" style="font-size:1.125rem;margin-bottom:.75rem;font-family:'Space Grotesk'">
+              Dual AI Tutor (GPT + Gemini)</h3>
+            <p class="text-muted text-sm" style="line-height:1.7">Why rely on one AI when you can use two? Ask any
+              homework question and get solutions from both ChatGPT and Gemini side by side. Compare explanations, pick
+              what clicks, and learn faster than ever before.</p>
+            <span class="feature-cta text-accent">Try AI Tutor <i class="fas fa-arrow-right"></i></span>
+          </div>
+        </a>
+        <a href="{{ url_for('register') }}" class="feature-card glass-card reveal delay-3">
+          <div class="glow-bg glow-purple"></div>
+          <div style="position:relative;z-index:10">
+            <div class="feature-icon bg-purple-15 text-purple"><i class="fas fa-book"></i></div>
+            <h3 class="font-bold text-fg" style="font-size:1.125rem;margin-bottom:.75rem;font-family:'Space Grotesk'">
+              Massive Resource Library</h3>
+            <p class="text-muted text-sm" style="line-height:1.7">Access 15,000+ shared notes, past exam papers, solved
+              assignments, and study guides — all uploaded by your fellow students. Upload your own materials to earn
+              credits and help the community grow.</p>
+            <span class="feature-cta text-purple">Browse Library <i class="fas fa-arrow-right"></i></span>
+          </div>
+        </a>
+        <a href="{{ url_for('register') }}" class="feature-card glass-card reveal delay-1">
+          <div class="glow-bg glow-primary"></div>
+          <div style="position:relative;z-index:10">
+            <div class="feature-icon bg-primary-15 text-primary"><i class="fas fa-camera"></i></div>
+            <h3 class="font-bold text-fg" style="font-size:1.125rem;margin-bottom:.75rem;font-family:'Space Grotesk'">
+              Snap & Solve (Image Scanner)</h3>
+            <p class="text-muted text-sm" style="line-height:1.7">Take a photo of any handwritten or printed question
+              and our AI instantly recognizes, analyzes, and solves it with detailed step-by-step explanations. Perfect
+              for late-night study sessions.</p>
+            <span class="feature-cta text-primary">Scan a Question <i class="fas fa-arrow-right"></i></span>
+          </div>
+        </a>
+        <a href="{{ url_for('register') }}" class="feature-card glass-card reveal delay-2">
+          <div class="glow-bg glow-accent"></div>
+          <div style="position:relative;z-index:10">
+            <div class="feature-icon bg-accent-15 text-accent"><i class="fas fa-file-alt"></i></div>
+            <h3 class="font-bold text-fg" style="font-size:1.125rem;margin-bottom:.75rem;font-family:'Space Grotesk'">
+              Smart Notes & Summaries</h3>
+            <p class="text-muted text-sm" style="line-height:1.7">Paste any lecture content, textbook chapter, or
+              article — our AI generates concise summaries, key takeaways, flashcard-ready bullet points, and practice
+              questions automatically.</p>
+            <span class="feature-cta text-accent">Summarize Now <i class="fas fa-arrow-right"></i></span>
+          </div>
+        </a>
+        <a href="{{ url_for('register') }}" class="feature-card glass-card reveal delay-3">
+          <div class="glow-bg glow-purple"></div>
+          <div style="position:relative;z-index:10">
+            <div class="feature-icon bg-purple-15 text-purple"><i class="fas fa-video"></i></div>
+            <h3 class="font-bold text-fg" style="font-size:1.125rem;margin-bottom:.75rem;font-family:'Space Grotesk'">
+              Recorded Session Replays</h3>
+            <p class="text-muted text-sm" style="line-height:1.7">Every live tutoring session is recorded automatically.
+              Revisit tricky explanations, rewatch whiteboard drawings, and study at your own pace before exams. Never
+              miss a detail again.</p>
+            <span class="feature-cta text-purple">Watch Replays <i class="fas fa-arrow-right"></i></span>
+          </div>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════ HOW IT WORKS ════════════ -->
+  <section class="section-pad">
+    <div class="dot-pattern" style="position:absolute;inset:0;opacity:.2"></div>
+    <div class="blur-orb"
+      style="top:0;right:0;width:500px;height:500px;background:hsl(var(--accent)/0.05);filter:blur(150px)"></div>
+    <div class="blur-orb"
+      style="bottom:0;left:0;width:500px;height:500px;background:hsl(var(--purple)/0.05);filter:blur(150px)"></div>
+    <div class="container" style="position:relative;z-index:10">
+      <div class="section-header reveal">
+        <span class="section-label text-accent">Simple Process</span>
+        <h2 class="section-title">How It <span class="text-gradient-accent">Works</span></h2>
+        <p class="section-desc">From signup to acing your exams — here's how PanunSchool transforms your study routine
+          in 4 easy steps.</p>
+      </div>
+      <div class="steps-grid">
+        <div class="steps-line"></div>
+        <div class="step-card glass-card reveal delay-1" style="border-color:hsl(var(--primary)/0.3)">
+          <div class="step-glow bg-primary-20"></div>
+          <div style="position:relative;z-index:10">
+            <div class="step-icon bg-primary-10 text-primary"><i class="fas fa-user-plus"></i></div>
+            <div class="step-label text-primary">STEP 01</div>
+            <h3 class="font-bold text-fg" style="font-size:1.25rem;margin-bottom:.75rem;font-family:'Space Grotesk'">
+              Create Your Account</h3>
+            <p class="text-muted text-sm" style="line-height:1.7">Sign up in seconds with just your email. No credit
+              card needed — start exploring all features immediately as a student.</p>
+          </div>
+        </div>
+        <div class="step-card glass-card reveal delay-2" style="border-color:hsl(var(--accent)/0.3)">
+          <div class="step-glow bg-accent-20"></div>
+          <div style="position:relative;z-index:10">
+            <div class="step-icon bg-accent-10 text-accent"><i class="fas fa-search"></i></div>
+            <div class="step-label text-accent">STEP 02</div>
+            <h3 class="font-bold text-fg" style="font-size:1.25rem;margin-bottom:.75rem;font-family:'Space Grotesk'">
+              Find What You Need</h3>
+            <p class="text-muted text-sm" style="line-height:1.7">Browse thousands of notes, past exam papers, and study
+              guides. Or ask our AI tutor any homework question — even snap a photo of it.</p>
+          </div>
+        </div>
+        <div class="step-card glass-card reveal delay-3" style="border-color:hsl(var(--purple)/0.3)">
+          <div class="step-glow bg-purple-20"></div>
+          <div style="position:relative;z-index:10">
+            <div class="step-icon bg-purple-10 text-purple"><i class="fas fa-brain"></i></div>
+            <div class="step-label text-purple">STEP 03</div>
+            <h3 class="font-bold text-fg" style="font-size:1.25rem;margin-bottom:.75rem;font-family:'Space Grotesk'">
+              Learn & Practice</h3>
+            <p class="text-muted text-sm" style="line-height:1.7">Get step-by-step AI solutions powered by GPT & Gemini.
+              Book live tutoring sessions with whiteboards for complex topics.</p>
+          </div>
+        </div>
+        <div class="step-card glass-card reveal delay-4" style="border-color:hsl(var(--primary)/0.3)">
+          <div class="step-glow bg-primary-20"></div>
+          <div style="position:relative;z-index:10">
+            <div class="step-icon bg-primary-10 text-primary"><i class="fas fa-trophy"></i></div>
+            <div class="step-label text-primary">STEP 04</div>
+            <h3 class="font-bold text-fg" style="font-size:1.25rem;margin-bottom:.75rem;font-family:'Space Grotesk'">Ace
+              Your Exams</h3>
+            <p class="text-muted text-sm" style="line-height:1.7">Track your progress, earn credits by sharing notes,
+              and watch your grades climb. 98% of students report improvement within a month.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════ AI TUTOR ════════════ -->
+  <section id="ai-tutor" class="section-pad">
+    <div class="blur-orb"
+      style="top:0;left:25%;width:500px;height:500px;background:hsl(var(--purple)/0.1);filter:blur(150px)"></div>
+    <div class="blur-orb"
+      style="bottom:0;right:25%;width:500px;height:500px;background:hsl(var(--primary)/0.1);filter:blur(150px)"></div>
+    <div class="container" style="position:relative;z-index:10">
+      <div class="ai-section-grid">
+        <div style="flex:1" class="reveal-left">
+          <div class="glass-card text-primary"
+            style="display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:12px;font-weight:700;font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;margin-bottom:1.5rem">
+            <i class="fas fa-bolt"></i> Powered by Gemini & GPT
+          </div>
+          <h2
+            style="font-size:2.25rem;font-weight:700;margin-bottom:1.5rem;line-height:1.2;font-family:'Space Grotesk'">
+            Stuck on a problem?<br><span class="text-gradient-primary">Just ask.</span></h2>
+          <p class="text-muted text-lg" style="margin-bottom:2rem;line-height:1.7">Our AI analyzes your questions,
+            provides step-by-step solutions, and even scans images of your homework.</p>
+          <a href="{{ url_for('register') }}" class="btn-hero bg-gradient-hero"
+            style="color:hsl(var(--primary-fg));display:inline-flex">Start
+            Learning Now</a>
+        </div>
+        <div style="flex:1" class="reveal-right delay-2">
+          <div class="ai-terminal glass-card" style="box-shadow:0 25px 50px -12px rgba(0,0,0,.5)">
+            <div class="terminal-dots">
+              <span style="background:hsl(var(--destructive))"></span>
+              <span style="background:hsl(var(--primary))"></span>
+              <span style="background:hsl(var(--accent))"></span>
+              <span style="flex:1"></span>
+              <span class="text-xs text-muted" style="font-family:monospace">AI_Tutor.exe</span>
+            </div>
+            <div class="terminal-msg">
+              <div class="avatar bg-secondary" style="color:hsl(var(--secondary-fg))">You</div>
+              <div class="bubble"
+                style="background:hsl(var(--secondary)/0.8);color:hsl(var(--fg));border-top-left-radius:0">Can you
+                explain Quantum Entanglement like I'm 5?</div>
+            </div>
+            <div class="terminal-msg" style="flex-direction:row-reverse">
+              <div class="avatar bg-gradient-purple" style="color:hsl(var(--primary-fg));font-size:.6rem">AI</div>
+              <div class="bubble"
+                style="background:hsl(var(--purple)/0.15);border:1px solid hsl(var(--purple)/0.25);color:hsl(var(--fg));border-top-right-radius:0">
+                Imagine you have two magic dice. 🎲🎲 No matter how far apart they are, if you roll a 6 on one, the
+                other INSTANTLY shows a 6 too!</div>
+            </div>
+            <div class="blur-orb"
+              style="bottom:-40px;right:-40px;width:160px;height:160px;background:hsl(var(--purple)/0.2);filter:blur(60px)">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════ SUBJECTS ════════════ -->
+  <section class="section-pad">
+    <div class="grid-pattern" style="position:absolute;inset:0;opacity:.15"></div>
+    <div class="blur-orb"
+      style="top:50%;left:0;width:500px;height:500px;background:hsl(var(--primary)/0.05);filter:blur(150px)"></div>
+    <div class="blur-orb"
+      style="top:50%;right:0;width:500px;height:500px;background:hsl(var(--accent)/0.05);filter:blur(150px)"></div>
+    <div class="container" style="position:relative;z-index:10">
+      <div class="section-header reveal">
+        <span class="section-label text-purple">All Subjects Covered</span>
+        <h2 class="section-title">Whatever You're <span class="text-gradient-primary">Studying</span></h2>
+        <p class="section-desc">From STEM to Humanities — our AI tutors and expert community cover every subject at
+          every level. High school, college, or postgraduate.</p>
+      </div>
+      <div class="subjects-grid">
+        <div class="subject-card glass-card reveal-scale delay-1">
+          <div class="subject-icon bg-primary-10 text-primary"><i class="fas fa-calculator"></i></div>
+          <h3 class="font-bold text-fg text-sm" style="font-family:'Space Grotesk';margin-bottom:4px">Mathematics</h3>
+          <p class="text-muted text-xs">Algebra, Calculus, Statistics & beyond</p>
+        </div>
+        <div class="subject-card glass-card reveal-scale delay-2">
+          <div class="subject-icon bg-accent-10 text-accent"><i class="fas fa-atom"></i></div>
+          <h3 class="font-bold text-fg text-sm" style="font-family:'Space Grotesk';margin-bottom:4px">Physics</h3>
+          <p class="text-muted text-xs">Mechanics, Thermodynamics, Quantum</p>
+        </div>
+        <div class="subject-card glass-card reveal-scale delay-3">
+          <div class="subject-icon bg-purple-10 text-purple"><i class="fas fa-flask"></i></div>
+          <h3 class="font-bold text-fg text-sm" style="font-family:'Space Grotesk';margin-bottom:4px">Chemistry</h3>
+          <p class="text-muted text-xs">Organic, Inorganic & Physical Chemistry</p>
+        </div>
+        <div class="subject-card glass-card reveal-scale delay-1">
+          <div class="subject-icon bg-primary-10 text-primary"><i class="fas fa-microchip"></i></div>
+          <h3 class="font-bold text-fg text-sm" style="font-family:'Space Grotesk';margin-bottom:4px">Computer Science
+          </h3>
+          <p class="text-muted text-xs">Data Structures, Algorithms, OS & more</p>
+        </div>
+        <div class="subject-card glass-card reveal-scale delay-2">
+          <div class="subject-icon bg-accent-10 text-accent"><i class="fas fa-code"></i></div>
+          <h3 class="font-bold text-fg text-sm" style="font-family:'Space Grotesk';margin-bottom:4px">Programming</h3>
+          <p class="text-muted text-xs">Python, Java, C++, JavaScript & beyond</p>
+        </div>
+        <div class="subject-card glass-card reveal-scale delay-3">
+          <div class="subject-icon bg-purple-10 text-purple"><i class="fas fa-book-open"></i></div>
+          <h3 class="font-bold text-fg text-sm" style="font-family:'Space Grotesk';margin-bottom:4px">English &
+            Literature</h3>
+          <p class="text-muted text-xs">Essays, Grammar, Creative Writing</p>
+        </div>
+        <div class="subject-card glass-card reveal-scale delay-1">
+          <div class="subject-icon bg-primary-10 text-primary"><i class="fas fa-chart-line"></i></div>
+          <h3 class="font-bold text-fg text-sm" style="font-family:'Space Grotesk';margin-bottom:4px">Economics</h3>
+          <p class="text-muted text-xs">Micro, Macro, Econometrics</p>
+        </div>
+        <div class="subject-card glass-card reveal-scale delay-2">
+          <div class="subject-icon bg-accent-10 text-accent"><i class="fas fa-stethoscope"></i></div>
+          <h3 class="font-bold text-fg text-sm" style="font-family:'Space Grotesk';margin-bottom:4px">Biology & Medicine
+          </h3>
+          <p class="text-muted text-xs">Anatomy, Genetics, Biochemistry</p>
+        </div>
+        <div class="subject-card glass-card reveal-scale delay-3">
+          <div class="subject-icon bg-purple-10 text-purple"><i class="fas fa-globe"></i></div>
+          <h3 class="font-bold text-fg text-sm" style="font-family:'Space Grotesk';margin-bottom:4px">History &
+            Geography</h3>
+          <p class="text-muted text-xs">World History, Maps, Civilizations</p>
+        </div>
+        <div class="subject-card glass-card reveal-scale delay-1">
+          <div class="subject-icon bg-primary-10 text-primary"><i class="fas fa-balance-scale"></i></div>
+          <h3 class="font-bold text-fg text-sm" style="font-family:'Space Grotesk';margin-bottom:4px">Law & Ethics</h3>
+          <p class="text-muted text-xs">Constitutional, Criminal, Business Law</p>
+        </div>
+        <div class="subject-card glass-card reveal-scale delay-2">
+          <div class="subject-icon bg-accent-10 text-accent"><i class="fas fa-palette"></i></div>
+          <h3 class="font-bold text-fg text-sm" style="font-family:'Space Grotesk';margin-bottom:4px">Art & Design</h3>
+          <p class="text-muted text-xs">Visual Arts, Digital Design, Art History</p>
+        </div>
+        <div class="subject-card glass-card reveal-scale delay-3">
+          <div class="subject-icon bg-purple-10 text-purple"><i class="fas fa-language"></i></div>
+          <h3 class="font-bold text-fg text-sm" style="font-family:'Space Grotesk';margin-bottom:4px">Foreign Languages
+          </h3>
+          <p class="text-muted text-xs">French, Spanish, German, Hindi & more</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════ WHY CHOOSE US ════════════ -->
+  <section class="section-pad">
+    <div class="grid-pattern" style="position:absolute;inset:0;opacity:.15"></div>
+    <div class="blur-orb"
+      style="bottom:0;left:50%;transform:translateX(-50%);width:600px;height:400px;background:hsl(var(--accent)/0.05);filter:blur(150px)">
+    </div>
+    <div class="container" style="position:relative;z-index:10">
+      <div class="section-header reveal">
+        <span class="section-label text-accent">Why Students Love Us</span>
+        <h2 class="section-title">Built <span class="text-gradient-accent">By Students,</span> For Students</h2>
+        <p class="section-desc">We know what it's like to pull all-nighters and hunt for resources. That's why we built
+          PanunSchool to be everything we wished we had.</p>
+      </div>
+      <div class="perks-grid">
+        <div class="perk-card glass-card reveal delay-1">
+          <div class="perk-icon bg-accent-10 text-accent"><i class="fas fa-shield-alt"></i></div>
+          <h3 class="font-bold text-fg" style="font-size:1.125rem;margin-bottom:.5rem;font-family:'Space Grotesk'">100%
+            Safe & Private</h3>
+          <p class="text-muted text-sm" style="line-height:1.7">Your data is encrypted end-to-end. We never share your
+            information with third parties. Study with peace of mind.</p>
+        </div>
+        <div class="perk-card glass-card reveal delay-2">
+          <div class="perk-icon bg-accent-10 text-accent"><i class="fas fa-wifi"></i></div>
+          <h3 class="font-bold text-fg" style="font-size:1.125rem;margin-bottom:.5rem;font-family:'Space Grotesk'">Works
+            Offline Too</h3>
+          <p class="text-muted text-sm" style="line-height:1.7">Downloaded notes and saved solutions are available
+            offline. Study anywhere — on the bus, in the library, or at home.</p>
+        </div>
+        <div class="perk-card glass-card reveal delay-3">
+          <div class="perk-icon bg-accent-10 text-accent"><i class="fas fa-clock"></i></div>
+          <h3 class="font-bold text-fg" style="font-size:1.125rem;margin-bottom:.5rem;font-family:'Space Grotesk'">24/7
+            AI Availability</h3>
+          <p class="text-muted text-sm" style="line-height:1.7">Whether it's 2 AM before an exam or early morning prep,
+            our AI tutors never sleep. Get instant help anytime.</p>
+        </div>
+        <div class="perk-card glass-card reveal delay-1">
+          <div class="perk-icon bg-accent-10 text-accent"><i class="fas fa-headphones"></i></div>
+          <h3 class="font-bold text-fg" style="font-size:1.125rem;margin-bottom:.5rem;font-family:'Space Grotesk'">
+            Dedicated Student Support</h3>
+          <p class="text-muted text-sm" style="line-height:1.7">Stuck on the platform? Our support team responds within
+            minutes. Real humans who understand student life.</p>
+        </div>
+        <div class="perk-card glass-card reveal delay-2">
+          <div class="perk-icon bg-accent-10 text-accent"><i class="fas fa-download"></i></div>
+          <h3 class="font-bold text-fg" style="font-size:1.125rem;margin-bottom:.5rem;font-family:'Space Grotesk'">Earn
+            While You Learn</h3>
+          <p class="text-muted text-sm" style="line-height:1.7">Upload your own notes, solutions, and study guides. Earn
+            credits every time another student uses your material.</p>
+        </div>
+        <div class="perk-card glass-card reveal delay-3">
+          <div class="perk-icon bg-accent-10 text-accent"><i class="fas fa-share-alt"></i></div>
+          <h3 class="font-bold text-fg" style="font-size:1.125rem;margin-bottom:.5rem;font-family:'Space Grotesk'">
+            Collaborative Study Groups</h3>
+          <p class="text-muted text-sm" style="line-height:1.7">Create or join study groups for your courses. Share
+            resources, quiz each other, and prepare for exams together.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════ TESTIMONIALS ════════════ -->
+  <section id="reviews" class="section-pad">
+    <div class="dot-pattern" style="position:absolute;inset:0;opacity:.2"></div>
+    <div class="section-header reveal" style="position:relative;z-index:10;padding:0 1rem">
+      <span class="section-label text-accent">Real Student Stories</span>
+      <h2 class="section-title">What Students <span class="text-gradient-accent">Say</span></h2>
+      <p class="section-desc">Don't just take our word for it — hear from students and tutors who transformed their
+        academic journey with PanunSchool.</p>
+    </div>
+    <div style="width:100%;overflow:hidden">
+      <div class="testimonials-track animate-scroll-x">
+        {% if feedbacks %}
+        {% for feedback in feedbacks %}
+        <div class="testimonial-card glass-card">
+          <div class="testimonial-header">
+            <img style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover;"
+              src="{{ url_for('static', filename=feedback.user.profile_picture) if feedback.user.profile_picture else 'https://ui-avatars.com/api/?name=' + feedback.user.username }}"
+              alt="{{ feedback.user.username }}">
+            <div>
+              <p class="font-bold text-fg text-sm">{{ feedback.user.full_name or feedback.user.username }}</p>
+              <p class="text-xs text-muted">
+                {% if feedback.user.role == 'user' %}Student{% else %}{{ feedback.user.role|capitalize }}{% endif %}
+              </p>
+            </div>
+            <div class="testimonial-stars">
+              {% for i in range(feedback.rating) %}
+              <i class="fas fa-star"></i>
+              {% endfor %}
+            </div>
+          </div>
+          <p class="text-muted text-sm" style="line-height:1.7">"{{ feedback.content }}"</p>
+        </div>
+        {% endfor %}
+        <!-- Duplicate for infinite scroll effect (optional, or just loop twice) -->
+        {% for feedback in feedbacks %}
+        <div class="testimonial-card glass-card" aria-hidden="true">
+          <div class="testimonial-header">
+            <img style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover;"
+              src="{{ url_for('static', filename=feedback.user.profile_picture) if feedback.user.profile_picture else 'https://ui-avatars.com/api/?name=' + feedback.user.username }}"
+              alt="{{ feedback.user.username }}">
+            <div>
+              <p class="font-bold text-fg text-sm">{{ feedback.user.full_name or feedback.user.username }}</p>
+              <p class="text-xs text-muted">
+                {% if feedback.user.role == 'user' %}Student{% else %}{{ feedback.user.role|capitalize }}{% endif %}
+              </p>
+            </div>
+            <div class="testimonial-stars">
+              {% for i in range(feedback.rating) %}
+              <i class="fas fa-star"></i>
+              {% endfor %}
+            </div>
+          </div>
+          <p class="text-muted text-sm" style="line-height:1.7">"{{ feedback.content }}"</p>
+        </div>
+        {% endfor %}
+        {% else %}
+        <!-- Fallback if no reviews yet -->
+        <div class="testimonial-card glass-card">
+          <div class="testimonial-header">
+            <div class="bg-primary text-white"
+              style="width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center"><i
+                class="fas fa-user"></i></div>
+            <div>
+              <p class="font-bold text-fg text-sm">Panun Student</p>
+              <p class="text-xs text-muted">Member</p>
+            </div>
+            <div class="testimonial-stars"><i class="fas fa-star"></i><i class="fas fa-star"></i><i
+                class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
+          </div>
+          <p class="text-muted text-sm" style="line-height:1.7">"Be the first to leave a review! Join us and tell us
+            about your experience."</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════ PRICING ════════════ -->
+  <section id="pricing" class="section-pad">
+    <div class="dot-pattern" style="position:absolute;inset:0;opacity:.15"></div>
+    <div class="blur-orb"
+      style="top:50%;left:50%;transform:translate(-50%,-50%);width:800px;height:600px;background:hsl(var(--primary)/0.05);filter:blur(180px)">
+    </div>
+    <div class="container" style="position:relative;z-index:10">
+      <div class="section-header reveal">
+        <span class="section-label text-primary">Simple Pricing</span>
+        <h2 class="section-title">Plans Built for <span class="text-gradient-primary">Students</span></h2>
+        <p class="section-desc">No hidden fees. Start free and upgrade only when you need more. Every plan includes our
+          core AI features.</p>
+      </div>
+      <div class="pricing-grid">
+        <!-- Basic Plan -->
+        <div class="pricing-card glass-card reveal delay-1" style="border-color:hsl(var(--accent)/0.2)">
+          <div class="pricing-icon bg-secondary text-accent"><i class="fas fa-book-open"></i></div>
+          <h3 class="font-bold text-fg" style="font-size:1.5rem;font-family:'Space Grotesk'">Basic Plan</h3>
+          <div style="margin:1rem 0 .5rem"><span class="text-accent"
+              style="font-family:'Space Grotesk';font-weight:700;font-size:2.25rem">₹299</span><span
+              class="text-muted text-sm">/month</span></div>
+          <p class="text-muted text-sm" style="line-height:1.7;margin-bottom:1.5rem">Great for getting started with AI
+            tutoring and expert help.</p>
+          <ul class="pricing-features">
+            <li><i class="fas fa-check text-accent"></i>10 AI Questions / mo</li>
+            <li><i class="fas fa-check text-accent"></i>20 Expert Q&A / mo</li>
+            <li><i class="fas fa-check text-accent"></i>5 Live Sessions / mo</li>
+            <li><i class="fas fa-check text-accent"></i>Unlimited Notes & Unblur</li>
+          </ul>
+          <a href="{{ url_for('payments.pricing') }}" class="pricing-cta glass-card text-accent"
+            style="border-color:hsl(var(--accent)/0.2)">Choose Basic
+            <i class="fas fa-arrow-right"></i></a>
+        </div>
+
+        <!-- Pro Plan -->
+        <div class="pricing-card glass-card highlighted reveal delay-2 glow-primary">
+          <div class="pricing-badge bg-gradient-hero" style="color:hsl(var(--primary-fg))">Most Popular</div>
+          <div class="pricing-icon bg-secondary text-primary"><i class="fas fa-crown"></i></div>
+          <h3 class="font-bold text-fg" style="font-size:1.5rem;font-family:'Space Grotesk'">Pro Plan</h3>
+          <div style="margin:1rem 0 .5rem"><span class="text-primary"
+              style="font-family:'Space Grotesk';font-weight:700;font-size:2.25rem">₹499</span><span
+              class="text-muted text-sm">/month</span></div>
+          <p class="text-muted text-sm" style="line-height:1.7;margin-bottom:1.5rem">Maximum power for serious students
+            who need extensive support.</p>
+          <ul class="pricing-features">
+            <li><i class="fas fa-check text-primary"></i>50 AI Questions / mo</li>
+            <li><i class="fas fa-check text-primary"></i>40 Expert Q&A / mo</li>
+            <li><i class="fas fa-check text-primary"></i>10 Live Sessions / mo</li>
+            <li><i class="fas fa-check text-primary"></i>Unlimited Notes & Unblur</li>
+          </ul>
+          <a href="{{ url_for('payments.pricing') }}" class="pricing-cta bg-gradient-hero"
+            style="color:hsl(var(--primary-fg))">Go Pro <i class="fas fa-arrow-right"></i></a>
+        </div>
+
+        <!-- School Plan -->
+        <div class="pricing-card glass-card reveal delay-3" style="border-color:hsl(var(--purple)/0.2)">
+          <div class="pricing-icon bg-secondary text-purple"><i class="fas fa-school"></i></div>
+          <h3 class="font-bold text-fg" style="font-size:1.5rem;font-family:'Space Grotesk'">School Plan</h3>
+          <div style="margin:1rem 0 .5rem"><span class="text-purple"
+              style="font-family:'Space Grotesk';font-weight:700;font-size:2.25rem">₹1200</span><span
+              class="text-muted text-sm">/month</span></div>
+          <p class="text-muted text-sm" style="line-height:1.7;margin-bottom:1.5rem">The complete virtual school
+            experience with daily online classes.</p>
+          <ul class="pricing-features">
+            <li><i class="fas fa-check text-purple"></i><strong>Full Online School Access</strong></li>
+            <li><i class="fas fa-check text-purple"></i>Daily Live Classes</li>
+            <li><i class="fas fa-check text-purple"></i>20 AI Questions / mo</li>
+            <li><i class="fas fa-check text-purple"></i>Unlimited Notes & Unblur</li>
+          </ul>
+          <a href="{{ url_for('payments.pricing') }}" class="pricing-cta glass-card text-purple"
+            style="border-color:hsl(var(--purple)/0.2)">Enroll Now
+            <i class="fas fa-arrow-right"></i></a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════ FAQ ════════════ -->
+  <section class="section-pad">
+    <div class="dot-pattern" style="position:absolute;inset:0;opacity:.15"></div>
+    <div class="container" style="position:relative;z-index:10;max-width:768px">
+      <div class="section-header reveal">
+        <span class="section-label text-purple">Got Questions?</span>
+        <h2 class="section-title">Frequently <span class="text-gradient-primary">Asked</span></h2>
+        <p class="section-desc">Everything students ask us before joining. Can't find your answer? Reach out to our
+          support team.</p>
+      </div>
+      <div>
+        <div class="faq-item reveal delay-1"><button class="faq-btn glass-card" onclick="toggleFaq(this)">
+            <div class="faq-q"><i class="fas fa-question-circle text-muted"></i>
+              <h3 class="font-bold text-fg text-sm" style="font-family:'Space Grotesk'">Is PanunSchool really free to
+                use?</h3>
+            </div><span class="faq-plus">+</span>
+          </button>
+          <div class="faq-answer">
+            <p>Yes! Our Free plan gives you 5 AI questions per day, access to community notes, and study group
+              discussions — forever, no credit card needed. Upgrade to Pro only if you want unlimited AI access and live
+              tutoring.</p>
+          </div>
+        </div>
+        <div class="faq-item reveal delay-2"><button class="faq-btn glass-card" onclick="toggleFaq(this)">
+            <div class="faq-q"><i class="fas fa-question-circle text-muted"></i>
+              <h3 class="font-bold text-fg text-sm" style="font-family:'Space Grotesk'">How does the AI homework help
+                work?</h3>
+            </div><span class="faq-plus">+</span>
+          </button>
+          <div class="faq-answer">
+            <p>Simply type your question or snap a photo of your homework. Our dual AI engine (powered by GPT & Gemini)
+              analyzes the problem and provides detailed, step-by-step solutions. You can even ask follow-up questions
+              for deeper understanding.</p>
+          </div>
+        </div>
+        <div class="faq-item reveal delay-3"><button class="faq-btn glass-card" onclick="toggleFaq(this)">
+            <div class="faq-q"><i class="fas fa-question-circle text-muted"></i>
+              <h3 class="font-bold text-fg text-sm" style="font-family:'Space Grotesk'">Can I earn money or credits on
+                the platform?</h3>
+            </div><span class="faq-plus">+</span>
+          </button>
+          <div class="faq-answer">
+            <p>Absolutely! Upload your own notes, past papers, or study guides. Every time another student accesses your
+              material, you earn credits that can be used to unlock premium content or book tutoring sessions.</p>
+          </div>
+        </div>
+        <div class="faq-item reveal delay-4"><button class="faq-btn glass-card" onclick="toggleFaq(this)">
+            <div class="faq-q"><i class="fas fa-question-circle text-muted"></i>
+              <h3 class="font-bold text-fg text-sm" style="font-family:'Space Grotesk'">What subjects are covered?</h3>
+            </div><span class="faq-plus">+</span>
+          </button>
+          <div class="faq-answer">
+            <p>We cover 50+ subjects across STEM, Humanities, Business, Law, Medicine, and more. From high school to
+              postgraduate level — if you're studying it, we've got AI support and expert tutors for it.</p>
+          </div>
+        </div>
+        <div class="faq-item reveal delay-5"><button class="faq-btn glass-card" onclick="toggleFaq(this)">
+            <div class="faq-q"><i class="fas fa-question-circle text-muted"></i>
+              <h3 class="font-bold text-fg text-sm" style="font-family:'Space Grotesk'">How do live tutoring sessions
+                work?</h3>
+            </div><span class="faq-plus">+</span>
+          </button>
+          <div class="faq-answer">
+            <p>Pro students can book 1-on-1 sessions with verified expert tutors. Sessions include HD video, an
+              interactive whiteboard, screen sharing, and session recording so you can revisit the lesson anytime.</p>
+          </div>
+        </div>
+        <div class="faq-item reveal delay-6"><button class="faq-btn glass-card" onclick="toggleFaq(this)">
+            <div class="faq-q"><i class="fas fa-question-circle text-muted"></i>
+              <h3 class="font-bold text-fg text-sm" style="font-family:'Space Grotesk'">Is my data safe?</h3>
+            </div><span class="faq-plus">+</span>
+          </button>
+          <div class="faq-answer">
+            <p>100%. All data is encrypted end-to-end. We never sell or share your personal information. Your study
+              history, notes, and conversations are completely private.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════ CTA ════════════ -->
+  <section class="section-pad">
+    <div class="blur-orb"
+      style="top:50%;left:50%;transform:translate(-50%,-50%);width:900px;height:500px;background:hsl(var(--primary)/0.1);filter:blur(200px)">
+    </div>
+    <div class="blur-orb"
+      style="top:0;left:25%;width:400px;height:400px;background:hsl(var(--accent)/0.08);filter:blur(120px)"></div>
+    <div class="blur-orb"
+      style="bottom:0;right:25%;width:400px;height:400px;background:hsl(var(--purple)/0.08);filter:blur(120px)"></div>
+    <div class="container" style="position:relative;z-index:10;max-width:896px">
+      <div class="cta-box glass-card reveal-scale" style="border-color:hsl(var(--primary)/0.2)">
+        <div class="cta-inner-border"></div>
+        <div class="cta-bg"></div>
+        <div style="position:relative;z-index:10">
+          <div class="bg-gradient-hero glow-primary"
+            style="width:64px;height:64px;margin:0 auto 2rem;border-radius:1rem;display:flex;align-items:center;justify-content:center">
+            <i class="fas fa-sparkles" style="font-size:2rem;color:hsl(var(--primary-fg))"></i>
+          </div>
+          <h2
+            style="font-size:2.25rem;font-weight:700;margin-bottom:1.5rem;line-height:1.2;font-family:'Space Grotesk'">
+            Ready to <span class="text-gradient-primary">Transform</span><br>Your Grades?</h2>
+          <p class="text-muted text-lg" style="max-width:560px;margin:0 auto 2.5rem;line-height:1.7">Join thousands of
+            students who stopped struggling and started excelling. Free to start — no credit card required. Your future
+            self will thank you.</p>
+          <div style="display:flex;flex-wrap:wrap;gap:1rem;justify-content:center">
+            <a href="{{ url_for('register') }}" class="btn-hero bg-gradient-hero"
+              style="color:hsl(var(--primary-fg));font-size:1.125rem">Get
+              Started Free <i class="fas fa-arrow-right"></i></a>
+            <a href="#pricing" class="btn-glass glass-card" style="color:hsl(var(--fg))">View Plans</a>
+          </div>
+          <p class="text-muted text-xs" style="margin-top:2rem">✨ No credit card • Instant access • Cancel anytime</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════ FOOTER ════════════ -->
+  <footer class="footer">
+    <div class="grid-pattern" style="position:absolute;inset:0;opacity:.1"></div>
+    <div class="container" style="position:relative;z-index:10">
+      <div class="footer-grid">
+        <div>
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:1rem">
+            <div class="bg-gradient-hero"
+              style="width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center">
+              <i class="fas fa-graduation-cap" style="color:hsl(var(--primary-fg))"></i>
+            </div>
+            <span style="font-family:'Space Grotesk';font-weight:700;font-size:1.25rem">Panun<span
+                class="text-gradient-primary">School</span></span>
+          </div>
+          <p class="text-muted text-sm" style="max-width:400px;margin-bottom:1.5rem;line-height:1.7">Empowering the next
+            generation of learners with AI-powered tutoring, a massive resource library, and expert support. Built by
+            students, for students.</p>
+          <div style="display:flex;flex-direction:column;gap:.5rem">
+            <div style="display:flex;align-items:center;gap:8px" class="text-sm text-muted"><i
+                class="fas fa-envelope text-primary"></i>support@panunschool.com</div>
+            <div style="display:flex;align-items:center;gap:8px" class="text-sm text-muted"><i
+                class="fas fa-map-marker-alt text-primary"></i>India • Worldwide Access</div>
+          </div>
+        </div>
+        <div>
+          <h4 class="font-bold text-fg" style="margin-bottom:.75rem;font-family:'Space Grotesk'">Platform</h4>
+          <div style="display:flex;flex-direction:column;gap:.5rem">
+            <a href="#features" class="text-muted text-sm" style="transition:color .3s">Features</a>
+            <a href="#pricing" class="text-muted text-sm" style="transition:color .3s">Pricing</a>
+            <a href="{{ url_for('login') }}" class="text-muted text-sm">Login</a>
+            <a href="{{ url_for('register') }}" class="text-muted text-sm">Register</a>
+            <a href="{{ url_for('register') }}" class="text-muted text-sm">Become a Tutor</a>
+          </div>
+        </div>
+        <div>
+          <h4 class="font-bold text-fg" style="margin-bottom:.75rem;font-family:'Space Grotesk'">Resources</h4>
+          <div style="display:flex;flex-direction:column;gap:.5rem">
+            <a href="#" class="text-muted text-sm">Help Center</a>
+            <a href="#" class="text-muted text-sm">Blog</a>
+            <a href="#" class="text-muted text-sm">Privacy Policy</a>
+            <a href="#" class="text-muted text-sm">Terms of Service</a>
+            <a href="#" class="text-muted text-sm">Contact Us</a>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p class="text-xs text-muted">© 2025 Panun School. All rights reserved. Made with ❤️ for students everywhere.
+        </p>
+        <div class="social-links">
+          <a href="#" class="bg-secondary text-muted" title="Twitter">T</a>
+          <a href="#" class="bg-secondary text-muted" title="GitHub">G</a>
+          <a href="#" class="bg-secondary text-muted" title="Instagram">I</a>
+          <a href="#" class="bg-secondary text-muted" title="YouTube">Y</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // ═══════════ NAVBAR SCROLL ═══════════
+    window.addEventListener('scroll', function () {
+      document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 20);
+    });
+
+    // ═══════════ MOBILE MENU ═══════════
+    document.getElementById('menuBtn').addEventListener('click', function () {
+      var menu = document.getElementById('mobileMenu');
+      menu.classList.toggle('open');
+      this.innerHTML = menu.classList.contains('open') ? '<i class="fas fa-times"></i>' : '<i class="fas fa-bars"></i>';
+    });
+    // Close mobile menu on link click
+    document.querySelectorAll('#mobileMenu a').forEach(function (a) {
+      a.addEventListener('click', function () {
+        document.getElementById('mobileMenu').classList.remove('open');
+        document.getElementById('menuBtn').innerHTML = '<i class="fas fa-bars"></i>';
+      });
+    });
+
+    // ═══════════ INTERSECTION OBSERVER (replaces Framer Motion) ═══════════
+    var observer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          // Animated counters
+          if (entry.target.querySelector('[data-count]')) {
+            entry.target.querySelectorAll('[data-count]').forEach(animateCounter);
+          }
+        }
+      });
+    }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+
+    document.querySelectorAll('.reveal, .reveal-left, .reveal-right, .reveal-scale').forEach(function (el) {
+      observer.observe(el);
+    });
+
+    // ═══════════ ANIMATED COUNTERS ═══════════
+    function animateCounter(el) {
+      if (el.dataset.animated) return;
+      el.dataset.animated = '1';
+      var target = parseInt(el.dataset.count);
+      var suffix = el.dataset.suffix || '';
+      var duration = 2000;
+      var steps = 60;
+      var increment = target / steps;
+      var current = 0;
+      var timer = setInterval(function () {
+        current += increment;
+        if (current >= target) {
+          el.textContent = target.toLocaleString() + suffix;
+          clearInterval(timer);
+        } else {
+          el.textContent = Math.floor(current).toLocaleString() + suffix;
+        }
+      }, duration / steps);
+    }
+
+    // ═══════════ FAQ ACCORDION ═══════════
+    function toggleFaq(btn) {
+      var answer = btn.nextElementSibling;
+      var wasOpen = answer.classList.contains('open');
+      // Close all
+      document.querySelectorAll('.faq-answer').forEach(function (a) { a.classList.remove('open'); });
+      document.querySelectorAll('.faq-btn').forEach(function (b) { b.classList.remove('active'); });
+      // Toggle clicked
+      if (!wasOpen) {
+        answer.classList.add('open');
+        btn.classList.add('active');
+      }
+    }
+  </script>
+</body>
+
+</html>
