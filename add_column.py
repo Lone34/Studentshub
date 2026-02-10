@@ -1,35 +1,31 @@
 import sqlite3
+import os
 
 def add_column():
-    db_path = 'instance/chegg_bot.db'
-    print(f"Connecting to: {db_path}")
-    conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
-    
-    # Check existing tables
-    cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
-    tables = cursor.fetchall()
-    print("Tables found:", [t[0] for t in tables])
-    
-    if 'tutor' in [t[0] for t in tables]:
-        # Check columns in tutor
-        cursor.execute("PRAGMA table_info(tutor)")
-        columns = [col[1] for col in cursor.fetchall()]
-        print("Columns in tutor:", columns)
+    print("Attempting to add chegg_link column to job table...")
+    try:
+        db_path = 'instance/chegg_bot.db'
+        if not os.path.exists(db_path):
+             db_path = 'chegg_bot.db'
+             
+        print(f"Connecting to: {db_path}")
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
         
-        if 'teaching_grades' not in columns:
-            try:
-                cursor.execute("ALTER TABLE tutor ADD COLUMN teaching_grades VARCHAR(500)")
-                print("Column 'teaching_grades' added successfully.")
-                conn.commit()
-            except sqlite3.OperationalError as e:
-                print(f"Error adding column: {e}")
+        # Check if column exists
+        cursor.execute("PRAGMA table_info(job)")
+        columns = [info[1] for info in cursor.fetchall()]
+        
+        if 'chegg_link' not in columns:
+            cursor.execute("ALTER TABLE job ADD COLUMN chegg_link TEXT")
+            conn.commit()
+            print("Column 'chegg_link' added successfully.")
         else:
-            print("Column 'teaching_grades' already exists.")
-    else:
-        print("ERROR: table 'tutor' NOT FOUND in this database.")
-        
-    conn.close()
+            print("Column 'chegg_link' already exists.")
+            
+        conn.close()
+    except Exception as e:
+        print(f"Error adding column: {e}")
 
 if __name__ == "__main__":
     add_column()

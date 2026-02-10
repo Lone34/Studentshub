@@ -100,6 +100,18 @@ class Job(db.Model):
     result_message = db.Column(db.Text, nullable=True)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
     service_account_name = db.Column(db.String(100), nullable=True)
+    chegg_link = db.Column(db.String(500), nullable=True) # URL of the posted question
+
+class Notification(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    message = db.Column(db.String(255), nullable=False)
+    link = db.Column(db.String(500), nullable=True)  # Link to the solved answer
+    is_read = db.Column(db.Boolean, default=False)   # False = Unread (Dark), True = Read (Light)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # Relationship to user
+    user = db.relationship('User', backref=db.backref('notifications', lazy=True))
 
 class ChatHistory(db.Model):
     """Stores AI Tutor conversations for history and analytics"""

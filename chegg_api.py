@@ -5,6 +5,114 @@ import time
 import os
 import re
 from typing import Dict, Any, List
+from bs4 import BeautifulSoup
+from models import db, User, Notification
+
+# --- NOTIFICATION & CHECKER HELPERS ---
+
+def notify_super_admin(message, link=None):
+    """
+    Helper function to send a notification specifically to the Owner (ID 1).
+    """
+    try:
+        # We assume ID 1 is the "Main Main" admin/owner
+        admin = User.query.get(1) 
+        if admin:
+            # Check if we recently sent this exact alert to avoid spamming 100 times
+            exists = Notification.query.filter_by(
+                user_id=admin.id, 
+                message=message, 
+                is_read=False
+            ).first()
+            
+            if not exists:
+                print(f"🚨 ALERTING ADMIN: {message}")
+                notif = Notification(user_id=admin.id, message=message, link=link)
+                db.session.add(notif)
+                db.session.commit()
+    except Exception as e:
+        print(f"Failed to notify admin: {e}")
+
+def check_if_solved(chegg_url):
+    """
+    REAL LOGIC: Checks Chegg for Solution, Unsolved status, or Captcha blocks.
+    Returns: 'SOLVED', 'UNSOLVED', 'CAPTCHA', or 'ERROR'
+    """
+    # Use a real browser User-Agent to try and bypass simple blocks
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Upgrade-Insecure-Requests': '1',
+    }
+    
+    try:
+        print(f"🕵️ DEBUG: Checking URL: {chegg_url}")
+        response = requests.get(chegg_url, headers=headers, timeout=15)
+        print(f"🕵️ DEBUG: Status Code: {response.status_code}")
+        
+        page_text = response.text.lower()
+        
+        # --- 1. CAPTCHA DETECTION ---
+        if response.status_code == 403 or \
+           "captcha" in page_text or \
+           "verify you are human" in page_text or \
+           "access denied" in page_text:
+            print(f"⚠️ DEBUG: Captcha detected!")
+            return 'CAPTCHA'
+
+        soup = BeautifulSoup(response.text, 'html.parser')
+        
+        # --- 2. JSON-LD CHECK (Most Reliable) ---
+        # Look for the structured data script
+        json_ld_script = soup.find('script', type='application/ld+json')
+        if json_ld_script:
+            try:
+                data = json.loads(json_ld_script.string)
+                # print(f"🕵️ DEBUG: Found JSON-LD") # Uncomment if needed
+                
+                # The JSON-LD usually defines a QAPage with a mainEntity of type Question
+                question_data = data.get('mainEntity', {})
+                if question_data.get('@type') == 'Question':
+                    
+                    # Check "answerCount"
+                    answer_count = question_data.get('answerCount', 0)
+                    if answer_count > 0:
+                        print(f"✅ DEBUG: Solved (JSON-LD answerCount: {answer_count})")
+                        return 'SOLVED'
+                        
+                    # Check "acceptedAnswer" object presence
+                    if question_data.get('acceptedAnswer'):
+                       print(f"✅ DEBUG: Solved (JSON-LD acceptedAnswer found)")
+                       return 'SOLVED'
+                       
+                    # If we found the Question object but no answer indicators, it's Unsolved
+                    print(f"⏳ DEBUG: Unsolved (JSON-LD present but no answer)")
+                    return 'UNSOLVED'
+                    
+            except json.JSONDecodeError:
+                print(f"❌ DEBUG: JSON-LD Decode Error")
+                pass # Fallback to text search if JSON parsing fails
+
+        # --- 3. TEXT FALLBACK ---
+        if "this question hasn't been solved yet" in page_text or \
+           "we don't have a solution for this question" in page_text:
+            print(f"⏳ DEBUG: Unsolved (Text Match)")
+            return 'UNSOLVED'
+
+        if "expert answer" in page_text or "best answer" in page_text:
+             # Verify it's not "Get an expert answer" (upsell)
+             if "get an expert answer" not in page_text:
+                 print(f"✅ DEBUG: Solved (Text Match: 'expert answer')")
+                 return 'SOLVED'
+             
+        # If we are unsure, return Unsolved so we check again.
+        print(f"⏳ DEBUG: Unsolved (Fallback - No positive match)")
+        return 'UNSOLVED'
+
+    except Exception as e:
+        print(f"❌ Error checking Chegg: {e}")
+        return 'ERROR'
 
 # --- CONFIGURATION ---
 ONE_GRAPH_ENDPOINT = "https://gateway.chegg.com/one-graph/graphql"
@@ -114,6 +222,98 @@ def safe_post(url: str, headers: Dict[str, str], payload: Dict[str, Any], proxy:
         print(f"[API ERROR] Connection Failed (Proxy used: {proxy}): {e}")
         return None, str(e)
 
+# --- FEATURE 1.5: GET MY QUESTIONS (Fallback) ---
+def get_latest_question_url(cookie_json, proxy=None):
+    """Fetches key details of the most recent question asked by the user."""
+    print(f"   [API] Fetching 'My Questions' for fallback...")
+    
+    headers = dict(BASE_HEADERS)
+    cookie_str = parse_cookie_string(cookie_json)
+    if cookie_str: headers["Cookie"] = cookie_str
+    
+    # Using a common hash for 'MyQuestions' (or similar)
+    # Often 'MyQuestionsQuery' or part of general viewer query
+    # We will try a known query hash
+    payload = {
+        'operationName': 'MyQuestions',
+        'variables': {'limit': 1, 'offset': 0},
+        'extensions': {
+            'persistedQuery': {
+                'version': 1,
+                'sha256Hash': '9d7d9b7367803737300f892a0e5b018591873323058a56209b5522524a87754f' 
+            }
+        }
+    }
+    
+    try:
+        status, data = safe_post(ONE_GRAPH_ENDPOINT, headers=headers, payload=payload, proxy=proxy)
+        
+        if status == 200 and 'data' in data:
+             # Structure: data -> myQuestions -> edges -> node -> slug, uuid
+             items = data.get('data', {}).get('myQuestions', {}).get('edges', [])
+             if items:
+                 node = items[0].get('node', {})
+                 slug = node.get('slug')
+                 uuid = node.get('uuid')
+                 if slug and uuid:
+                     return f"https://www.chegg.com/homework-help/questions-and-answers/{slug}-{uuid}"
+                     
+    except Exception as e:
+        print(f"   [API] MyQuestion Query failed: {e}")
+        
+    # --- SCRAPING FALLBACK ---
+    try:
+        print("   [API] Trying HTML Scraping for My Questions...")
+        url = "https://www.chegg.com/my/questions-and-answers"
+        resp = requests.get(url, headers=headers, proxies={"https": proxy} if proxy else None, timeout=15)
+        
+        if resp.status_code == 200:
+            # Regex to find question links
+            # Pattern: /homework-help/questions-and-answers/[slug]-[uuid]
+            # or q[digits]
+            
+            # Look for the characteristic Q&A link pattern
+            # We want the most recent one, which usually appears first in the source if it's a list
+            import re
+            matches = re.findall(r'href=["\'](https://www.chegg.com/homework-help/questions-and-answers/[^"\']+)["\']', resp.text)
+            
+            if matches:
+                # Filter out likely junk/nav links if any (though the pattern is specific)
+                # Return the first one
+                print(f"   [API] Scraped URL: {matches[0]}")
+                return matches[0]
+                
+            # Try relative path
+            matches_rel = re.findall(r'href=["\'](/homework-help/questions-and-answers/[^"\']+)["\']', resp.text)
+            if matches_rel:
+                print(f"   [API] Scraped Relative URL: {matches_rel[0]}")
+                return f"https://www.chegg.com{matches_rel[0]}"
+            
+            # If we are here, no matches found
+            print(f"   [API] No matches found in {len(resp.text)} bytes.")
+            try:
+                 with open("scrape_dump.html", "w", encoding="utf-8") as f:
+                     f.write(resp.text)
+                 print("   [API] Dumped HTML to scrape_dump.html")
+            except: pass
+            
+        else:
+            print(f"   [API] My Questions Status Code: {resp.status_code}")
+            try:
+                 with open("scrape_dump_error.html", "w", encoding="utf-8") as f:
+                     f.write(resp.text)
+            except: pass
+                
+    except Exception as e:
+        print(f"   [API] Scraping failed: {e}")
+        try:
+             with open("scrape_dump.html", "w", encoding="utf-8") as f:
+                 f.write(resp.text)
+             print("   [API] Dumped HTML to scrape_dump.html")
+        except: pass
+
+    return None
+
 # --- FEATURE 1: FIND SUBJECTS FROM QUESTION TEXT ---
 def get_subjects_from_text(cookie_json, question_text, proxy=None):
     """Sends question to Chegg to get valid subjects/IDs."""
@@ -216,7 +416,33 @@ def post_question_v3(cookie_json, html_body, subject_id, proxy=None):
         if "errors" in data:
             # Handle Chegg-specific errors (e.g., limit reached)
             return False, f"Chegg Error: {data['errors'][0].get('message', 'Unknown')}"
-        return True, "Posted Successfully"
+            
+        # Extract URL if possible
+        # Structure: data -> postQuestionV3 -> question -> link/url/slug ??
+        try:
+            res = data.get('data', {}).get('postQuestionV3', {})
+            question = res.get('question', {})
+            
+            # 1. Direct Extraction
+            if 'slug' in question and 'uuid' in question:
+                url = f"https://www.chegg.com/homework-help/questions-and-answers/{question['slug']}-{question['uuid']}"
+                return True, url
+            elif 'url' in question:
+                 return True, question['url']
+                 
+            # 2. Fallback: Fetch "My Questions" to get the latest one
+            print(f"   [API] Direct URL missing, trying fallback (My Questions)...")
+            time.sleep(2) # Wait a moment for indexing
+            latest_url = get_latest_question_url(cookie_json, proxy)
+            if latest_url:
+                print(f"   [API] Fallback Success! URL: {latest_url}")
+                return True, latest_url
+                
+        except Exception as e:
+             print(f"   [API] URL Extraction Error: {e}")
+            
+        # Final Fallback
+        return True, "Posted Successfully (Link not found in response)"
     return False, f"Network Error: {status}"
 
 def post_question_to_chegg(account_cookies_json, content, subject_title, subject_id, group_id, proxy=None):

@@ -8,11 +8,23 @@
 
     <script src="https://cdn.tailwindcss.com"></script>
 
+    <!-- Google AdSense -->
+    <meta name="google-adsense-account" content="ca-pub-4690138405925118">
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4690138405925118"
+        crossorigin="anonymous"></script>
+
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Toastify for Notifications -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+
+    <!-- Notification Logic -->
+    <script src="{{ url_for('static', filename='notifications.js') }}" defer></script>
 
     <script>
         tailwind.config = {
@@ -78,7 +90,41 @@
                 </a>
 
                 <div class="flex items-center gap-4">
+
+
                     {% if current_user.is_authenticated %}
+
+                    <!-- Notification Bell -->
+                    <div class="relative" x-data="{ open: false }">
+                        <button @click="open = !open"
+                            class="group flex items-center justify-center w-10 h-10 rounded-full bg-white border border-slate-200 text-slate-400 hover:text-orange-600 hover:border-orange-200 transition-all duration-300 shadow-sm hover:shadow-md relative">
+                            <i class="fa-solid fa-bell text-sm transition-transform group-hover:scale-110"></i>
+                            <span id="notif-badge"
+                                class="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] text-white font-bold hidden">0</span>
+                        </button>
+
+                        <!-- Dropdown -->
+                        <div x-show="open" @click.away="open = false"
+                            x-transition:enter="transition ease-out duration-200"
+                            x-transition:enter-start="opacity-0 translate-y-2"
+                            x-transition:enter-end="opacity-100 translate-y-0"
+                            x-transition:leave="transition ease-in duration-150"
+                            x-transition:leave-start="opacity-100 translate-y-0"
+                            x-transition:leave-end="opacity-0 translate-y-2"
+                            class="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-2xl border border-slate-100 overflow-hidden z-50 origin-top-right">
+                            <div
+                                class="px-4 py-3 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
+                                <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider">Notifications</h3>
+                                <button @click="window.markAllRead()"
+                                    class="text-[10px] text-orange-600 hover:text-orange-700 font-bold">Mark all
+                                    read</button>
+                            </div>
+                            <div id="notif-list" class="max-h-96 overflow-y-auto">
+                                <!-- Notifications will be injected here -->
+                                <div class="p-4 text-center text-xs text-slate-400">No notifications</div>
+                            </div>
+                        </div>
+                    </div>
 
                     <div
                         class="hidden md:flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200 rounded-full shadow-sm">
@@ -138,6 +184,8 @@
         <p>&copy; 2025 Panun School. All rights reserved.</p>
     </footer>
 
+    <audio id="notification-sound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3"
+        preload="auto"></audio>
 </body>
 
 </html>

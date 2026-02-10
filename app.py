@@ -5,7 +5,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 import os
 # ----------------------------------------------
-from models import db, User, ServiceAccount, Job, ChatHistory, Document, DocumentUnlock, Tutor, TutoringSession, Grade, Subject, Feedback
+from models import db, User, ServiceAccount, Job, ChatHistory, Document, DocumentUnlock, Tutor, TutoringSession, Grade, Subject, Feedback, Notification
 from sqlalchemy import func, or_
 import chegg_api
 import time
@@ -13,6 +13,9 @@ import hashlib
 from sqlalchemy import desc
 from datetime import datetime
 from dotenv import load_dotenv
+from flask_apscheduler import APScheduler
+import concurrent.futures
+from chegg_api import check_if_solved, notify_super_admin
 
 load_dotenv() # Load environment variables from .env
 
@@ -23,13 +26,19 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///chegg_bot.db'
 UPLOAD_FOLDER = 'static/uploads'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 # --------------------------------
+scheduler = APScheduler()
 
 @app.route('/uploads/<path:filename>')
 def uploaded_file(filename):
     """Serve uploaded files (recordings, etc)"""
     from flask import send_from_directory
     return send_from_directory('uploads', filename)
+
+@app.route('/ads.txt')
+def ads_txt():
+    return send_from_directory(app.root_path, 'ads.txt')
 
 db.init_app(app)
 login_manager = LoginManager()
@@ -945,7 +954,11 @@ def dashboard():
             db.session.commit()
 
             if success:
-                job.status = "Completed"
+                job.status = "Completed" # Marks it as posted.
+                # If msg is a URL, save it to chegg_link for tracking
+                if msg.startswith("http"):
+                    job.chegg_link = msg
+                    job.status = "Pending" # Set to Pending so the checker watches it!
                 success_count += 1
             else:
                 job.status = "Failed"
@@ -1528,6 +1541,128 @@ def delete_feedback(id):
     db.session.commit()
     flash("Feedback deleted.")
     return redirect(url_for('super_admin_dashboard'))
+
+
+# --- CHEGG CHECKER BACKGROUND TASK ---
+
+def run_chegg_checker():
+    """
+    Background task to check status of Pending jobs.
+    """
+    with app.app_context():
+        # 1. 🔍 Get all pending jobs
+        pending_jobs = Job.query.filter_by(status='Pending').all()
+        if not pending_jobs:
+            # print("   (No pending jobs to check)")
+            return
+
+        print(f"🕵️ Checker running for {len(pending_jobs)} pending jobs...")
+        
+        # 2. 🚀 Setup Parallel Execution
+        # We use a ThreadPoolExecutor to run multiple checks at once
+        results_to_process = []
+        
+        with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+            # Create a dictionary to map futures to jobs
+            future_to_job = {
+                executor.submit(check_if_solved, job.chegg_link): job 
+                for job in pending_jobs
+            }
+            
+            # 3. ⏳ Process Results as they complete
+            for future in concurrent.futures.as_completed(future_to_job):
+                job = future_to_job[future]
+                try:
+                    status = future.result()
+                    results_to_process.append((job, status))
+                except Exception as exc:
+                    print(f"   --> JOB #{job.id} generated an exception: {exc}")
+
+        # 4. Update DB in Main Thread (SQLite is sensitive to threads)
+        notifications_to_add = []
+        
+        for job, status in results_to_process:
+            if status == 'SOLVED':
+                job.status = 'Solved'
+                # Create Notification
+                notifications_to_add.append(Notification(
+                    user_id=job.user_id,
+                    message=f"Solution Ready: {job.subject}",
+                    link=job.chegg_link
+                ))
+                print(f"   --> JOB #{job.id} SOLVED! Notification queued.")
+                
+            elif status == 'CAPTCHA':
+                print(f"   --> JOB #{job.id} BLOCKED (Captcha).")
+                # notify_super_admin is also db-dependent, careful here. 
+                # Ideally, queue this too.
+                # notify_super_admin(...) 
+                
+            elif status == 'UNSOLVED':
+                print(f"   --> JOB #{job.id} Unsolved.")
+                
+            else:
+                print(f"   --> JOB #{job.id} Error during check.")
+
+        if notifications_to_add:
+            db.session.add_all(notifications_to_add)
+            
+        try:
+            db.session.commit()
+            if notifications_to_add:
+                print(f"   --> Committed {len(notifications_to_add)} new notifications.")
+        except Exception as e:
+            db.session.rollback()
+            print(f"   --> DB Commit Error: {e}")
+        
+        # LOGGING TO FILE
+        try:
+            with open("logs/checker_run.log", "a") as f:
+                f.write(f"{datetime.utcnow()} - Checked {len(pending_jobs)} jobs. New Notifications: {len(notifications_to_add)}\n")
+        except:
+            pass
+                
+        print("--- Check Complete ---")
+
+# --- NOTIFICATION ROUTES ---
+
+@app.route('/get-notifications')
+@login_required
+def get_notifications():
+    # Fetch latest 20 notifications for the user
+    try:
+        notifs = Notification.query.filter_by(user_id=current_user.id)\
+                                   .order_by(Notification.timestamp.desc())\
+                                   .limit(20).all()
+        
+        data = [{
+            'id': n.id,
+            'message': n.message,
+            'link': n.link,
+            'is_read': n.is_read,
+            'timestamp': n.timestamp.isoformat()
+        } for n in notifs]
+        
+        return jsonify(data)
+    except Exception as e:
+        print(f"Error fetching notifications: {e}")
+        return jsonify([])
+
+@app.route('/mark-all-read', methods=['POST'])
+@login_required
+def mark_all_read():
+    try:
+        Notification.query.filter_by(user_id=current_user.id, is_read=False).update({'is_read': True})
+        db.session.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        print(f"Error marking read: {e}")
+        return jsonify({'success': False})
+
+# Initialize Scheduler
+scheduler.add_job(id='Scheduled Task', func=run_chegg_checker, trigger="interval", minutes=1)
+scheduler.init_app(app)
+scheduler.start()
 
 if __name__ == '__main__':
     with app.app_context():
