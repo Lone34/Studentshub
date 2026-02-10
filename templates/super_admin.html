@@ -29,12 +29,185 @@
             <div class="text-3xl font-black text-slate-800 mt-1">{{ users|length }}</div>
         </div>
         <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-            <div class="text-slate-400 text-xs font-bold uppercase">Active Accounts</div>
-            <div class="text-3xl font-black text-indigo-600 mt-1">{{ my_accounts|length + other_accounts|length }}</div>
+            <div class="text-slate-400 text-xs font-bold uppercase">Pending Verifications</div>
+            <div class="text-3xl font-black text-yellow-500 mt-1">{{ pending_users|length if pending_users is defined
+                else '0' }}</div>
         </div>
         <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
             <div class="text-slate-400 text-xs font-bold uppercase">Global Jobs</div>
             <div class="text-3xl font-black text-orange-600 mt-1">{{ jobs|length }}</div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- DATA & REPORTS SECTION -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <div class="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden mb-8">
+        <div class="bg-gradient-to-r from-cyan-500 to-blue-600 px-8 py-5 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-white">
+                    <i class="fa-solid fa-chart-line text-xl"></i>
+                </div>
+                <div>
+                    <h2 class="text-white font-bold text-lg">Data & Reports</h2>
+                    <p class="text-cyan-100 text-xs">View registration stats and export data</p>
+                </div>
+            </div>
+            <div>
+                <input type="date" id="stats-date"
+                    class="bg-white/20 text-white placeholder-white/70 border-none rounded-lg px-4 py-2 text-sm font-bold focus:ring-2 focus:ring-white/50 cursor-pointer"
+                    onchange="fetchStats()">
+            </div>
+        </div>
+
+        <div class="p-8">
+            <!-- Stats Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <!-- Daily Students -->
+                <div class="bg-slate-50 p-6 rounded-2xl border border-slate-200">
+                    <div class="text-slate-400 text-xs font-bold uppercase mb-2">Students (Selected Date)</div>
+                    <div class="flex items-baseline gap-2">
+                        <span class="text-3xl font-black text-slate-800" id="daily-students">-</span>
+                        <span class="text-xs text-slate-400">registrations</span>
+                    </div>
+                </div>
+
+                <!-- Daily Tutors -->
+                <div class="bg-slate-50 p-6 rounded-2xl border border-slate-200">
+                    <div class="text-slate-400 text-xs font-bold uppercase mb-2">Tutors (Selected Date)</div>
+                    <div class="flex items-baseline gap-2">
+                        <span class="text-3xl font-black text-slate-800" id="daily-tutors">-</span>
+                        <span class="text-xs text-slate-400">registrations</span>
+                    </div>
+                </div>
+
+                <!-- Total Active Plans -->
+                <div class="bg-slate-50 p-6 rounded-2xl border border-slate-200">
+                    <div class="text-slate-400 text-xs font-bold uppercase mb-2">Active Paid Plans</div>
+                    <div class="flex items-baseline gap-2">
+                        <span class="text-3xl font-black text-emerald-600" id="total-plans">-</span>
+                        <span class="text-xs text-slate-400">current</span>
+                    </div>
+                </div>
+
+                <!-- Total Database -->
+                <div class="bg-slate-50 p-6 rounded-2xl border border-slate-200">
+                    <div class="text-slate-400 text-xs font-bold uppercase mb-2">Total Database</div>
+                    <div class="flex items-baseline gap-2">
+                        <span class="text-3xl font-black text-indigo-600" id="total-users">-</span>
+                        <span class="text-xs text-slate-400">users & tutors</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Export Actions -->
+            <div class="flex flex-col md:flex-row gap-4 border-t border-slate-100 pt-6">
+                <a href="{{ url_for('admin_export_students') }}" target="_blank"
+                    class="flex-1 bg-white border border-slate-200 hover:border-blue-500 hover:text-blue-600 text-slate-600 py-4 rounded-xl font-bold flex items-center justify-center gap-3 transition-all group shadow-sm hover:shadow-md">
+                    <div
+                        class="w-10 h-10 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center group-hover:bg-blue-100 transition-colors">
+                        <i class="fa-solid fa-file-pdf text-lg"></i>
+                    </div>
+                    <div>
+                        <div class="text-sm">Download Students Report</div>
+                        <div class="text-[10px] text-slate-400 font-normal">Full PDF Export</div>
+                    </div>
+                </a>
+
+                <a href="{{ url_for('admin_export_tutors') }}" target="_blank"
+                    class="flex-1 bg-white border border-slate-200 hover:border-violet-500 hover:text-violet-600 text-slate-600 py-4 rounded-xl font-bold flex items-center justify-center gap-3 transition-all group shadow-sm hover:shadow-md">
+                    <div
+                        class="w-10 h-10 rounded-full bg-violet-50 text-violet-500 flex items-center justify-center group-hover:bg-violet-100 transition-colors">
+                        <i class="fa-solid fa-chalkboard-user text-lg"></i>
+                    </div>
+                    <div>
+                        <div class="text-sm">Download Tutors Report</div>
+                        <div class="text-[10px] text-slate-400 font-normal">Full PDF Export</div>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- DISABLED STUDENT VERIFICATION SECTION -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <div class="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden mb-8">
+        <div class="bg-gradient-to-r from-yellow-400 to-orange-500 px-8 py-5 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-white">
+                    <i class="fa-solid fa-user-shield text-xl"></i>
+                </div>
+                <div>
+                    <h2 class="text-white font-bold text-lg">Student Verification</h2>
+                    <p class="text-orange-50 text-xs">Approve free access for disabled students</p>
+                </div>
+            </div>
+            <span class="bg-white/20 text-white px-3 py-1 rounded-lg text-xs font-bold">
+                {{ pending_users|length if pending_users is defined else '0' }} Pending
+            </span>
+        </div>
+
+        <div class="p-8">
+            {% if pending_users %}
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {% for user in pending_users %}
+                <div
+                    class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div
+                            class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-600">
+                            {{ user.username[0]|upper }}
+                        </div>
+                        <div>
+                            <div class="font-bold text-slate-800 text-sm">{{ user.full_name }}</div>
+                            <div class="text-xs text-slate-400">{{ user.email }}</div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-2 mb-4 text-xs text-slate-500">
+                        <p><strong class="text-slate-700">Parent:</strong> {{ user.parent_name }} ({{ user.parent_phone
+                            }})</p>
+                        <p><strong class="text-slate-700">Address:</strong> {{ user.address }}</p>
+                    </div>
+
+                    {% if user.disability_certificate_path %}
+                    <a href="{{ url_for('uploaded_file', filename=user.disability_certificate_path) }}" target="_blank"
+                        class="block w-full py-2 mb-4 text-center border border-slate-200 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-50 transition-colors">
+                        <i class="fa-solid fa-file-pdf mr-1 text-red-500"></i> View Certificate
+                    </a>
+                    {% else %}
+                    <div
+                        class="w-full py-2 mb-4 text-center border border-red-200 bg-red-50 rounded-lg text-xs font-bold text-red-500">
+                        No Certificate Uploaded
+                    </div>
+                    {% endif %}
+
+                    <div class="flex gap-2">
+                        <form action="{{ url_for('verify_user', user_id=user.id, action='approve') }}" method="POST"
+                            class="flex-1">
+                            <button type="submit"
+                                class="w-full bg-emerald-500 hover:bg-emerald-600 text-white py-2 rounded-lg text-xs font-bold transition-colors">
+                                <i class="fa-solid fa-check mr-1"></i> Approve
+                            </button>
+                        </form>
+                        <form action="{{ url_for('verify_user', user_id=user.id, action='reject') }}" method="POST"
+                            class="flex-1">
+                            <button type="submit"
+                                class="w-full bg-white border border-slate-200 text-slate-500 hover:bg-red-50 hover:text-red-500 hover:border-red-200 py-2 rounded-lg text-xs font-bold transition-all">
+                                <i class="fa-solid fa-trash mr-1"></i> Reject
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-12 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                <i class="fa-solid fa-user-check text-4xl text-slate-300 mb-4"></i>
+                <p class="text-slate-500 font-medium">No pending verification requests.</p>
+            </div>
+            {% endif %}
         </div>
     </div>
 
@@ -711,6 +884,34 @@
             }
         } catch (e) { console.error('Error loading subjects:', e); }
     }
+
+    // --- STATS & REPORTS ---
+    async function fetchStats() {
+        const dateInput = document.getElementById('stats-date');
+        const dateVal = dateInput.value || new Date().toISOString().split('T')[0];
+
+        // Ensure input has value if empty (initial load)
+        if (!dateInput.value) dateInput.value = dateVal;
+
+        try {
+            const res = await fetch(`/api/admin/stats?date=${dateVal}`);
+            const data = await res.json();
+
+            if (data.daily) {
+                document.getElementById('daily-students').innerText = data.daily.students;
+                document.getElementById('daily-tutors').innerText = data.daily.tutors;
+                document.getElementById('total-plans').innerText = data.total.active_plans;
+                document.getElementById('total-users').innerText = data.total.students + data.total.tutors;
+            }
+        } catch (e) {
+            console.error('Error fetching stats:', e);
+        }
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+        fetchStats();
+    });
 
     // --- CLASSES (SCHEDULE) ---
     async function loadClasses() {

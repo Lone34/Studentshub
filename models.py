@@ -23,6 +23,17 @@ class User(UserMixin, db.Model):
     # Subscription
     active_subscription_id = db.Column(db.Integer, db.ForeignKey('subscription.id'), nullable=True)
     
+    # New Registration Fields
+    student_type = db.Column(db.String(50), default='grade') # grade, higher_ed, disabled
+    parent_name = db.Column(db.String(150), nullable=True)
+    parent_phone = db.Column(db.String(20), nullable=True)
+    address = db.Column(db.Text, nullable=True)
+    school_name = db.Column(db.String(150), nullable=True)
+    class_grade = db.Column(db.String(50), nullable=True)
+    disability_certificate_path = db.Column(db.String(255), nullable=True)
+    is_verified = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
     service_accounts = db.relationship('ServiceAccount', backref='owner', lazy=True, foreign_keys='ServiceAccount.owner_id')
 
     def can_access(self, feature):
@@ -35,6 +46,11 @@ class User(UserMixin, db.Model):
             return True
 
         # 2. Check for Active Subscription
+        # 2. Check for Active Subscription
+        # Exception: Verified Disabled Students for 'school' feature
+        if feature == 'school' and self.student_type == 'disabled' and self.is_verified:
+            return True
+
         if not self.active_subscription_id:
             return False
             
@@ -47,6 +63,9 @@ class User(UserMixin, db.Model):
         
         # --- SCHOOL ACCESS ---
         if feature == 'school':
+            # Free access for verified disabled students
+            if self.student_type == 'disabled' and self.is_verified:
+                return True
             return sub.plan_type == 'school_1200'
 
         # --- UNLIMITED FEATURES ---

@@ -181,6 +181,7 @@
                     class="fa-solid fa-arrow-right"></i></span>
         </a>
     </div>
+    {% if user.student_type != 'higher_ed' %}
     <a href="{{ url_for('school.index') }}"
         class="dashboard-card group p-8 rounded-3xl bg-white border border-slate-100 cursor-pointer relative overflow-hidden block">
         <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
@@ -194,6 +195,7 @@
         <span class="text-violet-600 font-bold text-sm flex items-center gap-2">Enter School <i
                 class="fa-solid fa-arrow-right"></i></span>
     </a>
+    {% endif %}
 </div>
 
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">

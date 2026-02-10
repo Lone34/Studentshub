@@ -133,7 +133,7 @@
             {% for doc in documents %}
             <a href="{{ url_for('library_document', doc_id=doc.id) }}"
                 class="doc-card bg-white rounded-2xl border border-slate-100 overflow-hidden block animate-slide"
-                style="animation-delay: {{ loop.index * 50 }}ms">
+                style="--i: {{ loop.index }}; animation-delay: calc(var(--i) * 50ms);">
 
                 <!-- Preview / Thumbnail -->
                 <div

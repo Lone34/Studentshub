@@ -365,13 +365,47 @@ def browse_tutors():
     """Browse available tutors (for students)"""
     subject_filter = request.args.get('subject', '')
     
+    from flask_login import current_user
+    
     # Get approved and available tutors
     query = Tutor.query.filter_by(is_approved=True, is_active=True)
     
     if subject_filter:
         query = query.filter(Tutor.subjects.ilike(f'%{subject_filter}%'))
     
-    tutors = query.order_by(Tutor.rating.desc()).all()
+    all_tutors = query.order_by(Tutor.rating.desc()).all()
+    filtered_tutors = []
+    
+    # Filter based on Student Type
+    if current_user.is_authenticated:
+        if current_user.student_type == 'higher_ed':
+            # Show ONLY tutors who teach Higher Education
+            filtered_tutors = [t for t in all_tutors if t.teaching_grades and 'Higher Education' in t.teaching_grades]
+        else:
+            # Show tutors who teach Grades (exclude those who ONLY teach Higher Ed)
+            filtered_tutors = []
+            for t in all_tutors:
+                grades = t.teaching_grades or ""
+                # Include if:
+                # 1. Does NOT contain "Higher Education"
+                # OR
+                # 2. Contains "Higher Education" BUT also other grades (length > 1 implied, but string split is safer)
+                
+                # Simplified: Exclude ONLY if "Higher Education" is the ONLY thing they teach.
+                # If grades is empty, they teach nothing? Maybe show them? Or hide? 
+                # Let's hide if empty to be safe, or show if we want.
+                # But to fix error:
+                
+                if 'Higher Education' not in grades:
+                     filtered_tutors.append(t)
+                elif len(grades.split(',')) > 1:
+                     filtered_tutors.append(t)
+            
+    else:
+        # For guests (landing page link?), show all? Or hide Higher Ed exclusive?
+        filtered_tutors = all_tutors
+
+    tutors = filtered_tutors
     
     # Get unique subjects from all tutors
     all_subjects = set()
@@ -426,12 +460,24 @@ def api_get_tutors():
     """API: Get list of available tutors"""
     subject = request.args.get('subject', '')
     
+    from flask_login import current_user
+    
     query = Tutor.query.filter_by(is_approved=True, is_active=True, is_available=True)
     
     if subject:
         query = query.filter(Tutor.subjects.ilike(f'%{subject}%'))
     
-    tutors = query.order_by(Tutor.rating.desc()).all()
+    all_tutors = query.order_by(Tutor.rating.desc()).all()
+    filtered_tutors = []
+
+    # Strict Filtering Logic matching browse_tutors
+    if current_user.is_authenticated and current_user.student_type == 'higher_ed':
+         filtered_tutors = [t for t in all_tutors if t.teaching_grades and 'Higher Education' in t.teaching_grades]
+    elif current_user.is_authenticated:
+         # Grade / Disabled / Others -> Exclude if ONLY Higher Education
+         filtered_tutors = [t for t in all_tutors if (t.teaching_grades or "") != 'Higher Education']
+    else:
+        filtered_tutors = all_tutors
     
     return jsonify({
         'tutors': [{
@@ -443,7 +489,7 @@ def api_get_tutors():
             'bio': t.bio[:100] + '...' if t.bio and len(t.bio) > 100 else t.bio,
             'languages': t.languages,
             'is_available': t.is_available
-        } for t in tutors],
+        } for t in filtered_tutors],
         'rate_per_minute': RATE_PER_MINUTE
     })
 

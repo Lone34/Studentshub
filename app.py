@@ -1,11 +1,11 @@
-from flask import Flask, render_template, redirect, url_for, request, flash, jsonify, send_from_directory
+from flask import Flask, render_template, redirect, url_for, request, flash, jsonify, send_from_directory, Response
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 # --- ADDED THESE IMPORTS FOR IMAGE HANDLING ---
 from werkzeug.utils import secure_filename
 import os
 # ----------------------------------------------
-from models import db, User, ServiceAccount, Job, ChatHistory, Document, DocumentUnlock, Tutor, TutoringSession, Grade, Subject, Feedback, Notification
+from models import db, User, ServiceAccount, Job, ChatHistory, Document, DocumentUnlock, Tutor, TutoringSession, Grade, Subject, Feedback, Notification, Subscription
 from sqlalchemy import func, or_
 import chegg_api
 import time
@@ -34,7 +34,7 @@ scheduler = APScheduler()
 def uploaded_file(filename):
     """Serve uploaded files (recordings, etc)"""
     from flask import send_from_directory
-    return send_from_directory('uploads', filename)
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
 @app.route('/ads.txt')
 def ads_txt():
@@ -686,6 +686,9 @@ def super_admin_dashboard():
     
     # Fetch approved feedbacks for management (limit last 50 to avoid clutter)
     approved_feedbacks = Feedback.query.filter_by(is_approved=True).order_by(Feedback.created_at.desc()).limit(50).all()
+    
+    # Fetch Pending Verification Users (Disabled Students)
+    pending_users = User.query.filter_by(student_type='disabled', is_verified=False).all()
 
     return render_template('super_admin.html', 
                            admins=all_admins, 
@@ -694,7 +697,42 @@ def super_admin_dashboard():
                            other_accounts=other_accounts, # Pass others separately
                            jobs=global_jobs,
                            pending_feedbacks=pending_feedbacks,
-                           approved_feedbacks=approved_feedbacks)
+                           approved_feedbacks=approved_feedbacks,
+                           pending_users=pending_users)
+
+# --- NEW: User Verification Route ---
+@app.route('/verify-user/<int:user_id>/<action>', methods=['POST'])
+@login_required
+def verify_user(user_id, action):
+    if current_user.role != 'super_admin':
+        flash("Unauthorized access.", "danger")
+        return redirect(url_for('dashboard'))
+    
+    user = User.query.get(user_id)
+    if not user:
+        flash("User not found.", "danger")
+        return redirect(url_for('super_admin_dashboard'))
+    
+    if action == 'approve':
+        user.is_verified = True
+        db.session.commit()
+        flash(f"User {user.username} has been verified and approved.", "success")
+    
+    elif action == 'reject':
+        # Optional: Delete uploaded certificate if it exists to save space
+        if user.disability_certificate_path:
+            try:
+                full_path = os.path.join(app.config['UPLOAD_FOLDER'], user.disability_certificate_path)
+                if os.path.exists(full_path):
+                    os.remove(full_path)
+            except Exception as e:
+                print(f"Error removing certificate: {e}")
+        
+        db.session.delete(user)
+        db.session.commit()
+        flash(f"User {user.username} has been rejected and removed.", "warning")
+    
+    return redirect(url_for('super_admin_dashboard'))
 
 # --- STANDARD ROUTES ---
 @app.route('/')
@@ -723,6 +761,11 @@ def login():
         password = request.form.get('password')
         user = User.query.filter_by(username=username).first()
         if user and check_password_hash(user.password, password):
+            # Check for verification (Disabled Students)
+            if user.student_type == 'disabled' and not user.is_verified:
+                flash('Your account is pending verification by the admin. Please wait for approval.', 'warning')
+                return redirect(url_for('login'))
+                
             login_user(user)
             return redirect(url_for('dashboard'))
         flash('Invalid username or password')
@@ -730,35 +773,104 @@ def login():
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
+    # Helper to clean text input
+    def clean(val):
+        return val.strip() if val else None
+
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
+        
+        # Check if username exists
         if User.query.filter_by(username=username).first():
-            flash('Username taken')
+            flash('Username is already taken. Please choose another one.', 'danger')
             return redirect(url_for('register'))
 
-        # Create user with additional profile fields
+        # Get Student Type
+        student_type = request.form.get('student_type', 'grade') # 'grade', 'higher_ed', 'disabled'
+        
+        # Base User Data
+        email = clean(request.form.get('email'))
+        phone = clean(request.form.get('phone'))
+        full_name = clean(request.form.get('full_name'))
+        grade_id = request.form.get('grade_id') or None
+        
+        # New Fields
+        parent_name = clean(request.form.get('parent_name'))
+        parent_phone = clean(request.form.get('parent_phone'))
+        address = clean(request.form.get('address'))
+        school_name = clean(request.form.get('school_name'))
+        
+        # Capture class_grade for Higher Ed
+        if student_type == 'higher_ed':
+             class_grade = clean(request.form.get('class_grade'))
+        else:
+             class_grade = None
+
+        # Capture grade_id for Disabled if provided via separate select
+        if student_type == 'disabled':
+             disabled_grade = request.form.get('disabled_grade_id')
+             if disabled_grade:
+                  grade_id = disabled_grade
+        
+        # Default verification: True unless disabled
+        is_verified = True
+        disability_path = None
+        
+        if student_type == 'disabled':
+            is_verified = False # Needs Admin Approval
+            
+            # Handle Certificate Upload
+            if 'certificate' in request.files:
+                file = request.files['certificate']
+                if file and file.filename != '':
+                    filename = secure_filename(f"cert_{int(time.time())}_{file.filename}")
+                    cert_dir = os.path.join(app.config['UPLOAD_FOLDER'], 'certificates')
+                    os.makedirs(cert_dir, exist_ok=True)
+                    
+                    file.save(os.path.join(cert_dir, filename))
+                    disability_path = f"certificates/{filename}"
+        
+        # Create User Object
         new_user = User(
             username=username, 
             password=generate_password_hash(password),
-            full_name=request.form.get('full_name'),
-            email=request.form.get('email'),
-            phone=request.form.get('phone'),
-            grade_id=request.form.get('grade_id') or None
+            full_name=full_name,
+            email=email,
+            phone=phone,
+            grade_id=grade_id,
+            
+            # New Fields
+            student_type=student_type,
+            parent_name=parent_name,
+            parent_phone=parent_phone,
+            address=address,
+            school_name=school_name,
+            class_grade=class_grade,
+            disability_certificate_path=disability_path,
+            is_verified=is_verified
         )
+        
         db.session.add(new_user)
         db.session.commit()
-        login_user(new_user)
-        flash('Account created. Welcome to Students Hub!')
-        return redirect(url_for('dashboard'))
-    
+        
+        if not is_verified:
+            flash('Registration successful! Your account is pending verification. You will be notified once approved.', 'info')
+            return redirect(url_for('login'))
+        else:
+            login_user(new_user)
+            flash('Account created successfully! Welcome to Students Hub.', 'success')
+            return redirect(url_for('dashboard'))
+
     # Pass grades and unique subjects to template for dropdown
     grades = Grade.query.filter_by(is_active=True).order_by(Grade.display_order).all()
     # Get global subjects for tutor registration
     from school import GlobalSubject
     global_subjects = GlobalSubject.query.filter_by(is_active=True).order_by(GlobalSubject.name).all()
     subject_names = [s.name for s in global_subjects]
+
     return render_template('register.html', grades=grades, subjects=subject_names)
+
 
 
 # --- ONE-TIME DATABASE SETUP ---
@@ -1344,6 +1456,213 @@ def library_upload():
     
     return render_template('library_upload.html', user=current_user)
 
+# --- SUPER ADMIN DATA REPORTS & EXPORT ---
+
+@app.route('/api/admin/stats')
+@login_required
+def api_admin_stats():
+    if current_user.role != 'super_admin':
+        return jsonify({"error": "Unauthorized"}), 403
+
+    date_str = request.args.get('date')
+    if not date_str:
+        return jsonify({"error": "Date required"}), 400
+
+    try:
+        query_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+    except ValueError:
+        return jsonify({"error": "Invalid date format"}), 400
+
+    # 1. Total Counts
+    total_students = User.query.filter(User.role != 'admin', User.role != 'super_admin').count()
+    total_tutors = Tutor.query.count()
+    
+    # 2. Daily Counts
+    # SQLite stores datetime, so we filter by range or cast. 
+    # Simpler: Filter by >= date and < date + 1 day
+    next_day = query_date + timedelta(days=1)
+    
+    daily_students = User.query.filter(
+        User.role != 'admin', 
+        User.role != 'super_admin',
+        User.created_at >= query_date,
+        User.created_at < next_day
+    ).count()
+
+    daily_tutors = Tutor.query.filter(
+        Tutor.created_at >= query_date,
+        Tutor.created_at < next_day
+    ).count()
+    
+    # 3. Active Plans Count
+    active_plans = Subscription.query.filter_by(is_active=True).count()
+
+    return jsonify({
+        "total": {
+            "students": total_students,
+            "tutors": total_tutors,
+            "active_plans": active_plans
+        },
+        "daily": {
+            "date": date_str,
+            "students": daily_students,
+            "tutors": daily_tutors
+        }
+    })
+
+@app.route('/admin/export/students')
+@login_required
+def admin_export_students():
+    try:
+        if current_user.role != 'super_admin':
+            return redirect(url_for('dashboard'))
+
+        from fpdf import FPDF
+        import io
+
+        # Fetch Data
+        students = User.query.filter(User.role != 'admin', User.role != 'super_admin').order_by(User.created_at.desc()).all()
+
+        # Create PDF
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font("Arial", size=10)
+        
+        # Title
+        pdf.set_font("Arial", style="B", size=16)
+        pdf.cell(0, 10, txt="Students Hub - All Students Report", ln=True, align='C')
+        pdf.set_font("Arial", size=10)
+        pdf.cell(0, 10, txt=f"Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M')}", ln=True, align='C')
+        pdf.ln(10)
+
+        # Table Header
+        pdf.set_font("Arial", style="B", size=9)
+        # ID(10), Name(40), Type(20), Parent(30), Phone(25), Plan(30), Joined(30)
+        col_widths = [10, 40, 20, 30, 25, 30, 30]
+        headers = ["ID", "Name", "Type", "Parent", "Phone", "Active Plan", "Joined"]
+        
+        for i, h in enumerate(headers):
+            pdf.cell(col_widths[i], 10, h, border=1)
+        pdf.ln()
+
+        # Table Body
+        pdf.set_font("Arial", size=8)
+        for s in students:
+            # Get Plan Info
+            plan_name = "Free"
+            if s.active_subscription_id:
+                sub = Subscription.query.get(s.active_subscription_id)
+                if sub and sub.is_active:
+                    plan_name = sub.plan_type.replace('_', ' ').title()
+
+            row = [
+                str(s.id),
+                s.full_name or s.username,
+                s.student_type.capitalize() if s.student_type else "General",
+                s.parent_name or "-",
+                s.parent_phone or "-",
+                plan_name,
+                s.created_at.strftime('%Y-%m-%d')
+            ]
+            
+            # Check if row fits, else add page
+            if pdf.get_y() > 270:
+                pdf.add_page()
+                # Reprint Header
+                pdf.set_font("Arial", style="B", size=9)
+                for i, h in enumerate(headers):
+                    pdf.cell(col_widths[i], 10, h, border=1)
+                pdf.ln()
+                pdf.set_font("Arial", size=8)
+
+            for i, data in enumerate(row):
+                # Truncate if too long
+                text = str(data)
+                if len(text) > 25: text = text[:22] + "..."
+                pdf.cell(col_widths[i], 10, text, border=1)
+            pdf.ln()
+
+        # Output
+        return Response(bytes(pdf.output()), mimetype='application/pdf', 
+                        headers={'Content-Disposition': 'attachment;filename=students_report.pdf'})
+    except Exception as e:
+        print(f"PDF EXPORT ERROR: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/admin/export/tutors')
+@login_required
+def admin_export_tutors():
+    try:
+        if current_user.role != 'super_admin':
+            return redirect(url_for('dashboard'))
+
+        from fpdf import FPDF
+
+        # Fetch Data
+        tutors = Tutor.query.order_by(Tutor.created_at.desc()).all()
+
+        # Create PDF
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font("Arial", size=10)
+        
+        # Title
+        pdf.set_font("Arial", style="B", size=16)
+        pdf.cell(0, 10, txt="Students Hub - All Tutors Report", ln=True, align='C')
+        pdf.set_font("Arial", size=10)
+        pdf.cell(0, 10, txt=f"Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M')}", ln=True, align='C')
+        pdf.ln(10)
+
+        # Table Header
+        pdf.set_font("Arial", style="B", size=9)
+        # ID(10), Name(40), Subjects(40), Grades(40), Education(30), Status(20)
+        col_widths = [10, 40, 40, 40, 30, 20]
+        headers = ["ID", "Name", "Subjects", "Grades", "Qualification", "Status"]
+        
+        for i, h in enumerate(headers):
+            pdf.cell(col_widths[i], 10, h, border=1)
+        pdf.ln()
+
+        # Table Body
+        pdf.set_font("Arial", size=8)
+        for t in tutors:
+            status = "Active" if t.is_active else "Inactive"
+            if not t.is_approved: status = "Pending"
+
+            row = [
+                str(t.id),
+                t.display_name,
+                t.subjects or "-",
+                t.teaching_grades or "-",
+                t.qualification or "-",
+                status
+            ]
+            
+            # Check if row fits
+            if pdf.get_y() > 270:
+                pdf.add_page()
+                # Reprint Header
+                pdf.set_font("Arial", style="B", size=9)
+                for i, h in enumerate(headers):
+                    pdf.cell(col_widths[i], 10, h, border=1)
+                pdf.ln()
+                pdf.set_font("Arial", size=8)
+
+            for i, data in enumerate(row):
+                 # Truncate
+                text = str(data)
+                if len(text) > 25: text = text[:22] + "..."
+                pdf.cell(col_widths[i], 10, text, border=1)
+            pdf.ln()
+
+        # Output
+        return Response(bytes(pdf.output(dest='S')), mimetype='application/pdf', 
+                        headers={'Content-Disposition': 'attachment;filename=tutors_report.pdf'})
+    except Exception as e:
+        print(f"PDF EXPORT ERROR: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
 @app.route('/library/document/<int:doc_id>')
 @login_required
 def library_document(doc_id):
@@ -1662,9 +1981,8 @@ def mark_all_read():
 # Initialize Scheduler
 scheduler.add_job(id='Scheduled Task', func=run_chegg_checker, trigger="interval", minutes=1)
 scheduler.init_app(app)
-scheduler.start()
-
 if __name__ == '__main__':
+    scheduler.start()
     with app.app_context():
         db.create_all()
     # Use socketio.run for WebSocket support in video tutoring
