@@ -106,9 +106,9 @@ class ServiceAccount(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     cookie_data = db.Column(db.Text, nullable=False) 
-    # --- NEW PROXY FIELD ---
     proxy = db.Column(db.String(255), nullable=True)
     owner_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    questions_posted = db.Column(db.Integer, default=0)  # Auto-rotation: switch account after 20
 
 class Job(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -397,3 +397,49 @@ class Transaction(db.Model):
     
     user = db.relationship('User', backref=db.backref('transactions', lazy=True))
 
+
+# ============================================
+# VIDEO COURSES MODELS
+# ============================================
+
+class VideoCourse(db.Model):
+    """Video courses managed by super admin"""
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    thumbnail_path = db.Column(db.String(500), nullable=True)  # Path to course cover image
+    price = db.Column(db.Float, default=0)  # Price in INR, 0 = free
+    is_active = db.Column(db.Boolean, default=True)
+    display_order = db.Column(db.Integer, default=0)
+    created_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # Relationships
+    videos = db.relationship('CourseVideo', backref='course', lazy=True, cascade='all, delete-orphan',
+                             order_by='CourseVideo.display_order')
+    purchases = db.relationship('CoursePurchase', backref='course', lazy=True, cascade='all, delete-orphan')
+
+
+class CourseVideo(db.Model):
+    """Individual videos within a course"""
+    id = db.Column(db.Integer, primary_key=True)
+    course_id = db.Column(db.Integer, db.ForeignKey('video_course.id'), nullable=False)
+    title = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    file_path = db.Column(db.String(500), nullable=False)  # Path to video file
+    file_size_mb = db.Column(db.Float, default=0)  # File size in MB
+    duration_seconds = db.Column(db.Integer, default=0)  # Duration for display
+    display_order = db.Column(db.Integer, default=0)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+class CoursePurchase(db.Model):
+    """Tracks which users have purchased which courses"""
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    course_id = db.Column(db.Integer, db.ForeignKey('video_course.id'), nullable=False)
+    amount_paid = db.Column(db.Float, default=0)
+    transaction_id = db.Column(db.String(100), nullable=True)
+    purchased_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    user = db.relationship('User', backref=db.backref('course_purchases', lazy=True))

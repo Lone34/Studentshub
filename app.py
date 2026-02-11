@@ -5,7 +5,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 import os
 # ----------------------------------------------
-from models import db, User, ServiceAccount, Job, ChatHistory, Document, DocumentUnlock, Tutor, TutoringSession, Grade, Subject, Feedback, Notification, Subscription
+from models import db, User, ServiceAccount, Job, ChatHistory, Document, DocumentUnlock, Tutor, TutoringSession, Grade, Subject, Feedback, Notification, Subscription, VideoCourse, CourseVideo, CoursePurchase
 from sqlalchemy import func, or_
 import chegg_api
 import time
@@ -25,7 +25,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///chegg_bot.db'
 
 UPLOAD_FOLDER = 'static/uploads'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+app.config['MAX_CONTENT_LENGTH'] = 500 * 1024 * 1024  # 500MB max upload
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 # --------------------------------
 scheduler = APScheduler()
@@ -57,6 +57,10 @@ app.register_blueprint(school_bp)
 from payments import payments_bp
 app.register_blueprint(payments_bp)
 
+# --- REGISTER VIDEO COURSES BLUEPRINT ---
+from video_courses import video_courses_bp
+app.register_blueprint(video_courses_bp)
+
 # --- SOCKETIO FOR VIDEO TUTORING ---
 from signaling import init_socketio
 socketio = init_socketio(app)
@@ -75,21 +79,29 @@ import random
 # --- HELPER: ROTATE SUPER ADMIN ACCOUNTS ---
 def get_super_admin_account():
     """Finds a working ServiceAccount owned by a Super Admin."""
-    # 1. Find all super admins
     super_admins = User.query.filter_by(role='super_admin').all()
     if not super_admins:
         return None
-    
     super_admin_ids = [u.id for u in super_admins]
-    
-    # 2. Get all accounts owned by these IDs
     accounts = ServiceAccount.query.filter(ServiceAccount.owner_id.in_(super_admin_ids)).all()
-    
     if not accounts:
         return None
-        
-    # 3. Randomly select one (Simple Rotation)
     return random.choice(accounts)
+
+ACCOUNT_QUESTION_LIMIT = 20
+
+def get_auto_account():
+    """Auto-select the first ServiceAccount with questions_posted < LIMIT, ordered by ID.
+    Returns (account, None) on success, (None, error_message) on failure."""
+    account = ServiceAccount.query.filter(
+        ServiceAccount.questions_posted < ACCOUNT_QUESTION_LIMIT
+    ).order_by(ServiceAccount.id.asc()).first()
+    
+    if account:
+        return account, None
+    
+    # All accounts exhausted
+    return None, "All Chegg accounts have reached their question limit. Please contact the Super Admin to add new accounts."
 
 # --- NEW ROUTE: UNBLUR INTERFACE ---
 @app.route('/unblur', methods=['GET', 'POST'])
@@ -164,20 +176,14 @@ def api_process_image():
         return jsonify({"error": "No file uploaded"}), 400
     
     file = request.files['file']
-    account_id = request.form.get('account_id')
     
     if file.filename == '':
         return jsonify({"error": "No file selected"}), 400
 
-    account = db.session.get(ServiceAccount, account_id)
+    # Auto-select account
+    account, err = get_auto_account()
     if not account:
-        return jsonify({"error": "Invalid Account"}), 400
-    
-    # Permission Check (Matches your logic)
-    if current_user.role != 'super_admin':
-        allowed_owner_id = current_user.id if current_user.role == 'admin' else current_user.manager_id
-        if account.owner_id != allowed_owner_id:
-             return jsonify({"error": "Unauthorized Access"}), 403
+        return jsonify({"error": err}), 400
 
     # Save temp file
     filename = secure_filename(f"{int(time.time())}_{file.filename}")
@@ -212,388 +218,19 @@ def api_process_image():
 def api_get_suggested_subjects():
     data = request.get_json()
     question_text = data.get('question_text', '')
-    account_id = data.get('account_id')
 
     if not question_text or len(question_text) < 5:
         return jsonify({"error": "Question too short"})
 
-    # --- ISOLATION CHECK ---
-    account = db.session.get(ServiceAccount, account_id)
+    # Auto-select account
+    account, err = get_auto_account()
     if not account:
-        return jsonify({"error": "Invalid Account"})
-
-    # --- SUPER ADMIN BYPASS ---
-    if current_user.role != 'super_admin':
-        allowed_owner_id = current_user.id if current_user.role == 'admin' else current_user.manager_id
-
-        if account.owner_id != allowed_owner_id:
-             return jsonify({"error": "Unauthorized Access to Account"})
+        return jsonify({"error": err})
 
     suggestions = chegg_api.get_subjects_from_text(account.cookie_data, question_text, account.proxy)
     return jsonify({"subjects": suggestions})
 
-# --- API: Extract Question from Chegg URL (for Repost) ---
-@app.route('/api/chegg/extract-question', methods=['POST'])
-@login_required
-def api_extract_question():
-    """Extract question content from a Chegg URL for reposting."""
-    data = request.get_json()
-    chegg_url = data.get('url', '').strip()
-    
-    if not chegg_url or 'chegg.com' not in chegg_url:
-        return jsonify({"error": "Please enter a valid Chegg URL"})
-    
-    # Get super admin account for extraction (doesn't cost credits)
-    account = get_super_admin_account()
-    if not account:
-        return jsonify({"error": "System Error: No accounts available"})
-    
-    try:
-        result, error = chegg_processor.get_question_data(chegg_url, account.cookie_data, account.proxy)
-        
-        if error:
-            return jsonify({"error": error})
-        
-        question_data = result.get('question_data', {})
-        
-        # Debug: Print structure to understand the data
-        import json as json_module
-        print(f"DEBUG question_data keys: {question_data.keys() if question_data else 'None'}")
-        if 'content' in question_data:
-            print(f"DEBUG content keys: {question_data['content'].keys() if isinstance(question_data.get('content'), dict) else 'Not a dict'}")
-        
-        # Extract question body - CORRECT PATH: content.body, content.textContent, content.transcribedData
-        # This matches the structure used in mayank.py generate_html_string()
-        content_html = ""
-        plain_text = ""
-        images = []
-        
-        # Primary method: Same as mayank.py
-        content_obj = question_data.get('content', {})
-        if isinstance(content_obj, dict):
-            content_html = (
-                content_obj.get('body') or 
-                content_obj.get('textContent') or 
-                content_obj.get('transcribedData') or
-                ""
-            )
-        
-        # Fallback: Try 'body' field directly (older format)
-        if not content_html and 'body' in question_data:
-            body = question_data['body']
-            if isinstance(body, dict):
-                content_html = body.get('content', '') or body.get('html', '') or body.get('text', '')
-            elif isinstance(body, str):
-                content_html = body
-        
-        # Fallback: Try other field names
-        if not content_html:
-            for key in ['htmlBody', 'questionBody', 'text', 'questionText', 'rawBody']:
-                if key in question_data:
-                    val = question_data[key]
-                    if isinstance(val, str) and val:
-                        content_html = val
-                        break
-                    elif isinstance(val, dict) and val.get('content'):
-                        content_html = val.get('content')
-                        break
-        
-        # Extract images from HTML and from media fields
-        import re
-        if content_html:
-            img_matches = re.findall(r'<img[^>]+src=["\']([^"\']+)["\']', content_html)
-            images.extend(img_matches)
-        
-        # Check for media/images field
-        if 'media' in question_data and question_data['media']:
-            for m in question_data['media']:
-                if isinstance(m, dict) and m.get('url'):
-                    images.append(m['url'])
-                elif isinstance(m, str):
-                    images.append(m)
-        
-        # Check for images field
-        if 'images' in question_data and question_data['images']:
-            for img in question_data['images']:
-                if isinstance(img, dict) and img.get('url'):
-                    images.append(img['url'])
-                elif isinstance(img, str):
-                    images.append(img)
-        
-        # Remove duplicates
-        images = list(dict.fromkeys(images))
-        
-        # Get plain text from HTML
-        from bs4 import BeautifulSoup
-        if content_html:
-            soup = BeautifulSoup(content_html, 'html.parser')
-            plain_text = soup.get_text(separator='\n').strip()
-        
-        # If still no content, try to get just the question text
-        if not plain_text and not content_html:
-            # Fallback: check for title or question fields
-            plain_text = question_data.get('title', '') or question_data.get('question', '') or question_data.get('text', '')
-            content_html = f"<p>{plain_text}</p>" if plain_text else ""
-        
-        # Extract subject info
-        subject_info = None
-        if 'subject' in question_data and question_data['subject']:
-            subj = question_data['subject']
-            print(f"DEBUG subject data: {subj}")
-            if isinstance(subj, dict):
-                # Try different ID field names
-                subj_id = subj.get('id') or subj.get('subjectId') or subj.get('subject_id')
-                grp_id = subj.get('groupId') or subj.get('group_id')
-                if not grp_id and isinstance(subj.get('group'), dict):
-                    grp_id = subj.get('group', {}).get('id')
-                
-                subject_info = {
-                    'title': subj.get('title') or subj.get('name') or subj.get('subjectName', ''),
-                    'subjectId': subj_id,
-                    'groupId': grp_id
-                }
-                print(f"DEBUG extracted subject_info: {subject_info}")
-            elif isinstance(subj, str):
-                subject_info = {'title': subj}
-        
-        # Also check 'subjects' array
-        if not subject_info and 'subjects' in question_data:
-            subjects = question_data['subjects']
-            if subjects and len(subjects) > 0:
-                subj = subjects[0]
-                if isinstance(subj, dict):
-                    subject_info = {
-                        'title': subj.get('title') or subj.get('name', ''),
-                        'subjectId': subj.get('id') or subj.get('subjectId'),
-                        'groupId': subj.get('groupId')
-                    }
-        
-        # Build final HTML with images
-        final_html = content_html
-        for img_url in images:
-            if img_url not in final_html:
-                final_html += f'<div><img src="{img_url}" /></div>'
-        
-        # OCR: Extract text from images if images are present
-        ocr_text = ""
-        if images and len(images) > 0:
-            print(f"DEBUG: Running OCR on {len(images)} image(s)...")
-            for img_url in images:
-                try:
-                    extracted_text = chegg_api.ocr_analyze_image(account.cookie_data, img_url, account.proxy)
-                    if extracted_text:
-                        ocr_text += extracted_text + "\n\n"
-                        print(f"DEBUG: OCR extracted {len(extracted_text)} chars from image")
-                except Exception as e:
-                    print(f"DEBUG: OCR failed for image: {e}")
-            ocr_text = ocr_text.strip()
-        
-        return jsonify({
-            "success": True,
-            "question_id": result.get('question_id'),
-            "content_html": final_html,
-            "plain_text": plain_text or "Question extracted (see images below)",
-            "images": images,
-            "ocr_text": ocr_text,  # OCR-extracted text from images
-            "subject": subject_info,
-            "original_url": chegg_url,
-            "raw_keys": list(question_data.keys()) if question_data else []
-        })
-        
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        return jsonify({"error": f"Extraction failed: {str(e)}"})
 
-# --- API: Repost Question to Expert ---
-@app.route('/api/chegg/repost', methods=['POST'])
-@login_required
-def api_repost_question():
-    """Repost extracted question content to Ask an Expert."""
-    data = request.get_json()
-    content_html = data.get('content_html', '')
-    subject_data = data.get('subject', '')  # "title|subject_id|group_id"
-    account_id = data.get('account_id')
-    
-    if not content_html:
-        return jsonify({"error": "No question content to post"})
-    
-    if not subject_data:
-        return jsonify({"error": "Please select a subject"})
-    
-    # Check Access (Subscription OR Credits)
-    has_plan = current_user.can_access('expert_ask')
-    credits_needed = 20 * int(data.get('post_count', 1)) # 20 credits per post
-    
-    if not has_plan:
-        if current_user.credits < credits_needed:
-             return jsonify({"error": f"Limit reached. You need a Plan or {credits_needed} Credits to ask an expert."})
-        
-        # Deduct credits if no plan
-        current_user.credits -= credits_needed
-        db.session.commit()
-    
-    # Get account
-    account = db.session.get(ServiceAccount, account_id)
-    if not account:
-        return jsonify({"error": "Invalid account selected"})
-    
-    # Permission check
-    if current_user.role != 'super_admin':
-        allowed_owner_id = current_user.id if current_user.role == 'admin' else current_user.manager_id
-        if account.owner_id != allowed_owner_id:
-            return jsonify({"error": "Unauthorized access to account"})
-    
-    # Parse subject - handle both formats: "title|id|groupId" or just "title"
-    try:
-        parts = subject_data.split('|')
-        if len(parts) >= 3 and parts[1] and parts[2]:
-            # Full format with IDs
-            title = parts[0]
-            subj_id = parts[1]
-            grp_id = parts[2]
-        else:
-            # Only title provided - need to lookup subject ID
-            title = parts[0] if parts else subject_data
-            print(f"DEBUG: Looking up subject ID for title: {title}")
-            
-            # Use the question content to find matching subjects
-            suggestions = chegg_api.get_subjects_from_text(
-                account.cookie_data, 
-                title,  # Use subject title as search query
-                account.proxy
-            )
-            
-            if suggestions and len(suggestions) > 0:
-                # Find best match or use first result
-                matched = None
-                for s in suggestions:
-                    if s.get('title', '').lower() == title.lower():
-                        matched = s
-                        break
-                if not matched:
-                    matched = suggestions[0]
-                
-                subj_id = matched.get('subjectId')
-                grp_id = matched.get('groupId')
-                title = matched.get('title', title)
-                print(f"DEBUG: Found subject - ID: {subj_id}, GroupID: {grp_id}")
-            else:
-                return jsonify({"error": f"Could not find subject ID for '{title}'. Please use 'Find Related Subjects' button."})
-    except Exception as e:
-        print(f"Subject parsing error: {e}")
-        return jsonify({"error": f"Invalid subject format: {str(e)}"})
-    
-    # Get post count (how many times to post)
-    post_count = data.get('post_count', 1)
-    try:
-        post_count = int(post_count)
-        if post_count < 1:
-            post_count = 1
-        if post_count > 10:  # Limit to 10 posts max
-            post_count = 10
-    except:
-        post_count = 1
-    
-    # Check credits
-    # Check Access again with count
-    # Note: simple check doesn't handle 'count', but for now assume 1 usage per post call or loop
-    if not current_user.can_access('expert_ask'):
-         return jsonify({"error": "Limit reached."})
-    
-    # Increment counters later in loop or batch
-    # For simplicity in this migration, we will increment in the loop and check continuously or just proceed
-    # Since can_access checks current usage, we should be fine.
-    
-    # Logic change: detailed quota check
-    if current_user.role not in ['admin', 'super_admin'] and current_user.active_subscription_id:
-        sub = Subscription.query.get(current_user.active_subscription_id)
-        # Check if enough quota remains for post_count
-        limit = 0
-        if sub.plan_type == 'basic_299': limit = 20
-        elif sub.plan_type == 'pro_499': limit = 40
-        elif sub.plan_type == 'school_1200': limit = 20
-        
-        if (sub.expert_used + post_count) > limit:
-             return jsonify({"error": f"Not enough Expert quota. You have {limit - sub.expert_used} remaining."})
-    
-    # Deduct credits upfront -> REPLACED by usage tracking
-    # current_user.credits -= post_count
-    
-    # Deduct credits if no plan
-        # We already deducted above if needed (logic block has commit)
-        pass 
-    
-    credits_deducted = 0
-    if not has_plan:
-        credits_deducted = credits_needed
-
-    try:
-        success_count = 0
-        fail_count = 0
-        last_msg = ""
-        
-        # Post multiple times based on post_count
-        for i in range(post_count):
-            try:
-                success, msg = chegg_api.post_question_v3(
-                    account.cookie_data, 
-                    content_html, 
-                    int(subj_id), 
-                    account.proxy
-                )
-                
-                if success:
-                    success_count += 1
-                else:
-                    fail_count += 1
-                    last_msg = msg
-            except Exception as e:
-                fail_count += 1
-                last_msg = str(e)
-            
-            # Log each job
-            job = Job(
-                user_id=current_user.id, 
-                subject=f"[Repost] {title}", 
-                content=content_html[:200], 
-                status="Completed" if success else "Failed",
-                result_message=msg if success else last_msg,
-                service_account_name=account.name
-            )
-            db.session.add(job)
-        
-        # Refund failed posts (If user paid with credits)
-        # Each post costs 20 credits. Refund 20 * fail_count
-        if credits_deducted > 0 and fail_count > 0:
-            refund_amount = 20 * fail_count
-            current_user.credits += refund_amount
-            db.session.commit()
-            last_msg += f" ({refund_amount} credits refunded)"
-        else:
-            db.session.commit()
-        
-        if success_count == post_count:
-            return jsonify({
-                "success": True, 
-                "message": f"All {post_count} question(s) reposted successfully!", 
-                "credits_remaining": current_user.credits
-            })
-        elif success_count > 0:
-            return jsonify({
-                "success": True, 
-                "message": f"{success_count}/{post_count} questions reposted. {fail_count} failed: {last_msg}", 
-                "credits_remaining": current_user.credits
-            })
-        else:
-            return jsonify({"error": f"All reposts failed: {last_msg}"})
-            
-    except Exception as e:
-        # Full Refund on critical error
-        if credits_deducted > 0:
-            current_user.credits += credits_deducted
-            db.session.commit()
-        return jsonify({"error": f"Repost failed: {str(e)}. Credits refunded."})
 
 # --- SUPER ADMIN DASHBOARD ---
 @app.route('/lone-admin/', methods=['GET', 'POST'])
@@ -669,6 +306,48 @@ def super_admin_dashboard():
                 db.session.commit()
                 flash("Service Account deleted.")
 
+        # --- 5. ADD CHEGG STUDY ACCOUNT ---
+        elif action == 'add_chegg_account':
+            name = request.form.get('chegg_acc_name')
+            cookies = request.form.get('chegg_cookie_json')
+            proxy_val = request.form.get('chegg_proxy')
+            if proxy_val and proxy_val.strip() == "": proxy_val = None
+
+            exists = ServiceAccount.query.filter_by(name=name).first()
+            if exists:
+                flash(f"An account named '{name}' already exists.")
+            else:
+                new_acc = ServiceAccount(
+                    name=name,
+                    cookie_data=cookies,
+                    proxy=proxy_val,
+                    owner_id=current_user.id,
+                    questions_posted=0
+                )
+                db.session.add(new_acc)
+                db.session.commit()
+                flash(f"Chegg Study account '{name}' added successfully!")
+
+        # --- 6. DELETE CHEGG STUDY ACCOUNT ---
+        elif action == 'delete_chegg_account':
+            acc_id = request.form.get('chegg_account_id')
+            acc = db.session.get(ServiceAccount, acc_id)
+            if acc:
+                db.session.delete(acc)
+                db.session.commit()
+                flash(f"Chegg account '{acc.name}' deleted.")
+            else:
+                flash("Account not found.")
+
+        # --- 7. RESET CHEGG ACCOUNT COUNTER ---
+        elif action == 'reset_chegg_account':
+            acc_id = request.form.get('chegg_account_id')
+            acc = db.session.get(ServiceAccount, acc_id)
+            if acc:
+                acc.questions_posted = 0
+                db.session.commit()
+                flash(f"Account '{acc.name}' usage reset to 0.")
+
         return redirect(url_for('super_admin_dashboard'))
 
     # Data for the dashboard
@@ -690,6 +369,10 @@ def super_admin_dashboard():
     # Fetch Pending Verification Users (Disabled Students)
     pending_users = User.query.filter_by(student_type='disabled', is_verified=False).all()
 
+    # Chegg Study Accounts (for Homework Helper auto-rotation)
+    chegg_accounts = ServiceAccount.query.order_by(ServiceAccount.id.asc()).all()
+    exhausted_accounts = [a for a in chegg_accounts if a.questions_posted >= ACCOUNT_QUESTION_LIMIT]
+
     return render_template('super_admin.html', 
                            admins=all_admins, 
                            users=all_users, 
@@ -698,7 +381,10 @@ def super_admin_dashboard():
                            jobs=global_jobs,
                            pending_feedbacks=pending_feedbacks,
                            approved_feedbacks=approved_feedbacks,
-                           pending_users=pending_users)
+                           pending_users=pending_users,
+                           chegg_accounts=chegg_accounts,
+                           exhausted_accounts=exhausted_accounts,
+                           account_limit=ACCOUNT_QUESTION_LIMIT)
 
 # --- NEW: User Verification Route ---
 @app.route('/verify-user/<int:user_id>/<action>', methods=['POST'])
@@ -948,31 +634,15 @@ def get_trending_topics():
 def dashboard():
     global RECENT_POSTS
 
-    if current_user.role == 'super_admin':
-        target_owner_id = None 
-        accounts = ServiceAccount.query.all()
-    elif current_user.role == 'admin':
-        target_owner_id = current_user.id
-        accounts = ServiceAccount.query.filter_by(owner_id=target_owner_id).all()
-    else:
-        target_owner_id = current_user.manager_id
-        if target_owner_id:
-            accounts = ServiceAccount.query.filter_by(owner_id=target_owner_id).all()
-        else:
-            accounts = []
-
     if request.method == 'POST':
-        # --- NEW FIELDS FOR IMAGE ---
         post_mode = request.form.get('post_mode', 'text')
         final_image_url = request.form.get('final_image_url')
-        # ----------------------------
-        
         raw_subject = request.form.get('subject_select')
         content = request.form.get('content')
-        account_id = request.form.get('account_id')
-        post_count = int(request.form.get('post_count', 1))
 
-        request_signature = f"{current_user.id}-{account_id}-{content[:50]}"
+        # Duplicate prevention
+        content_snippet = (content or '')[:50]
+        request_signature = f"{current_user.id}-{content_snippet}"
         post_hash = hashlib.sha256(request_signature.encode()).hexdigest()
         current_time = time.time()
         RECENT_POSTS = {k: v for k, v in RECENT_POSTS.items() if current_time - v < 60}
@@ -986,22 +656,21 @@ def dashboard():
              flash("Expert Questions limit reached for your plan. Please upgrade.")
              return redirect(url_for('dashboard'))
         
-        # Check quota for post_count
+        # Check quota
         if current_user.role not in ['admin', 'super_admin'] and current_user.active_subscription_id:
              sub = Subscription.query.get(current_user.active_subscription_id)
-             # Check limits
              limit = 0
              if sub.plan_type == 'basic_299': limit = 20
              elif sub.plan_type == 'pro_499': limit = 40
              elif sub.plan_type == 'school_1200': limit = 20
              
-             if (sub.expert_used + post_count) > limit:
+             if sub.expert_used >= limit:
                  flash(f"Not enough usage quota! Remaining: {limit - sub.expert_used}")
                  return redirect(url_for('dashboard'))
 
-        # --- VALIDATION MODIFIED FOR IMAGE MODE ---
-        if not raw_subject or not account_id:
-            flash("Please fill all fields.")
+        # Validation
+        if not raw_subject:
+            flash("Please select a subject.")
             return redirect(url_for('dashboard'))
         
         if post_mode == 'text' and not content:
@@ -1011,17 +680,12 @@ def dashboard():
         if post_mode == 'image' and not final_image_url:
             flash("Please upload an image.")
             return redirect(url_for('dashboard'))
-        # ------------------------------------------
 
-        account = db.session.get(ServiceAccount, account_id)
+        # Auto-select account (first available with < 20 questions)
+        account, acc_err = get_auto_account()
         if not account:
-            flash("Invalid Service Account.")
+            flash(acc_err)
             return redirect(url_for('dashboard'))
-
-        if current_user.role != 'super_admin':
-            if account.owner_id != target_owner_id:
-                flash("Unauthorized Service Account.")
-                return redirect(url_for('dashboard'))
 
         try:
             title, subj_id, grp_id = raw_subject.split('|')
@@ -1029,64 +693,68 @@ def dashboard():
             flash("Invalid Subject.")
             return redirect(url_for('dashboard'))
 
-        success_count = 0
-        for i in range(post_count):
-            # current_user.credits -= 1 # Removed credit deduction
+        # Increment Usage (once, not twice)
+        if current_user.role not in ['admin', 'super_admin'] and current_user.active_subscription_id:
+            sub = Subscription.query.get(current_user.active_subscription_id)
+            sub.expert_used += 1
+            db.session.commit()
+        
+        # Post question (single post only)
+        if post_mode == 'image':
+            job_desc = f"[Image] {(content or '')[:100]}"
+            html_body = ""
+            if content and content.strip():
+                html_body += f"<div><p>{content}</p></div>"
+            html_body += f"<div><img src='{final_image_url}' /></div>"
             
-            # Increment Usage
+            success, msg = chegg_api.post_question_v3(
+                account.cookie_data, html_body, int(subj_id), account.proxy
+            )
+        else:
+            job_desc = content
+            success, msg = chegg_api.post_question_to_chegg(
+                account.cookie_data, content, title, int(subj_id), int(grp_id), account.proxy
+            )
+
+        job = Job(user_id=current_user.id, subject=title, content=job_desc, status="Processing", service_account_name=account.name)
+        db.session.add(job)
+        db.session.commit()
+
+        if success:
+            job.status = "Completed"
+            if msg.startswith("http"):
+                job.chegg_link = msg
+                job.status = "Pending"
+            
+            # Increment account usage counter
+            account.questions_posted += 1
+            db.session.commit()
+            
+            # Notify super admin if account just hit limit
+            if account.questions_posted >= ACCOUNT_QUESTION_LIMIT:
+                super_admins = User.query.filter_by(role='super_admin').all()
+                for sa in super_admins:
+                    notif = Notification(
+                        user_id=sa.id,
+                        message=f"⚠️ Chegg account '{account.name}' has reached {ACCOUNT_QUESTION_LIMIT} questions! Please replace it.",
+                        link=url_for('super_admin_dashboard')
+                    )
+                    db.session.add(notif)
+                db.session.commit()
+            
+            flash("Question posted successfully!")
+        else:
+            job.status = "Failed"
+            # Refund Usage
             if current_user.role not in ['admin', 'super_admin'] and current_user.active_subscription_id:
                 sub = Subscription.query.get(current_user.active_subscription_id)
-                sub.expert_used += 1
+                sub.expert_used = max(0, sub.expert_used - 1)
                 db.session.commit()
-            if current_user.role not in ['admin', 'super_admin'] and current_user.active_subscription_id:
-                sub = Subscription.query.get(current_user.active_subscription_id)
-                sub.expert_used += 1
-                db.session.commit()
-            
-            # --- LOGIC TO HANDLE BOTH MODES ---
-            if post_mode == 'image':
-                job_desc = f"[Image] {content[:100]}"
-                html_body = ""
-                if content and content.strip():
-                    html_body += f"<div><p>{content}</p></div>"
-                html_body += f"<div><img src='{final_image_url}' /></div>"
                 
-                success, msg = chegg_api.post_question_v3(
-                    account.cookie_data, html_body, int(subj_id), account.proxy
-                )
-            else:
-                job_desc = content
-                success, msg = chegg_api.post_question_to_chegg(
-                    account.cookie_data, content, title, int(subj_id), int(grp_id), account.proxy
-                )
-            # ----------------------------------
+            flash(f"Failed to post: {msg}")
 
-            job = Job(user_id=current_user.id, subject=title, content=job_desc, status="Processing", service_account_name=account.name)
-            db.session.add(job)
-            db.session.commit()
-
-            if success:
-                job.status = "Completed" # Marks it as posted.
-                # If msg is a URL, save it to chegg_link for tracking
-                if msg.startswith("http"):
-                    job.chegg_link = msg
-                    job.status = "Pending" # Set to Pending so the checker watches it!
-                success_count += 1
-            else:
-                job.status = "Failed"
-                # Refund Usage
-                if current_user.role not in ['admin', 'super_admin'] and current_user.active_subscription_id:
-                    sub = Subscription.query.get(current_user.active_subscription_id)
-                    sub.expert_used = max(0, sub.expert_used - 1)
-                    db.session.commit()
-                    
-                msg = f"{msg} (Quota Refunded)"
-
-            job.result_message = msg
-            db.session.commit()
-            if i < post_count - 1: time.sleep(2)
-
-        flash(f"Finished: Posted {success_count}/{post_count} times.")
+        job.result_message = msg
+        db.session.commit()
         return redirect(url_for('dashboard'))
 
     my_jobs = Job.query.filter_by(user_id=current_user.id).order_by(Job.timestamp.desc()).all()
@@ -1099,7 +767,6 @@ def dashboard():
 
     return render_template('dashboard.html',
                            user=current_user,
-                           accounts=accounts,
                            jobs=my_jobs,
                            sessions=my_sessions,
                            trending=trending)
@@ -1151,36 +818,6 @@ def admin():
                 db.session.commit()
                 flash(f"User {new_username} created and assigned to you.")
 
-        elif action == 'add_account':
-            name = request.form.get('acc_name')
-            cookies = request.form.get('cookie_json')
-            proxy_val = request.form.get('proxy')
-            if proxy_val and proxy_val.strip() == "": proxy_val = None
-
-            exists = ServiceAccount.query.filter_by(name=name, owner_id=current_user.id).first()
-            if exists:
-                flash("You already have an account with this name.")
-            else:
-                new_acc = ServiceAccount(
-                    name=name,
-                    cookie_data=cookies,
-                    proxy=proxy_val,
-                    owner_id=current_user.id 
-                )
-                db.session.add(new_acc)
-                db.session.commit()
-                flash(f"Account {name} added to your pool.")
-
-        elif action == 'delete_account':
-            acc_id = request.form.get('account_id')
-            acc = db.session.get(ServiceAccount, acc_id)
-            if acc and acc.owner_id == current_user.id:
-                db.session.delete(acc)
-                db.session.commit()
-                flash(f"Account '{acc.name}' deleted.")
-            else:
-                flash("Account not found or access denied.")
-
         elif action == 'delete_user':
             user_id = request.form.get('user_id')
             user_to_delete = db.session.get(User, user_id)
@@ -1224,7 +861,6 @@ def admin():
                 flash("Tutor not found.")
 
     my_users = User.query.filter_by(manager_id=current_user.id).all()
-    my_accounts = ServiceAccount.query.filter_by(owner_id=current_user.id).all()
     
     # Get tutors for admin panel
     pending_tutors = Tutor.query.filter_by(is_approved=False, is_active=True).all()
@@ -1235,7 +871,6 @@ def admin():
     
     return render_template('admin.html', 
                          users=my_users, 
-                         accounts=my_accounts,
                          pending_tutors=pending_tutors,
                          approved_tutors=approved_tutors,
                          sessions=sessions)
@@ -1259,10 +894,10 @@ from ai_tutor import get_ai_response
 @login_required
 def ai_tutor():
     """Render AI Tutor chat page with dual AI responses"""
-    # Get user's recent chat history (combined from both providers)
+    # Get user's recent chat history
     history = ChatHistory.query.filter_by(
         user_id=current_user.id
-    ).order_by(ChatHistory.timestamp.desc()).limit(10).all()
+    ).order_by(ChatHistory.timestamp.desc()).limit(50).all()
     
     return render_template('ai_tutor.html', 
                          user=current_user, 
@@ -1271,7 +906,7 @@ def ai_tutor():
 @app.route('/api/ai-tutor/chat', methods=['POST'])
 @login_required
 def api_ai_tutor_chat():
-    """Handle AI chat requests - calls BOTH ChatGPT and Gemini, deducts 1 credit"""
+    """Handle AI chat requests - calls AI Tutor (Gemini), deducts 1 credit"""
     data = request.get_json()
     question = data.get('question', '').strip()
     
@@ -1283,12 +918,11 @@ def api_ai_tutor_chat():
     if not current_user.can_access('ai_tutor'):
         return jsonify({"error": "Daily/Monthly AI limit reached or no active plan. Please upgrade."})
 
-    # Get responses from BOTH AIs
-    chatgpt_response, chatgpt_category, chatgpt_error = get_ai_response('chatgpt', question)
-    gemini_response, gemini_category, gemini_error = get_ai_response('gemini', question)
+    # Get response from AI Tutor (Gemini)
+    # We use 'gemini' backend but store as 'ai_tutor' for branding consistency
+    response_text, category, error = get_ai_response('gemini', question)
     
-    # Use the category from whichever succeeded
-    category = chatgpt_category or gemini_category or 'general'
+    if not category: category = 'general'
     
     # Increment Usage (if not admin)
     if current_user.role not in ['admin', 'super_admin'] and current_user.active_subscription_id:
@@ -1296,40 +930,22 @@ def api_ai_tutor_chat():
         sub.ai_used += 1
         db.session.commit()
     
-    # Save ChatGPT response to history if successful
-    if chatgpt_response:
-        chat_gpt = ChatHistory(
+    # Save response to history
+    if response_text:
+        chat_entry = ChatHistory(
             user_id=current_user.id,
-            ai_provider='chatgpt',
+            ai_provider='ai_tutor',  # Unified provider name
             question=question,
-            answer=chatgpt_response,
+            answer=response_text,
             category=category
         )
-        db.session.add(chat_gpt)
-    
-    # Save Gemini response to history if successful
-    if gemini_response:
-        chat_gemini = ChatHistory(
-            user_id=current_user.id,
-            ai_provider='gemini',
-            question=question,
-            answer=gemini_response,
-            category=category
-        )
-        db.session.add(chat_gemini)
-    
-    db.session.commit()
+        db.session.add(chat_entry)
+        db.session.commit()
     
     return jsonify({
         "success": True,
-        "chatgpt": {
-            "answer": chatgpt_response,
-            "error": chatgpt_error
-        },
-        "gemini": {
-            "answer": gemini_response,
-            "error": gemini_error
-        },
+        "answer": response_text,
+        "error": error,
         "category": category,
         "credits_remaining": current_user.credits
     })

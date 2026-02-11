@@ -2,7 +2,31 @@
 {% block content %}
 
 <style>
-    /* Animations matching Landing Page */
+    /* ===== ANIMATIONS ===== */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes fadeInScale {
+        from {
+            opacity: 0;
+            transform: scale(0.9);
+        }
+
+        to {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+
     @keyframes float {
 
         0%,
@@ -11,22 +35,222 @@
         }
 
         50% {
-            transform: translateY(-10px);
+            transform: translateY(-12px);
         }
     }
 
-    .delay-300 {
-        animation-delay: 0.3s;
+    @keyframes float-reverse {
+
+        0%,
+        100% {
+            transform: translateY(0);
+        }
+
+        50% {
+            transform: translateY(12px);
+        }
     }
 
-    .delay-350 {
-        animation-delay: 0.35s;
+    @keyframes pulse-glow {
+
+        0%,
+        100% {
+            box-shadow: 0 0 20px rgba(249, 115, 22, 0.15);
+        }
+
+        50% {
+            box-shadow: 0 0 40px rgba(249, 115, 22, 0.3);
+        }
+    }
+
+    @keyframes shimmer {
+        0% {
+            background-position: -200% center;
+        }
+
+        100% {
+            background-position: 200% center;
+        }
+    }
+
+    @keyframes spin-slow {
+        from {
+            transform: rotate(0deg);
+        }
+
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    @keyframes icon-bounce {
+
+        0%,
+        100% {
+            transform: scale(1);
+        }
+
+        50% {
+            transform: scale(1.15);
+        }
+    }
+
+    @keyframes gradient-shift {
+        0% {
+            background-position: 0% 50%;
+        }
+
+        50% {
+            background-position: 100% 50%;
+        }
+
+        100% {
+            background-position: 0% 50%;
+        }
+    }
+
+    .animate-fade-in-up {
+        opacity: 0;
+        animation: fadeInUp 0.6s ease-out forwards;
+    }
+
+    .animate-fade-in-scale {
+        opacity: 0;
+        animation: fadeInScale 0.5s ease-out forwards;
     }
 
     .animate-float {
         animation: float 6s ease-in-out infinite;
     }
 
+    .animate-float-reverse {
+        animation: float-reverse 7s ease-in-out infinite;
+    }
+
+    .animate-pulse-glow {
+        animation: pulse-glow 3s ease-in-out infinite;
+    }
+
+    .animate-spin-slow {
+        animation: spin-slow 20s linear infinite;
+    }
+
+    .delay-100 {
+        animation-delay: 0.1s;
+    }
+
+    .delay-200 {
+        animation-delay: 0.2s;
+    }
+
+    .delay-300 {
+        animation-delay: 0.3s;
+    }
+
+    .delay-400 {
+        animation-delay: 0.4s;
+    }
+
+    .delay-500 {
+        animation-delay: 0.5s;
+    }
+
+    .delay-600 {
+        animation-delay: 0.6s;
+    }
+
+    .delay-700 {
+        animation-delay: 0.7s;
+    }
+
+    .delay-800 {
+        animation-delay: 0.8s;
+    }
+
+    .delay-900 {
+        animation-delay: 0.9s;
+    }
+
+    .delay-1000 {
+        animation-delay: 1.0s;
+    }
+
+    /* ===== CARD STYLES ===== */
+    .dash-card {
+        position: relative;
+        overflow: hidden;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(226, 232, 240, 0.6);
+    }
+
+    .dash-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(135deg, transparent 0%, rgba(255, 255, 255, 0.4) 50%, transparent 100%);
+        opacity: 0;
+        transition: opacity 0.4s;
+        pointer-events: none;
+    }
+
+    .dash-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(249, 115, 22, 0.1);
+        border-color: rgba(249, 115, 22, 0.2);
+    }
+
+    .dash-card:hover::before {
+        opacity: 1;
+    }
+
+    .dash-card:hover .card-icon {
+        transform: scale(1.1);
+        box-shadow: 0 8px 25px -5px var(--icon-shadow);
+    }
+
+    .dash-card:hover .card-arrow {
+        transform: translateX(6px);
+        opacity: 1;
+    }
+
+    .card-icon {
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .card-arrow {
+        transition: all 0.3s ease;
+        opacity: 0.7;
+    }
+
+    /* ===== GLASS ===== */
+    .glass {
+        background: rgba(255, 255, 255, 0.6);
+        backdrop-filter: blur(16px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    /* ===== SHIMMER TEXT ===== */
+    .shimmer-text {
+        background: linear-gradient(90deg, #f97316, #ef4444, #8b5cf6, #f97316);
+        background-size: 200% auto;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        animation: shimmer 4s linear infinite;
+    }
+
+    /* ===== GRADIENT BG RING ===== */
+    .gradient-ring {
+        background: conic-gradient(from 0deg, #f97316, #ef4444, #8b5cf6, #3b82f6, #10b981, #f97316);
+        animation: spin-slow 20s linear infinite;
+    }
+
+    /* Dashboard card - keep old class for tool/session/modal views */
     .dashboard-card {
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
@@ -39,215 +263,498 @@
 
 <div id="hub-view" class="max-w-7xl mx-auto">
 
-    <div class="mb-12 text-center md:text-left relative">
-        <div class="absolute top-0 right-0 -mt-10 w-64 h-64 bg-orange-500/10 rounded-full blur-3xl animate-float -z-10">
+    <!-- ===== GREETING SECTION ===== -->
+    <div class="relative mb-12 pt-4">
+        <!-- Floating Ambient Orbs -->
+        <div
+            class="absolute -top-20 -left-20 w-72 h-72 bg-gradient-to-br from-orange-400/20 to-rose-500/20 rounded-full blur-3xl animate-float pointer-events-none">
+        </div>
+        <div
+            class="absolute -top-10 right-10 w-56 h-56 bg-gradient-to-br from-violet-400/15 to-indigo-500/15 rounded-full blur-3xl animate-float-reverse pointer-events-none">
         </div>
 
-        <h1 class="text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight mb-2">
-            Welcome back, <span class="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-rose-600">{{
-                user.username }}</span>.
-        </h1>
-        <p class="text-slate-500 text-lg">Your academic command center is ready.</p>
-
-        {% if user.role in ['admin', 'super_admin'] %}
-        <div class="mt-4 flex gap-3 justify-center md:justify-start">
-            <a href="{{ url_for('admin') }}"
-                class="inline-flex items-center gap-2 px-4 py-2 bg-slate-800 text-white rounded-lg text-xs font-bold hover:bg-slate-700 transition">
-                <i class="fa-solid fa-shield-halved"></i> Admin Panel
-            </a>
-            {% if user.role == 'super_admin' %}
-            <a href="{{ url_for('super_admin_dashboard') }}"
-                class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-500 transition">
-                <i class="fa-solid fa-user-astronaut"></i> Super Admin
-            </a>
-            {% endif %}
+        <div class="relative z-10 animate-fade-in-up">
+            <p class="text-2xl md:text-3xl font-semibold text-slate-600 mb-2">
+                Welcome back, <span
+                    class="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-rose-600 font-extrabold">{{
+                    user.username }}</span> 👋
+            </p>
+            <p class="text-slate-400 text-sm">Your academic command center is ready.</p>
         </div>
-        {% endif %}
     </div>
 
-    <!-- Subscription Status -->
-    <div
-        class="mb-8 p-6 bg-white rounded-3xl border border-slate-100 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6">
-        <div>
-            <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
-                <i class="fa-solid fa-crown text-amber-500"></i> Current Plan:
-                <span class="text-transparent bg-clip-text bg-gradient-to-r from-amber-500 to-orange-600">
-                    {% if user.role in ['admin', 'super_admin'] %}
-                    Unlimited Admin Access
-                    {% elif user.active_subscription_id %}
-                    Premium Member
+    <!-- ===== SUBSCRIPTION STATUS ===== -->
+    <div class="mb-10 animate-fade-in-up delay-300">
+        <div
+            class="relative p-6 rounded-3xl glass shadow-sm overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6">
+            <!-- Gradient accent -->
+            <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-amber-400 via-orange-500 to-rose-500">
+            </div>
+            <div>
+                <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                    <div
+                        class="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
+                        <i class="fa-solid fa-crown text-white text-sm"></i>
+                    </div>
+                    Current Plan:
+                    <span
+                        class="text-transparent bg-clip-text bg-gradient-to-r from-amber-500 to-orange-600 font-extrabold">
+                        {% if user.role in ['admin', 'super_admin'] %}
+                        Unlimited Admin Access
+                        {% elif user.active_subscription_id %}
+                        Premium Member
+                        {% else %}
+                        Free Tier
+                        {% endif %}
+                    </span>
+                </h2>
+                <p class="text-slate-500 text-sm mt-1 ml-10">
+                    {% if user.active_subscription_id %}
+                    Your subscription is active. Enjoy full access!
+                    {% elif user.role in ['admin', 'super_admin'] %}
+                    You have unrestricted access to all features.
                     {% else %}
-                    Free Tier
+                    You are on the limited usage free tier. Upgrade to unlock more.
                     {% endif %}
-                </span>
-            </h2>
-            <p class="text-slate-500 text-sm mt-1">
-                {% if user.active_subscription_id %}
-                Your subscription is active. Enjoy full access!
-                {% elif user.role in ['admin', 'super_admin'] %}
-                You have unrestricted access to all features.
-                {% else %}
-                You are on the limited usage free tier. Upgrade to unlock more.
-                {% endif %}
-            </p>
-        </div>
-
-        {% if not user.active_subscription_id and user.role not in ['admin', 'super_admin'] %}
-        <a href="{{ url_for('payments.pricing') }}"
-            class="px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-600 text-white font-bold rounded-xl shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 transition transform hover:-translate-y-0.5">
-            Upgrade Now <i class="fa-solid fa-arrow-right ml-2"></i>
-        </a>
-        {% endif %}
-    </div>
-
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-
-        <div onclick="openTool()"
-            class="dashboard-card group p-8 rounded-3xl bg-white border border-slate-100 cursor-pointer relative overflow-hidden">
-            <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                <i class="fa-solid fa-brain text-6xl text-rose-500"></i>
+                </p>
             </div>
-            <div class="w-14 h-14 bg-rose-100 rounded-2xl flex items-center justify-center text-rose-600 text-2xl mb-6">
-                <i class="fa-solid fa-pen-to-square"></i>
-            </div>
-            <h3 class="text-xl font-bold text-slate-900 mb-2">Homework Helper</h3>
-            <p class="text-slate-500 text-sm mb-4">Post questions to experts, use OCR for images, and get detailed
-                solutions.</p>
-            <span class="text-rose-600 font-bold text-sm flex items-center gap-2">Launch Tool <i
-                    class="fa-solid fa-arrow-right"></i></span>
-        </div>
 
-        <a href="{{ url_for('unblur') }}"
-            class="dashboard-card group p-8 rounded-3xl bg-white border border-slate-100 cursor-pointer relative overflow-hidden block">
-            <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                <i class="fa-solid fa-unlock text-6xl text-indigo-500"></i>
-            </div>
-            <div
-                class="w-14 h-14 bg-indigo-100 rounded-2xl flex items-center justify-center text-indigo-600 text-2xl mb-6">
-                <i class="fa-solid fa-unlock-keyhole"></i>
-            </div>
-            <h3 class="text-xl font-bold text-slate-900 mb-2">Unblur Answers</h3>
-            <p class="text-slate-500 text-sm mb-4">Paste a Chegg URL to instantly view the solution without waiting.</p>
-            <span class="text-indigo-600 font-bold text-sm flex items-center gap-2">Unblur Now <i
-                    class="fa-solid fa-arrow-right"></i></span>
-        </a>
-
-        <a href="{{ url_for('ai_tutor') }}"
-            class="dashboard-card group p-8 rounded-3xl bg-white border border-slate-100 cursor-pointer relative overflow-hidden block">
-            <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                <i class="fa-solid fa-robot text-6xl text-emerald-500"></i>
-            </div>
-            <div
-                class="w-14 h-14 bg-emerald-100 rounded-2xl flex items-center justify-center text-emerald-600 text-2xl mb-6">
-                <i class="fa-solid fa-microchip"></i>
-            </div>
-            <h3 class="text-xl font-bold text-slate-900 mb-2">Dual AI Tutor</h3>
-            <p class="text-slate-500 text-sm mb-4">Compare answers from ChatGPT and Gemini simultaneously.</p>
-            <span class="text-emerald-600 font-bold text-sm flex items-center gap-2">Start Chat <i
-                    class="fa-solid fa-arrow-right"></i></span>
-        </a>
-
-        <a href="{{ url_for('tutoring.browse_tutors') }}"
-            class="dashboard-card group p-8 rounded-3xl bg-white border border-slate-100 cursor-pointer relative overflow-hidden block">
-            <div
-                class="w-14 h-14 bg-amber-100 rounded-2xl flex items-center justify-center text-amber-600 text-2xl mb-6">
-                <i class="fa-solid fa-video"></i>
-            </div>
-            <h3 class="text-xl font-bold text-slate-900 mb-2">Live Tutoring</h3>
-            <p class="text-slate-500 text-sm mb-4">Book 1-on-1 video sessions with whiteboard support.</p>
-            <span class="text-amber-600 font-bold text-sm flex items-center gap-2">Find Tutor <i
-                    class="fa-solid fa-arrow-right"></i></span>
-        </a>
-
-        <div onclick="openSessions()"
-            class="dashboard-card group p-8 rounded-3xl bg-white border border-slate-100 cursor-pointer relative overflow-hidden">
-            <div class="w-14 h-14 bg-cyan-100 rounded-2xl flex items-center justify-center text-cyan-600 text-2xl mb-6">
-                <i class="fa-solid fa-film"></i>
-            </div>
-            <h3 class="text-xl font-bold text-slate-900 mb-2">My Recordings</h3>
-            <p class="text-slate-500 text-sm mb-4">Watch past tutoring sessions and review your learning history.</p>
-            <span class="text-cyan-600 font-bold text-sm flex items-center gap-2">View Archive <i
-                    class="fa-solid fa-arrow-right"></i></span>
-        </div>
-
-        <a href="{{ url_for('library') }}"
-            class="dashboard-card group p-8 rounded-3xl bg-white border border-slate-100 cursor-pointer relative overflow-hidden block">
-            <div class="w-14 h-14 bg-blue-100 rounded-2xl flex items-center justify-center text-blue-600 text-2xl mb-6">
-                <i class="fa-solid fa-book-open"></i>
-            </div>
-            <h3 class="text-xl font-bold text-slate-900 mb-2">Library</h3>
-            <p class="text-slate-500 text-sm mb-4">Download notes, upload papers, and earn credits.</p>
-            <span class="text-blue-600 font-bold text-sm flex items-center gap-2">Browse Docs <i
-                    class="fa-solid fa-arrow-right"></i></span>
-        </a>
-    </div>
-    {% if user.student_type != 'higher_ed' %}
-    <a href="{{ url_for('school.index') }}"
-        class="dashboard-card group p-8 rounded-3xl bg-white border border-slate-100 cursor-pointer relative overflow-hidden block">
-        <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-            <i class="fa-solid fa-school text-6xl text-violet-500"></i>
-        </div>
-        <div class="w-14 h-14 bg-violet-100 rounded-2xl flex items-center justify-center text-violet-600 text-2xl mb-6">
-            <i class="fa-solid fa-chalkboard-user"></i>
-        </div>
-        <h3 class="text-xl font-bold text-slate-900 mb-2">Online School</h3>
-        <p class="text-slate-500 text-sm mb-4">Join live video classes, view schedules, and attend subjects.</p>
-        <span class="text-violet-600 font-bold text-sm flex items-center gap-2">Enter School <i
-                class="fa-solid fa-arrow-right"></i></span>
-    </a>
-    {% endif %}
-</div>
-
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-    <div class="lg:col-span-1 bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
-        <h4 class="font-bold text-slate-900 mb-4 flex items-center gap-2">
-            <i class="fa-solid fa-magnifying-glass text-slate-400"></i> Quick Search
-        </h4>
-        <div class="relative">
-            <input type="text" id="dashboard-search" placeholder="Search notes, exams..."
-                class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-orange-500 transition">
-            <div id="dashboard-search-results"
-                class="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-100 rounded-xl shadow-xl z-20 hidden max-h-60 overflow-y-auto">
-            </div>
-        </div>
-    </div>
-
-    <div
-        class="lg:col-span-2 bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between">
-        <div>
-            <h4 class="font-bold text-slate-900 mb-1">Recent Activity</h4>
-            {% if jobs %}
-            {% set latest = jobs[0] %}
-            <p class="text-sm text-slate-500">
-                <span class="font-semibold text-slate-700">{{ latest.subject }}</span> -
-                <span class="{{ 'text-green-500' if latest.status == 'Completed' else 'text-red-500' }} font-bold">{{
-                    latest.status }}</span>
-            </p>
-            {% else %}
-            <p class="text-sm text-slate-500">No activity yet.</p>
+            {% if not user.active_subscription_id and user.role not in ['admin', 'super_admin'] %}
+            <a href="{{ url_for('payments.pricing') }}"
+                class="group relative px-7 py-3 bg-gradient-to-r from-amber-500 to-orange-600 text-white font-bold rounded-xl shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 transition-all transform hover:-translate-y-0.5 overflow-hidden">
+                <span class="relative z-10">Upgrade Now <i
+                        class="fa-solid fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i></span>
+            </a>
             {% endif %}
         </div>
-        <button onclick="openTool(); switchTab('history')"
-            class="px-4 py-2 bg-slate-50 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-100 transition">
-            View Full History
-        </button>
     </div>
 
-    <!-- Feedback Section -->
-    <div class="lg:col-span-3 bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
-        <h4 class="font-bold text-slate-900 mb-4"><i class="fa-solid fa-comment-dots text-orange-500 mr-2"></i> Share
-            Your Experience</h4>
-        <form action="{{ url_for('submit_feedback') }}" method="POST" class="flex flex-col gap-4">
-            <textarea name="content" rows="3" placeholder="Tell us how we helped you! (Minimum 10 words to be featured)"
-                class="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm focus:outline-none focus:border-orange-500"></textarea>
-            <button type="submit"
-                class="self-end px-6 py-2 bg-slate-800 text-white rounded-xl font-bold text-sm hover:bg-slate-700 transition">
-                Submit Feedback
+    <!-- ===== LEARNING HUB ===== -->
+    <div class="mb-12">
+
+        <!-- ── Study Tools Row ── -->
+        <div class="mb-10 animate-fade-in-up delay-500">
+            <div class="flex items-center gap-2 mb-5">
+                <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest">Study Tools</h3>
+                <div class="flex-1 h-px bg-slate-100 ml-2"></div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <!-- Homework Helper -->
+                <div onclick="openTool()" class="dash-card group p-7 rounded-3xl cursor-pointer"
+                    style="--icon-shadow: rgba(244, 63, 94, 0.3)">
+                    <div
+                        class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-rose-500/10 to-transparent rounded-bl-full transition-all group-hover:from-rose-500/20">
+                    </div>
+                    <div class="flex items-start gap-5">
+                        <div
+                            class="card-icon w-14 h-14 bg-gradient-to-br from-rose-500 to-pink-600 rounded-2xl flex items-center justify-center text-white text-2xl shadow-lg shadow-rose-500/20 shrink-0">
+                            <i class="fa-solid fa-pen-to-square"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <h3 class="text-lg font-bold text-slate-900 mb-1">Homework Helper</h3>
+                            <p class="text-slate-500 text-sm leading-relaxed mb-3">Post questions to experts, use OCR
+                                for images, and get detailed solutions.</p>
+                            <span class="text-rose-600 font-bold text-sm flex items-center gap-2">Launch Tool <i
+                                    class="fa-solid fa-arrow-right card-arrow"></i></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Tutor -->
+                <a href="{{ url_for('ai_tutor') }}" class="dash-card group p-7 rounded-3xl cursor-pointer block"
+                    style="--icon-shadow: rgba(16, 185, 129, 0.3)">
+                    <div
+                        class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-emerald-500/10 to-transparent rounded-bl-full transition-all group-hover:from-emerald-500/20">
+                    </div>
+                    <div class="flex items-start gap-5">
+                        <div
+                            class="card-icon w-14 h-14 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl flex items-center justify-center text-white text-2xl shadow-lg shadow-emerald-500/20 shrink-0">
+                            <i class="fa-solid fa-microchip"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <h3 class="text-lg font-bold text-slate-900 mb-1">AI Tutor</h3>
+                            <p class="text-slate-500 text-sm leading-relaxed mb-3">Get instant, personalized answers
+                                from your personal AI tutor.</p>
+                            <span class="text-emerald-600 font-bold text-sm flex items-center gap-2">Start Chat <i
+                                    class="fa-solid fa-arrow-right card-arrow"></i></span>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <!-- ── Expert Help Row ── -->
+        <div class="mb-10 animate-fade-in-up delay-600">
+            <div class="flex items-center gap-2 mb-5">
+                <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest">Expert Help</h3>
+                <div class="flex-1 h-px bg-slate-100 ml-2"></div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <!-- Live Tutoring -->
+                <a href="{{ url_for('tutoring.browse_tutors') }}"
+                    class="dash-card group p-7 rounded-3xl cursor-pointer block"
+                    style="--icon-shadow: rgba(245, 158, 11, 0.3)">
+                    <div
+                        class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-amber-500/10 to-transparent rounded-bl-full transition-all group-hover:from-amber-500/20">
+                    </div>
+                    <div class="flex items-start gap-5">
+                        <div
+                            class="card-icon w-14 h-14 bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl flex items-center justify-center text-white text-2xl shadow-lg shadow-amber-500/20 shrink-0">
+                            <i class="fa-solid fa-video"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <h3 class="text-lg font-bold text-slate-900 mb-1">Live Tutoring</h3>
+                            <p class="text-slate-500 text-sm leading-relaxed mb-3">Book 1-on-1 video sessions with real
+                                tutors & whiteboard support.</p>
+                            <span class="text-amber-600 font-bold text-sm flex items-center gap-2">Find Tutor <i
+                                    class="fa-solid fa-arrow-right card-arrow"></i></span>
+                        </div>
+                    </div>
+                </a>
+
+                <!-- My Recordings -->
+                <div onclick="openSessions()" class="dash-card group p-7 rounded-3xl cursor-pointer"
+                    style="--icon-shadow: rgba(6, 182, 212, 0.3)">
+                    <div
+                        class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-cyan-500/10 to-transparent rounded-bl-full transition-all group-hover:from-cyan-500/20">
+                    </div>
+                    <div class="flex items-start gap-5">
+                        <div
+                            class="card-icon w-14 h-14 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-2xl flex items-center justify-center text-white text-2xl shadow-lg shadow-cyan-500/20 shrink-0">
+                            <i class="fa-solid fa-film"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <h3 class="text-lg font-bold text-slate-900 mb-1">My Recordings</h3>
+                            <p class="text-slate-500 text-sm leading-relaxed mb-3">Watch past tutoring sessions and
+                                review your learning history.</p>
+                            <span class="text-cyan-600 font-bold text-sm flex items-center gap-2">View Archive <i
+                                    class="fa-solid fa-arrow-right card-arrow"></i></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Knowledge Base Row ── -->
+        <div class="mb-2 animate-fade-in-up delay-700">
+            <div class="flex items-center gap-2 mb-5">
+                <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest">Knowledge Base</h3>
+                <div class="flex-1 h-px bg-slate-100 ml-2"></div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <!-- Library -->
+                <a href="{{ url_for('library') }}" class="dash-card group p-7 rounded-3xl cursor-pointer block"
+                    style="--icon-shadow: rgba(59, 130, 246, 0.3)">
+                    <div
+                        class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-blue-500/10 to-transparent rounded-bl-full transition-all group-hover:from-blue-500/20">
+                    </div>
+                    <div class="flex items-start gap-5">
+                        <div
+                            class="card-icon w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center text-white text-2xl shadow-lg shadow-blue-500/20 shrink-0">
+                            <i class="fa-solid fa-book-open"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <h3 class="text-lg font-bold text-slate-900 mb-1">Library</h3>
+                            <p class="text-slate-500 text-sm leading-relaxed mb-3">Download notes, upload papers, and
+                                earn credits.</p>
+                            <span class="text-blue-600 font-bold text-sm flex items-center gap-2">Browse Docs <i
+                                    class="fa-solid fa-arrow-right card-arrow"></i></span>
+                        </div>
+                    </div>
+                </a>
+
+                <!-- Video Courses -->
+                <a href="{{ url_for('video_courses.browse_courses') }}"
+                    class="dash-card group p-7 rounded-3xl cursor-pointer block"
+                    style="--icon-shadow: rgba(168, 85, 247, 0.3)">
+                    <div
+                        class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-purple-500/10 to-transparent rounded-bl-full transition-all group-hover:from-purple-500/20">
+                    </div>
+                    <div class="flex items-start gap-5">
+                        <div
+                            class="card-icon w-14 h-14 bg-gradient-to-br from-purple-500 via-violet-500 to-indigo-600 rounded-2xl flex items-center justify-center text-white text-2xl shadow-lg shadow-purple-500/20 shrink-0">
+                            <i class="fa-solid fa-play-circle"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <h3 class="text-lg font-bold text-slate-900 mb-1">Video Courses</h3>
+                            <p class="text-slate-500 text-sm leading-relaxed mb-3">Premium video lessons from expert
+                                tutors. Learn at your own pace.</p>
+                            <span class="text-purple-600 font-bold text-sm flex items-center gap-2">Browse Courses <i
+                                    class="fa-solid fa-arrow-right card-arrow"></i></span>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Online School (conditional) -->
+    {% if user.student_type != 'higher_ed' %}
+    <div class="mb-12 animate-fade-in-up delay-1000">
+        <a href="{{ url_for('school.index') }}" class="dash-card group p-8 rounded-3xl cursor-pointer block"
+            style="--icon-shadow: rgba(139, 92, 246, 0.3)">
+            <div
+                class="absolute top-0 right-0 w-40 h-40 bg-gradient-to-bl from-violet-500/10 to-transparent rounded-bl-full transition-all group-hover:from-violet-500/20">
+            </div>
+            <div class="flex items-center gap-6">
+                <div
+                    class="card-icon w-16 h-16 bg-gradient-to-br from-violet-500 to-purple-700 rounded-2xl flex items-center justify-center text-white text-3xl shadow-lg shadow-violet-500/20 shrink-0">
+                    <i class="fa-solid fa-chalkboard-user"></i>
+                </div>
+                <div>
+                    <h3 class="text-xl font-bold text-slate-900 mb-1">Online School</h3>
+                    <p class="text-slate-500 text-sm leading-relaxed">Join live video classes, view schedules, and
+                        attend subjects.</p>
+                </div>
+                <span class="text-violet-600 font-bold text-sm flex items-center gap-2 ml-auto shrink-0">Enter School <i
+                        class="fa-solid fa-arrow-right card-arrow"></i></span>
+            </div>
+        </a>
+    </div>
+    {% endif %}
+
+    <!-- ===== BOTTOM SECTION ===== -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 animate-fade-in-up delay-1000">
+
+        <!-- Quick Search -->
+        <div class="lg:col-span-1 glass p-6 rounded-3xl shadow-sm">
+            <h4 class="font-bold text-slate-900 mb-4 flex items-center gap-2">
+                <div class="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center">
+                    <i class="fa-solid fa-magnifying-glass text-slate-500 text-xs"></i>
+                </div>
+                Quick Search
+            </h4>
+            <div class="relative">
+                <input type="text" id="dashboard-search" placeholder="Search notes, exams..."
+                    class="w-full bg-white/80 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/10 transition-all">
+                <div id="dashboard-search-results"
+                    class="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-100 rounded-xl shadow-xl z-20 hidden max-h-60 overflow-y-auto">
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="lg:col-span-2 glass p-6 rounded-3xl shadow-sm flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <div
+                    class="w-10 h-10 rounded-xl bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center shrink-0">
+                    <i class="fa-solid fa-bolt text-white"></i>
+                </div>
+                <div>
+                    <h4 class="font-bold text-slate-900 mb-0.5">Recent Activity</h4>
+                    {% if jobs %}
+                    {% set latest = jobs[0] %}
+                    <p class="text-sm text-slate-500">
+                        <span class="font-semibold text-slate-700">{{ latest.subject }}</span> —
+                        <span
+                            class="inline-flex items-center gap-1 {{ 'text-green-500' if latest.status == 'Completed' else 'text-red-500' }} font-bold">
+                            <span
+                                class="w-1.5 h-1.5 rounded-full {{ 'bg-green-500' if latest.status == 'Completed' else 'bg-red-500' }} animate-pulse"></span>
+                            {{ latest.status }}
+                        </span>
+                    </p>
+                    {% else %}
+                    <p class="text-sm text-slate-500">No activity yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+            <button onclick="openTool(); switchTab('history')"
+                class="px-5 py-2.5 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 transition-all shadow-sm hover:shadow-md hover:-translate-y-0.5 shrink-0">
+                View History
             </button>
-        </form>
+        </div>
+
+        <!-- Feedback Section -->
+        <div class="lg:col-span-3 glass p-6 rounded-3xl shadow-sm">
+            <h4 class="font-bold text-slate-900 mb-4 flex items-center gap-2">
+                <div class="w-7 h-7 rounded-lg bg-orange-100 flex items-center justify-center">
+                    <i class="fa-solid fa-comment-dots text-orange-500 text-xs"></i>
+                </div>
+                Share Your Experience
+            </h4>
+            <form action="{{ url_for('submit_feedback') }}" method="POST" class="flex flex-col gap-4">
+                <textarea name="content" rows="3"
+                    placeholder="Tell us how we helped you! (Minimum 10 words to be featured)"
+                    class="w-full bg-white/80 border border-slate-200 rounded-xl p-4 text-sm focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/10 transition-all resize-none"></textarea>
+                <button type="submit"
+                    class="self-end px-6 py-2.5 bg-gradient-to-r from-orange-500 to-rose-500 text-white rounded-xl font-bold text-sm hover:shadow-lg hover:shadow-orange-500/20 transition-all hover:-translate-y-0.5">
+                    <i class="fa-solid fa-paper-plane mr-2"></i>Submit Feedback
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ===== ONLINE PLATFORMS FOR UNBLUR ANSWERS ===== -->
+    <div class="mb-10 animate-fade-in-up delay-1000">
+        <div class="flex items-center gap-2 mb-5">
+            <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
+            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest">Online Platforms</h3>
+            <div class="flex-1 h-px bg-slate-100 ml-2"></div>
+        </div>
+        <a href="{{ url_for('unblur') }}"
+            class="group relative block rounded-3xl overflow-hidden transition-all duration-500 hover:-translate-y-1 hover:shadow-2xl hover:shadow-indigo-500/20">
+            <!-- Background Gradient -->
+            <div class="absolute inset-0 bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-700 opacity-95">
+            </div>
+            <div
+                class="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.15),transparent_60%)]">
+            </div>
+            <!-- Floating Decorations -->
+            <div class="absolute top-4 right-8 w-20 h-20 rounded-full bg-white/5 animate-float"></div>
+            <div class="absolute bottom-4 right-24 w-12 h-12 rounded-full bg-white/5 animate-float-reverse"></div>
+            <div class="absolute top-1/2 right-4 -translate-y-1/2 opacity-10">
+                <i class="fa-solid fa-unlock-keyhole text-[120px] text-white"></i>
+            </div>
+            <!-- Content -->
+            <div class="relative z-10 p-8 md:p-10 flex items-center gap-6">
+                <div
+                    class="w-16 h-16 rounded-2xl bg-white/15 backdrop-blur-sm flex items-center justify-center text-white text-3xl shrink-0 shadow-lg border border-white/10 group-hover:scale-110 transition-transform">
+                    <i class="fa-solid fa-unlock-keyhole"></i>
+                </div>
+                <div class="flex-1">
+                    <h3 class="text-2xl font-extrabold text-white mb-1 tracking-tight">Unblur Answers</h3>
+                    <p class="text-sm text-indigo-100 font-medium">Online Platforms for Unblur Answers</p>
+                    <p class="text-indigo-200/70 text-xs mt-2 max-w-lg">Paste any Chegg, Course Hero, or Bartleby URL to
+                        instantly reveal the complete solution. Fast, reliable, and hassle-free.</p>
+                </div>
+                <div class="hidden md:flex items-center gap-3 shrink-0">
+                    <span class="text-white font-bold text-sm">Unblur Now</span>
+                    <div
+                        class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white group-hover:bg-white/30 group-hover:translate-x-1 transition-all">
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <!-- ===== ABOUT & INFO FOOTER ===== -->
+    <div class="mt-8 mb-4">
+        <div
+            class="rounded-3xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white overflow-hidden shadow-2xl">
+            <!-- Top Accent -->
+            <div class="h-1 bg-gradient-to-r from-orange-500 via-rose-500 to-violet-600"></div>
+
+            <div class="p-8 md:p-12">
+                <!-- Brand + Description -->
+                <div class="flex flex-col md:flex-row gap-10 mb-10">
+                    <div class="md:w-2/5">
+                        <div class="flex items-center gap-3 mb-4">
+                            <div
+                                class="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-rose-600 flex items-center justify-center text-white shadow-lg">
+                                <i class="fa-solid fa-graduation-cap"></i>
+                            </div>
+                            <span class="font-extrabold text-xl tracking-tight">Panun<span
+                                    class="text-orange-400">School</span></span>
+                        </div>
+                        <p class="text-slate-400 text-sm leading-relaxed">
+                            PanunSchool is an all-in-one academic platform built for Kashmiri Pandit students worldwide.
+                            We provide AI-powered homework help, live tutoring, a resource library, video courses,
+                            and instant answer unblurring — everything you need to excel in your studies.
+                        </p>
+                    </div>
+
+                    <!-- Links Grid -->
+                    <div class="flex-1 grid grid-cols-2 md:grid-cols-3 gap-8">
+                        <!-- Quick Links -->
+                        <div>
+                            <h4 class="font-bold text-white text-sm mb-4 flex items-center gap-2">
+                                <span class="w-1.5 h-1.5 rounded-full bg-orange-500"></span> Quick Links
+                            </h4>
+                            <ul class="space-y-2.5 text-sm">
+                                <li><a href="{{ url_for('dashboard') }}"
+                                        class="text-slate-400 hover:text-orange-400 transition-colors flex items-center gap-2"><i
+                                            class="fa-solid fa-chevron-right text-[8px] text-slate-600"></i>
+                                        Dashboard</a></li>
+                                <li><a href="{{ url_for('library') }}"
+                                        class="text-slate-400 hover:text-orange-400 transition-colors flex items-center gap-2"><i
+                                            class="fa-solid fa-chevron-right text-[8px] text-slate-600"></i> Library</a>
+                                </li>
+                                <li><a href="{{ url_for('ai_tutor') }}"
+                                        class="text-slate-400 hover:text-orange-400 transition-colors flex items-center gap-2"><i
+                                            class="fa-solid fa-chevron-right text-[8px] text-slate-600"></i> AI
+                                        Tutor</a></li>
+                                <li><a href="{{ url_for('tutoring.browse_tutors') }}"
+                                        class="text-slate-400 hover:text-orange-400 transition-colors flex items-center gap-2"><i
+                                            class="fa-solid fa-chevron-right text-[8px] text-slate-600"></i> Find a
+                                        Tutor</a></li>
+                                <li><a href="{{ url_for('payments.pricing') }}"
+                                        class="text-slate-400 hover:text-orange-400 transition-colors flex items-center gap-2"><i
+                                            class="fa-solid fa-chevron-right text-[8px] text-slate-600"></i> Pricing</a>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <!-- Legal -->
+                        <div>
+                            <h4 class="font-bold text-white text-sm mb-4 flex items-center gap-2">
+                                <span class="w-1.5 h-1.5 rounded-full bg-violet-500"></span> Legal
+                            </h4>
+                            <ul class="space-y-2.5 text-sm">
+                                <li><a href="#"
+                                        class="text-slate-400 hover:text-violet-400 transition-colors flex items-center gap-2"><i
+                                            class="fa-solid fa-chevron-right text-[8px] text-slate-600"></i> Terms &
+                                        Conditions</a></li>
+                                <li><a href="#"
+                                        class="text-slate-400 hover:text-violet-400 transition-colors flex items-center gap-2"><i
+                                            class="fa-solid fa-chevron-right text-[8px] text-slate-600"></i> Privacy
+                                        Policy</a></li>
+                                <li><a href="#"
+                                        class="text-slate-400 hover:text-violet-400 transition-colors flex items-center gap-2"><i
+                                            class="fa-solid fa-chevron-right text-[8px] text-slate-600"></i> Refund
+                                        Policy</a></li>
+                                <li><a href="#"
+                                        class="text-slate-400 hover:text-violet-400 transition-colors flex items-center gap-2"><i
+                                            class="fa-solid fa-chevron-right text-[8px] text-slate-600"></i> Acceptable
+                                        Use</a></li>
+                            </ul>
+                        </div>
+
+                        <!-- Contact -->
+                        <div>
+                            <h4 class="font-bold text-white text-sm mb-4 flex items-center gap-2">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Contact Us
+                            </h4>
+                            <ul class="space-y-2.5 text-sm">
+                                <li class="text-slate-400 flex items-center gap-2"><i
+                                        class="fa-solid fa-envelope text-slate-600 text-xs w-4"></i>
+                                    support@panunschool.com</li>
+                                <li class="text-slate-400 flex items-center gap-2"><i
+                                        class="fa-brands fa-instagram text-slate-600 text-xs w-4"></i> @panunschool</li>
+                                <li class="text-slate-400 flex items-center gap-2"><i
+                                        class="fa-brands fa-telegram text-slate-600 text-xs w-4"></i> PanunSchool</li>
+                                <li class="text-slate-400 flex items-center gap-2"><i
+                                        class="fa-solid fa-clock text-slate-600 text-xs w-4"></i> Mon-Sat, 9AM-9PM IST
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Divider -->
+                <div class="h-px bg-slate-700/50 mb-6"></div>
+
+                <!-- Bottom Row -->
+                <div class="flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-slate-500">
+                    <p>&copy; 2025 PanunSchool. All rights reserved. Built with <i
+                            class="fa-solid fa-heart text-rose-500 mx-0.5"></i> for Kashmiri Pandit students.</p>
+                    <div class="flex items-center gap-4">
+                        <a href="#" class="hover:text-orange-400 transition-colors">Terms</a>
+                        <span class="text-slate-700">•</span>
+                        <a href="#" class="hover:text-orange-400 transition-colors">Privacy</a>
+                        <span class="text-slate-700">•</span>
+                        <a href="#" class="hover:text-orange-400 transition-colors">Support</a>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
-</div>
+
 
 <div id="tool-view" class="hidden max-w-5xl mx-auto">
     <div class="flex items-center justify-between mb-8">
@@ -270,33 +777,12 @@
     <div id="view-post" class="bg-white rounded-3xl border border-slate-100 shadow-sm p-8">
         <form method="POST" id="postForm" class="space-y-6" onsubmit="return handleFormSubmit(event)">
 
-            <div>
-                <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">1. Select Service
-                    Account</label>
-                <div class="relative">
-                    <select name="account_id" id="account_select" onchange="checkBalance()"
-                        class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-orange-500 appearance-none">
-                        {% for acc in accounts %}
-                        <option value="{{ acc.id }}">{{ acc.name }}</option>
-                        {% endfor %}
-                    </select>
-                    <i class="fa-solid fa-chevron-down absolute right-4 top-3.5 text-slate-400 pointer-events-none"></i>
-                </div>
-                <div id="balance-display" class="hidden mt-2 text-xs">
-                    <span class="text-slate-400">Balance:</span> <span id="balance-value"
-                        class="font-bold text-slate-700">Checking...</span>
-                </div>
-            </div>
-
             <div class="bg-slate-50 p-2 rounded-xl inline-flex gap-2">
                 <button type="button" onclick="switchMode('text')" id="btn-mode-text"
                     class="px-4 py-2 rounded-lg bg-white text-slate-800 shadow-sm text-xs font-bold">Text</button>
                 <button type="button" onclick="switchMode('image')" id="btn-mode-image"
                     class="px-4 py-2 rounded-lg text-slate-500 hover:text-slate-800 text-xs font-bold">Image +
                     OCR</button>
-                <button type="button" onclick="switchMode('repost')" id="btn-mode-repost"
-                    class="px-4 py-2 rounded-lg text-slate-500 hover:text-slate-800 text-xs font-bold">Repost
-                    URL</button>
             </div>
             <input type="hidden" name="post_mode" id="post_mode" value="text">
             <input type="hidden" name="final_image_url" id="final_image_url">
@@ -323,37 +809,13 @@
                 </div>
             </div>
 
-            <div id="container-repost" class="hidden space-y-4">
-                <div class="flex gap-2">
-                    <input type="text" id="repost_url"
-                        class="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-orange-500"
-                        placeholder="Paste Chegg Question URL">
-                    <button type="button" onclick="extractQuestion()" id="extractBtn"
-                        class="px-4 py-2 bg-slate-800 text-white rounded-xl font-bold text-xs">Extract</button>
-                </div>
-                <div id="repost-preview" class="hidden bg-green-50 border border-green-100 p-4 rounded-xl">
-                    <p class="text-green-700 font-bold text-sm mb-2"><i class="fa-solid fa-check"></i> Extracted!</p>
-                    <div id="repost-content" class="text-xs text-slate-600 max-h-32 overflow-y-auto mb-2"></div>
-                    <textarea id="repost_ocr_editor"
-                        class="w-full bg-white border border-green-200 rounded-lg p-2 text-xs font-mono"
-                        placeholder="Extracted text..."></textarea>
-                    <div class="mt-2 flex items-center gap-2">
-                        <input type="checkbox" id="include_ocr_text" checked
-                            class="text-orange-500 focus:ring-orange-500">
-                        <label for="include_ocr_text" class="text-xs text-slate-500">Include text in post</label>
-                    </div>
-                    <input type="hidden" id="extracted_html" name="extracted_html">
-                </div>
-                <div id="repost-error" class="hidden text-red-500 text-xs font-bold"></div>
-            </div>
-
             <div>
                 <button type="button" onclick="fetchSubjects()" id="searchBtn"
                     class="w-full py-3 border border-dashed border-slate-300 text-slate-500 rounded-xl text-sm font-bold hover:bg-slate-50 transition mb-4">
                     <i class="fa-solid fa-magnifying-glass"></i> Find Subject
                 </button>
                 <div id="subject-step" class="opacity-50 pointer-events-none transition">
-                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">3. Target
+                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">2. Target
                         Subject</label>
                     <select name="subject_select" id="subject_dropdown"
                         class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-orange-500">
@@ -362,15 +824,10 @@
                 </div>
             </div>
 
-            <div class="flex gap-4">
-                <select name="post_count"
-                    class="w-24 bg-slate-50 border border-slate-200 rounded-xl px-3 py-3 text-sm font-bold">
-                    <option value="1">1 Post</option>
-                    <option value="2">2 Posts</option>
-                </select>
+            <div>
                 <button type="submit" id="postBtn"
-                    class="flex-1 bg-gradient-to-r from-orange-500 to-rose-600 text-white font-bold rounded-xl py-3 shadow-lg hover:shadow-orange-500/30 transition transform hover:-translate-y-0.5">
-                    Launch Process <i class="fa-solid fa-rocket ml-2"></i>
+                    class="w-full bg-gradient-to-r from-orange-500 to-rose-600 text-white font-bold rounded-xl py-3 shadow-lg hover:shadow-orange-500/30 transition transform hover:-translate-y-0.5">
+                    Post Question <i class="fa-solid fa-rocket ml-2"></i>
                 </button>
             </div>
         </form>
@@ -539,12 +996,12 @@
         }
     }
 
-    // --- Mode Switching (Text vs Image vs Repost) ---
+    // --- Mode Switching (Text vs Image) ---
     function switchMode(mode) {
         document.getElementById('post_mode').value = mode;
 
         // Reset Styles
-        ['text', 'image', 'repost'].forEach(m => {
+        ['text', 'image'].forEach(m => {
             const btn = document.getElementById('btn-mode-' + m);
             btn.classList.remove('bg-white', 'text-slate-800', 'shadow-sm');
             btn.classList.add('text-slate-500');
@@ -574,26 +1031,6 @@
         document.getElementById('detailsModal').classList.add('hidden');
     }
 
-    // --- API & Logic Functions ---
-    // (Pasted from your original file, cleaned up)
-
-    function checkBalance() {
-        const accId = document.getElementById('account_select').value;
-        const display = document.getElementById('balance-display');
-        const valSpan = document.getElementById('balance-value');
-        if (!accId) return;
-        display.classList.remove('hidden');
-        valSpan.innerText = "Checking...";
-        fetch('/api/check_balance', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ account_id: accId })
-        }).then(res => res.json()).then(data => {
-            if (data.balance && typeof data.balance === 'object') {
-                valSpan.innerText = data.balance.remaining !== undefined ? data.balance.remaining : (data.balance.used + '/' + data.balance.limit);
-            } else { valSpan.innerText = data.balance || "Error"; }
-        });
-    }
-
     function uploadImage() {
         const input = document.getElementById('imageInput');
         if (!input.files[0]) return;
@@ -601,7 +1038,6 @@
 
         const formData = new FormData();
         formData.append('file', input.files[0]);
-        formData.append('account_id', document.getElementById('account_select').value);
 
         fetch('/api/process_image', { method: 'POST', body: formData })
             .then(res => res.json()).then(data => {
@@ -632,7 +1068,7 @@
 
         fetch('/api/get_suggested_subjects', {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ question_text: qText, account_id: document.getElementById('account_select').value })
+            body: JSON.stringify({ question_text: qText })
         }).then(res => res.json()).then(data => {
             btn.innerHTML = '<i class="fa-solid fa-check"></i> Found!';
             drop.innerHTML = "";
@@ -643,61 +1079,9 @@
         });
     }
 
-    function extractQuestion() {
-        const url = document.getElementById('repost_url').value;
-        const btn = document.getElementById('extractBtn');
-        if (!url) return;
-        btn.innerText = "...";
-        fetch('/api/chegg/extract-question', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ url: url })
-        }).then(res => res.json()).then(data => {
-            btn.innerText = "Extract";
-            if (data.success) {
-                document.getElementById('repost-preview').classList.remove('hidden');
-                document.getElementById('repost-content').innerHTML = data.content_html || data.plain_text;
-                document.getElementById('repost_ocr_editor').value = data.ocr_text || "";
-                document.getElementById('extracted_html').value = data.content_html;
-                document.getElementById('question_content').value = data.plain_text;
-
-                // Auto subject
-                if (data.subject) {
-                    document.getElementById('subject-step').classList.remove('opacity-50', 'pointer-events-none');
-                    const drop = document.getElementById('subject_dropdown');
-                    drop.innerHTML = "";
-                    const val = data.subject.subjectId ? (data.subject.title + '|' + data.subject.subjectId + '|' + data.subject.groupId) : data.subject.title;
-                    drop.add(new Option(data.subject.title + " (Auto)", val, true, true));
-                }
-            } else { alert(data.error); }
-        });
-    }
-
     function handleFormSubmit(e) {
-        if (document.getElementById('post_mode').value !== 'repost') return true;
-        e.preventDefault();
-
-        const btn = document.getElementById('postBtn');
-        const oldText = btn.innerHTML;
-        btn.innerHTML = "Processing...";
-        btn.disabled = true;
-
-        let html = document.getElementById('extracted_html').value;
-        if (document.getElementById('include_ocr_text').checked) {
-            html = "<p>" + document.getElementById('repost_ocr_editor').value + "</p>" + html;
-        }
-
-        fetch('/api/chegg/repost', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                content_html: html,
-                subject: document.getElementById('subject_dropdown').value,
-                account_id: document.getElementById('account_select').value,
-                post_count: document.querySelector('select[name="post_count"]').value
-            })
-        }).then(res => res.json()).then(data => {
-            alert(data.message || data.error);
-            window.location.reload();
-        });
+        // Always submit normally (text or image mode)
+        return true;
     }
 
     // Convert UTC times

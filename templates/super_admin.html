@@ -43,7 +43,8 @@
     <!-- DATA & REPORTS SECTION -->
     <!-- ═══════════════════════════════════════════════════════════════════ -->
     <div class="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden mb-8">
-        <div class="bg-gradient-to-r from-cyan-500 to-blue-600 px-8 py-5 flex justify-between items-center">
+        <div class="bg-gradient-to-r from-cyan-500 to-blue-600 px-8 py-5 flex justify-between items-center cursor-pointer select-none"
+            onclick="toggleSection('section-data-reports')">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-white">
                     <i class="fa-solid fa-chart-line text-xl"></i>
@@ -53,78 +54,82 @@
                     <p class="text-cyan-100 text-xs">View registration stats and export data</p>
                 </div>
             </div>
-            <div>
+            <div class="flex items-center gap-3">
                 <input type="date" id="stats-date"
                     class="bg-white/20 text-white placeholder-white/70 border-none rounded-lg px-4 py-2 text-sm font-bold focus:ring-2 focus:ring-white/50 cursor-pointer"
-                    onchange="fetchStats()">
+                    onchange="fetchStats()" onclick="event.stopPropagation()">
+                <i class="fa-solid fa-chevron-down text-white/70 transition-transform duration-300 section-chevron"
+                    id="chevron-section-data-reports"></i>
             </div>
         </div>
 
-        <div class="p-8">
-            <!-- Stats Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                <!-- Daily Students -->
-                <div class="bg-slate-50 p-6 rounded-2xl border border-slate-200">
-                    <div class="text-slate-400 text-xs font-bold uppercase mb-2">Students (Selected Date)</div>
-                    <div class="flex items-baseline gap-2">
-                        <span class="text-3xl font-black text-slate-800" id="daily-students">-</span>
-                        <span class="text-xs text-slate-400">registrations</span>
+        <div class="section-content" id="section-data-reports">
+            <div class="p-8">
+                <!-- Stats Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <!-- Daily Students -->
+                    <div class="bg-slate-50 p-6 rounded-2xl border border-slate-200">
+                        <div class="text-slate-400 text-xs font-bold uppercase mb-2">Students (Selected Date)</div>
+                        <div class="flex items-baseline gap-2">
+                            <span class="text-3xl font-black text-slate-800" id="daily-students">-</span>
+                            <span class="text-xs text-slate-400">registrations</span>
+                        </div>
+                    </div>
+
+                    <!-- Daily Tutors -->
+                    <div class="bg-slate-50 p-6 rounded-2xl border border-slate-200">
+                        <div class="text-slate-400 text-xs font-bold uppercase mb-2">Tutors (Selected Date)</div>
+                        <div class="flex items-baseline gap-2">
+                            <span class="text-3xl font-black text-slate-800" id="daily-tutors">-</span>
+                            <span class="text-xs text-slate-400">registrations</span>
+                        </div>
+                    </div>
+
+                    <!-- Total Active Plans -->
+                    <div class="bg-slate-50 p-6 rounded-2xl border border-slate-200">
+                        <div class="text-slate-400 text-xs font-bold uppercase mb-2">Active Paid Plans</div>
+                        <div class="flex items-baseline gap-2">
+                            <span class="text-3xl font-black text-emerald-600" id="total-plans">-</span>
+                            <span class="text-xs text-slate-400">current</span>
+                        </div>
+                    </div>
+
+                    <!-- Total Database -->
+                    <div class="bg-slate-50 p-6 rounded-2xl border border-slate-200">
+                        <div class="text-slate-400 text-xs font-bold uppercase mb-2">Total Database</div>
+                        <div class="flex items-baseline gap-2">
+                            <span class="text-3xl font-black text-indigo-600" id="total-users">-</span>
+                            <span class="text-xs text-slate-400">users & tutors</span>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Daily Tutors -->
-                <div class="bg-slate-50 p-6 rounded-2xl border border-slate-200">
-                    <div class="text-slate-400 text-xs font-bold uppercase mb-2">Tutors (Selected Date)</div>
-                    <div class="flex items-baseline gap-2">
-                        <span class="text-3xl font-black text-slate-800" id="daily-tutors">-</span>
-                        <span class="text-xs text-slate-400">registrations</span>
-                    </div>
+                <!-- Export Actions -->
+                <div class="flex flex-col md:flex-row gap-4 border-t border-slate-100 pt-6">
+                    <a href="{{ url_for('admin_export_students') }}" target="_blank"
+                        class="flex-1 bg-white border border-slate-200 hover:border-blue-500 hover:text-blue-600 text-slate-600 py-4 rounded-xl font-bold flex items-center justify-center gap-3 transition-all group shadow-sm hover:shadow-md">
+                        <div
+                            class="w-10 h-10 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center group-hover:bg-blue-100 transition-colors">
+                            <i class="fa-solid fa-file-pdf text-lg"></i>
+                        </div>
+                        <div>
+                            <div class="text-sm">Download Students Report</div>
+                            <div class="text-[10px] text-slate-400 font-normal">Full PDF Export</div>
+                        </div>
+                    </a>
+
+                    <a href="{{ url_for('admin_export_tutors') }}" target="_blank"
+                        class="flex-1 bg-white border border-slate-200 hover:border-violet-500 hover:text-violet-600 text-slate-600 py-4 rounded-xl font-bold flex items-center justify-center gap-3 transition-all group shadow-sm hover:shadow-md">
+                        <div
+                            class="w-10 h-10 rounded-full bg-violet-50 text-violet-500 flex items-center justify-center group-hover:bg-violet-100 transition-colors">
+                            <i class="fa-solid fa-chalkboard-user text-lg"></i>
+                        </div>
+                        <div>
+                            <div class="text-sm">Download Tutors Report</div>
+                            <div class="text-[10px] text-slate-400 font-normal">Full PDF Export</div>
+                        </div>
+                    </a>
                 </div>
-
-                <!-- Total Active Plans -->
-                <div class="bg-slate-50 p-6 rounded-2xl border border-slate-200">
-                    <div class="text-slate-400 text-xs font-bold uppercase mb-2">Active Paid Plans</div>
-                    <div class="flex items-baseline gap-2">
-                        <span class="text-3xl font-black text-emerald-600" id="total-plans">-</span>
-                        <span class="text-xs text-slate-400">current</span>
-                    </div>
-                </div>
-
-                <!-- Total Database -->
-                <div class="bg-slate-50 p-6 rounded-2xl border border-slate-200">
-                    <div class="text-slate-400 text-xs font-bold uppercase mb-2">Total Database</div>
-                    <div class="flex items-baseline gap-2">
-                        <span class="text-3xl font-black text-indigo-600" id="total-users">-</span>
-                        <span class="text-xs text-slate-400">users & tutors</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Export Actions -->
-            <div class="flex flex-col md:flex-row gap-4 border-t border-slate-100 pt-6">
-                <a href="{{ url_for('admin_export_students') }}" target="_blank"
-                    class="flex-1 bg-white border border-slate-200 hover:border-blue-500 hover:text-blue-600 text-slate-600 py-4 rounded-xl font-bold flex items-center justify-center gap-3 transition-all group shadow-sm hover:shadow-md">
-                    <div
-                        class="w-10 h-10 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center group-hover:bg-blue-100 transition-colors">
-                        <i class="fa-solid fa-file-pdf text-lg"></i>
-                    </div>
-                    <div>
-                        <div class="text-sm">Download Students Report</div>
-                        <div class="text-[10px] text-slate-400 font-normal">Full PDF Export</div>
-                    </div>
-                </a>
-
-                <a href="{{ url_for('admin_export_tutors') }}" target="_blank"
-                    class="flex-1 bg-white border border-slate-200 hover:border-violet-500 hover:text-violet-600 text-slate-600 py-4 rounded-xl font-bold flex items-center justify-center gap-3 transition-all group shadow-sm hover:shadow-md">
-                    <div
-                        class="w-10 h-10 rounded-full bg-violet-50 text-violet-500 flex items-center justify-center group-hover:bg-violet-100 transition-colors">
-                        <i class="fa-solid fa-chalkboard-user text-lg"></i>
-                    </div>
-                    <div>
-                        <div class="text-sm">Download Tutors Report</div>
-                        <div class="text-[10px] text-slate-400 font-normal">Full PDF Export</div>
-                    </div>
-                </a>
             </div>
         </div>
     </div>
@@ -133,7 +138,8 @@
     <!-- DISABLED STUDENT VERIFICATION SECTION -->
     <!-- ═══════════════════════════════════════════════════════════════════ -->
     <div class="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden mb-8">
-        <div class="bg-gradient-to-r from-yellow-400 to-orange-500 px-8 py-5 flex justify-between items-center">
+        <div class="bg-gradient-to-r from-yellow-400 to-orange-500 px-8 py-5 flex justify-between items-center cursor-pointer select-none"
+            onclick="toggleSection('section-student-verification')">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-white">
                     <i class="fa-solid fa-user-shield text-xl"></i>
@@ -143,76 +149,85 @@
                     <p class="text-orange-50 text-xs">Approve free access for disabled students</p>
                 </div>
             </div>
-            <span class="bg-white/20 text-white px-3 py-1 rounded-lg text-xs font-bold">
-                {{ pending_users|length if pending_users is defined else '0' }} Pending
-            </span>
+            <div class="flex items-center gap-3">
+                <span class="bg-white/20 text-white px-3 py-1 rounded-lg text-xs font-bold">
+                    {{ pending_users|length if pending_users is defined else '0' }} Pending
+                </span>
+                <i class="fa-solid fa-chevron-down text-white/70 transition-transform duration-300 section-chevron"
+                    id="chevron-section-student-verification"></i>
+            </div>
         </div>
 
-        <div class="p-8">
-            {% if pending_users %}
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {% for user in pending_users %}
-                <div
-                    class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
-                    <div class="flex items-center gap-3 mb-4">
-                        <div
-                            class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-600">
-                            {{ user.username[0]|upper }}
-                        </div>
-                        <div>
-                            <div class="font-bold text-slate-800 text-sm">{{ user.full_name }}</div>
-                            <div class="text-xs text-slate-400">{{ user.email }}</div>
-                        </div>
-                    </div>
-
-                    <div class="space-y-2 mb-4 text-xs text-slate-500">
-                        <p><strong class="text-slate-700">Parent:</strong> {{ user.parent_name }} ({{ user.parent_phone
-                            }})</p>
-                        <p><strong class="text-slate-700">Address:</strong> {{ user.address }}</p>
-                    </div>
-
-                    {% if user.disability_certificate_path %}
-                    <a href="{{ url_for('uploaded_file', filename=user.disability_certificate_path) }}" target="_blank"
-                        class="block w-full py-2 mb-4 text-center border border-slate-200 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-50 transition-colors">
-                        <i class="fa-solid fa-file-pdf mr-1 text-red-500"></i> View Certificate
-                    </a>
-                    {% else %}
+        <div class="section-content" id="section-student-verification">
+            <div class="p-8">
+                {% if pending_users %}
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {% for user in pending_users %}
                     <div
-                        class="w-full py-2 mb-4 text-center border border-red-200 bg-red-50 rounded-lg text-xs font-bold text-red-500">
-                        No Certificate Uploaded
-                    </div>
-                    {% endif %}
+                        class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
+                        <div class="flex items-center gap-3 mb-4">
+                            <div
+                                class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-600">
+                                {{ user.username[0]|upper }}
+                            </div>
+                            <div>
+                                <div class="font-bold text-slate-800 text-sm">{{ user.full_name }}</div>
+                                <div class="text-xs text-slate-400">{{ user.email }}</div>
+                            </div>
+                        </div>
 
-                    <div class="flex gap-2">
-                        <form action="{{ url_for('verify_user', user_id=user.id, action='approve') }}" method="POST"
-                            class="flex-1">
-                            <button type="submit"
-                                class="w-full bg-emerald-500 hover:bg-emerald-600 text-white py-2 rounded-lg text-xs font-bold transition-colors">
-                                <i class="fa-solid fa-check mr-1"></i> Approve
-                            </button>
-                        </form>
-                        <form action="{{ url_for('verify_user', user_id=user.id, action='reject') }}" method="POST"
-                            class="flex-1">
-                            <button type="submit"
-                                class="w-full bg-white border border-slate-200 text-slate-500 hover:bg-red-50 hover:text-red-500 hover:border-red-200 py-2 rounded-lg text-xs font-bold transition-all">
-                                <i class="fa-solid fa-trash mr-1"></i> Reject
-                            </button>
-                        </form>
+                        <div class="space-y-2 mb-4 text-xs text-slate-500">
+                            <p><strong class="text-slate-700">Parent:</strong> {{ user.parent_name }} ({{
+                                user.parent_phone
+                                }})</p>
+                            <p><strong class="text-slate-700">Address:</strong> {{ user.address }}</p>
+                        </div>
+
+                        {% if user.disability_certificate_path %}
+                        <a href="{{ url_for('uploaded_file', filename=user.disability_certificate_path) }}"
+                            target="_blank"
+                            class="block w-full py-2 mb-4 text-center border border-slate-200 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-50 transition-colors">
+                            <i class="fa-solid fa-file-pdf mr-1 text-red-500"></i> View Certificate
+                        </a>
+                        {% else %}
+                        <div
+                            class="w-full py-2 mb-4 text-center border border-red-200 bg-red-50 rounded-lg text-xs font-bold text-red-500">
+                            No Certificate Uploaded
+                        </div>
+                        {% endif %}
+
+                        <div class="flex gap-2">
+                            <form action="{{ url_for('verify_user', user_id=user.id, action='approve') }}" method="POST"
+                                class="flex-1">
+                                <button type="submit"
+                                    class="w-full bg-emerald-500 hover:bg-emerald-600 text-white py-2 rounded-lg text-xs font-bold transition-colors">
+                                    <i class="fa-solid fa-check mr-1"></i> Approve
+                                </button>
+                            </form>
+                            <form action="{{ url_for('verify_user', user_id=user.id, action='reject') }}" method="POST"
+                                class="flex-1">
+                                <button type="submit"
+                                    class="w-full bg-white border border-slate-200 text-slate-500 hover:bg-red-50 hover:text-red-500 hover:border-red-200 py-2 rounded-lg text-xs font-bold transition-all">
+                                    <i class="fa-solid fa-trash mr-1"></i> Reject
+                                </button>
+                            </form>
+                        </div>
                     </div>
+                    {% endfor %}
                 </div>
-                {% endfor %}
+                {% else %}
+                <div class="text-center py-12 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                    <i class="fa-solid fa-user-check text-4xl text-slate-300 mb-4"></i>
+                    <p class="text-slate-500 font-medium">No pending verification requests.</p>
+                </div>
+                {% endif %}
             </div>
-            {% else %}
-            <div class="text-center py-12 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
-                <i class="fa-solid fa-user-check text-4xl text-slate-300 mb-4"></i>
-                <p class="text-slate-500 font-medium">No pending verification requests.</p>
-            </div>
-            {% endif %}
         </div>
     </div>
 
     <div class="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden mb-8">
-        <div class="bg-gradient-to-r from-orange-500 to-rose-600 px-8 py-5 flex justify-between items-center">
+        <div class="bg-gradient-to-r from-orange-500 to-rose-600 px-8 py-5 flex justify-between items-center cursor-pointer select-none"
+            onclick="toggleSection('section-unblur-pool')">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-white">
                     <i class="fa-solid fa-unlock-keyhole text-xl"></i>
@@ -222,207 +237,377 @@
                     <p class="text-orange-100 text-xs">These accounts are used exclusively for the Unblur feature</p>
                 </div>
             </div>
-            <span class="bg-white/20 text-white px-3 py-1 rounded-lg text-xs font-bold">{{ my_accounts|length }}
-                Active</span>
+            <div class="flex items-center gap-3">
+                <span class="bg-white/20 text-white px-3 py-1 rounded-lg text-xs font-bold">{{ my_accounts|length }}
+                    Active</span>
+                <i class="fa-solid fa-chevron-down text-white/70 transition-transform duration-300 section-chevron"
+                    id="chevron-section-unblur-pool"></i>
+            </div>
         </div>
 
-        <div class="p-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div class="lg:col-span-1 bg-slate-50 p-6 rounded-2xl border border-slate-200">
-                <h3 class="font-bold text-slate-700 mb-4 flex items-center gap-2">
-                    <i class="fa-solid fa-plus-circle text-orange-500"></i> Add Unblur Account
-                </h3>
-                <form method="POST" class="space-y-4">
-                    <input type="hidden" name="action" value="add_account">
+        <div class="section-content" id="section-unblur-pool">
+            <div class="p-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div class="lg:col-span-1 bg-slate-50 p-6 rounded-2xl border border-slate-200">
+                    <h3 class="font-bold text-slate-700 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-plus-circle text-orange-500"></i> Add Unblur Account
+                    </h3>
+                    <form method="POST" class="space-y-4">
+                        <input type="hidden" name="action" value="add_account">
 
-                    <div>
-                        <input type="text" name="acc_name" placeholder="Account Name (e.g. Unblur Bot 1)" required
-                            class="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-orange-500 text-sm">
-                    </div>
-                    <div>
-                        <input type="text" name="proxy" placeholder="Proxy (Optional)"
-                            class="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-orange-500 text-sm font-mono">
-                    </div>
-                    <div>
-                        <textarea name="cookie_json" rows="3" placeholder="Paste Cookies here..." required
-                            class="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-orange-500 text-xs font-mono"></textarea>
-                    </div>
-                    <button
-                        class="w-full bg-slate-900 hover:bg-slate-800 text-white py-3 rounded-xl font-bold transition-all shadow-md">
-                        Add to Pool
-                    </button>
-                </form>
-            </div>
-
-            <div class="lg:col-span-2">
-                <h3 class="font-bold text-slate-700 mb-4">Active Pool</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
-                    {% for acc in my_accounts %}
-                    <div
-                        class="bg-white border border-slate-200 p-4 rounded-xl flex items-center justify-between group hover:border-orange-200 transition-colors shadow-sm">
-                        <div class="flex items-center gap-3">
-                            <div
-                                class="w-10 h-10 rounded-full bg-green-50 text-green-600 flex items-center justify-center font-bold text-sm">
-                                {{ loop.index }}
-                            </div>
-                            <div>
-                                <h4 class="font-bold text-slate-800 text-sm">{{ acc.name }}</h4>
-                                <span class="text-[10px] text-slate-400 font-mono">ID: {{ acc.id }}</span>
-                            </div>
+                        <div>
+                            <input type="text" name="acc_name" placeholder="Account Name (e.g. Unblur Bot 1)" required
+                                class="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-orange-500 text-sm">
                         </div>
-                        <form method="POST" onsubmit="return confirm('Delete this unblur account?');">
-                            <input type="hidden" name="action" value="delete_account">
-                            <input type="hidden" name="account_id" value="{{ acc.id }}">
-                            <button class="text-slate-300 hover:text-red-500 transition-colors p-2">
-                                <i class="fa-solid fa-trash"></i>
-                            </button>
-                        </form>
-                    </div>
-                    {% else %}
+                        <div>
+                            <input type="text" name="proxy" placeholder="Proxy (Optional)"
+                                class="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-orange-500 text-sm font-mono">
+                        </div>
+                        <div>
+                            <textarea name="cookie_json" rows="3" placeholder="Paste Cookies here..." required
+                                class="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-orange-500 text-xs font-mono"></textarea>
+                        </div>
+                        <button
+                            class="w-full bg-slate-900 hover:bg-slate-800 text-white py-3 rounded-xl font-bold transition-all shadow-md">
+                            Add to Pool
+                        </button>
+                    </form>
+                </div>
+
+                <div class="lg:col-span-2">
+                    <h3 class="font-bold text-slate-700 mb-4">Active Pool</h3>
                     <div
-                        class="col-span-2 text-center py-10 text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-300">
-                        <p>No unblur accounts added yet.</p>
+                        class="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                        {% for acc in my_accounts %}
+                        <div
+                            class="bg-white border border-slate-200 p-4 rounded-xl flex items-center justify-between group hover:border-orange-200 transition-colors shadow-sm">
+                            <div class="flex items-center gap-3">
+                                <div
+                                    class="w-10 h-10 rounded-full bg-green-50 text-green-600 flex items-center justify-center font-bold text-sm">
+                                    {{ loop.index }}
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-slate-800 text-sm">{{ acc.name }}</h4>
+                                    <span class="text-[10px] text-slate-400 font-mono">ID: {{ acc.id }}</span>
+                                </div>
+                            </div>
+                            <form method="POST" onsubmit="return confirm('Delete this unblur account?');">
+                                <input type="hidden" name="action" value="delete_account">
+                                <input type="hidden" name="account_id" value="{{ acc.id }}">
+                                <button class="text-slate-300 hover:text-red-500 transition-colors p-2">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </form>
+                        </div>
+                        {% else %}
+                        <div
+                            class="col-span-2 text-center py-10 text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-300">
+                            <p>No unblur accounts added yet.</p>
+                        </div>
+                        {% endfor %}
                     </div>
-                    {% endfor %}
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-
-        <div class="lg:col-span-1 space-y-8">
-            <div class="bg-white rounded-2xl shadow-lg border border-slate-100 p-6">
-                <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
-                    <span class="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center"><i
-                            class="fa-solid fa-user-tie"></i></span>
-                    Promote User to Admin
-                </h3>
-                <form method="POST" class="space-y-3">
-                    <input type="hidden" name="action" value="create_admin">
-
-                    <div class="space-y-1">
-                        <label class="text-[10px] font-bold text-slate-400 uppercase">Existing User</label>
-                        <input type="text" name="username" placeholder="Enter Registered Username" required
-                            class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500">
-                    </div>
-
-                    <button
-                        class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-indigo-500/20">
-                        Promote to Admin
-                    </button>
-                    <p class="text-[10px] text-center text-slate-400 mt-2">The user must register an account first.</p>
-                </form>
+    <!-- CHEGG STUDY ACCOUNTS (Homework Helper Auto-Rotation) -->
+    <div class="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden mb-8">
+        <div class="bg-gradient-to-r from-emerald-500 to-teal-600 px-8 py-5 flex justify-between items-center cursor-pointer select-none"
+            onclick="toggleSection('section-chegg-accounts')">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-white">
+                    <i class="fa-solid fa-graduation-cap text-xl"></i>
+                </div>
+                <div>
+                    <h2 class="text-white font-bold text-lg">Chegg Study Accounts</h2>
+                    <p class="text-emerald-100 text-xs">Auto-rotation pool for Homework Helper ({{ account_limit }}
+                        questions per account)</p>
+                </div>
             </div>
-
-            <div class="bg-white rounded-2xl shadow-lg border border-slate-100 overflow-hidden">
-                <div class="bg-slate-50 px-6 py-4 border-b border-slate-100">
-                    <h3 class="font-bold text-slate-700 text-sm">Active Admins</h3>
-                </div>
-                <div class="divide-y divide-slate-50 max-h-[400px] overflow-y-auto">
-                    {% for admin in admins %}
-                    <div class="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
-                        <div class="flex items-center gap-3">
-                            <div
-                                class="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-bold">
-                                {{ admin.username[0]|upper }}</div>
-                            <div>
-                                <div class="font-bold text-slate-800 text-sm">{{ admin.username }}</div>
-                                <div class="text-[10px] text-slate-400">ID: {{ admin.id }} | Credits: {{ admin.credits
-                                    }}</div>
-                            </div>
-                        </div>
-                        <form method="POST" onsubmit="return confirm('Delete Admin and ALL their users/accounts?');">
-                            <input type="hidden" name="action" value="delete_user">
-                            <input type="hidden" name="user_id" value="{{ admin.id }}">
-                            <button class="text-slate-300 hover:text-red-500 transition-colors"><i
-                                    class="fa-solid fa-trash"></i></button>
-                        </form>
-                    </div>
-                    {% endfor %}
-                </div>
+            <div class="flex items-center gap-3">
+                {% if exhausted_accounts|length > 0 %}
+                <span class="bg-red-500 text-white px-3 py-1 rounded-lg text-xs font-bold animate-pulse">
+                    <i class="fa-solid fa-exclamation-triangle mr-1"></i> {{ exhausted_accounts|length }} Exhausted
+                </span>
+                {% endif %}
+                <span class="bg-white/20 text-white px-3 py-1 rounded-lg text-xs font-bold">{{ chegg_accounts|length }}
+                    Total</span>
+                <i class="fa-solid fa-chevron-down text-white/70 transition-transform duration-300 section-chevron"
+                    id="chevron-section-chegg-accounts"></i>
             </div>
         </div>
 
-        <div class="lg:col-span-2 space-y-8">
-
-            <div class="bg-white rounded-2xl shadow-lg border border-slate-100 overflow-hidden">
-                <div class="bg-slate-50 px-6 py-4 border-b border-slate-100 flex justify-between items-center">
-                    <h3 class="font-bold text-slate-700 text-sm">Global Job History</h3>
-                    <span class="text-[10px] font-mono text-slate-400">Latest 100 entries</span>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left">
-                        <thead
-                            class="bg-white text-slate-400 text-[10px] font-bold uppercase tracking-wider border-b border-slate-100">
-                            <tr>
-                                <th class="px-6 py-3">User</th>
-                                <th class="px-6 py-3">Subject</th>
-                                <th class="px-6 py-3">Status</th>
-                                <th class="px-6 py-3 text-right">Time</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-slate-50 text-sm">
-                            {% for job, user in jobs %}
-                            <tr class="hover:bg-slate-50">
-                                <td class="px-6 py-3 font-medium text-slate-700">
-                                    <span class="inline-flex items-center gap-2">
-                                        <i class="fa-solid fa-user text-slate-300 text-xs"></i>
-                                        {{ user.username }}
-                                        {% if user.role == 'admin' %}
-                                        <span
-                                            class="text-[9px] bg-indigo-50 text-indigo-600 px-1 rounded border border-indigo-100">ADMIN</span>
-                                        {% endif %}
-                                    </span>
-                                </td>
-                                <td class="px-6 py-3 text-slate-600 truncate max-w-xs">{{ job.subject }}</td>
-                                <td class="px-6 py-3">
-                                    {% if job.status == 'Completed' %}
-                                    <span class="text-green-600 font-bold text-xs">SUCCESS</span>
-                                    {% else %}
-                                    <span class="text-red-500 font-bold text-xs">{{ job.status }}</span>
-                                    {% endif %}
-                                </td>
-                                <td class="px-6 py-3 text-right text-slate-400 text-xs">{{
-                                    job.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div class="bg-white rounded-2xl shadow-lg border border-slate-100 overflow-hidden">
-                <div class="bg-slate-50 px-6 py-4 border-b border-slate-100 flex justify-between items-center">
-                    <h3 class="font-bold text-slate-700 text-sm">User Service Accounts</h3>
-                    <span class="text-[10px] font-bold text-slate-400 uppercase">For Posting</span>
-                </div>
-                <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {% for acc in other_accounts %}
-                    <div
-                        class="border border-slate-200 rounded-xl p-4 flex justify-between items-center bg-slate-50/50">
+        <div class="section-content" id="section-chegg-accounts">
+            <div class="p-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Add Account Form -->
+                <div class="lg:col-span-1 bg-slate-50 p-6 rounded-2xl border border-slate-200">
+                    <h3 class="font-bold text-slate-700 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-plus-circle text-emerald-500"></i> Add Chegg Account
+                    </h3>
+                    <form method="POST" class="space-y-4">
+                        <input type="hidden" name="action" value="add_chegg_account">
                         <div>
-                            <div class="font-bold text-slate-700 text-sm">{{ acc.name }}</div>
-                            <div class="text-xs text-slate-400">
-                                Owner ID: {{ acc.owner_id }}
-                                {% if acc.proxy %}<span class="text-orange-500 ml-2"><i
-                                        class="fa-solid fa-shield-halved"></i> Proxy</span>{% endif %}
+                            <input type="text" name="chegg_acc_name" placeholder="Account Name (e.g. Study Bot 1)"
+                                required
+                                class="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-emerald-500 text-sm">
+                        </div>
+                        <div>
+                            <input type="text" name="chegg_proxy" placeholder="Proxy (Optional)"
+                                class="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-emerald-500 text-sm font-mono">
+                        </div>
+                        <div>
+                            <textarea name="chegg_cookie_json" rows="3" placeholder="Paste Cookies here..." required
+                                class="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-emerald-500 text-xs font-mono"></textarea>
+                        </div>
+                        <button
+                            class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-bold transition-all shadow-md">
+                            <i class="fa-solid fa-plus mr-1"></i> Add Account
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Account List -->
+                <div class="lg:col-span-2">
+                    <h3 class="font-bold text-slate-700 mb-4">Account Pool & Usage</h3>
+                    <div class="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                        {% for acc in chegg_accounts %}
+                        {% set is_exhausted = acc.questions_posted >= account_limit %}
+                        <div
+                            class="bg-white border {{ 'border-red-300' if is_exhausted else 'border-slate-200' }} p-4 rounded-xl group hover:shadow-md transition-shadow">
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="flex items-center gap-3">
+                                    <div
+                                        class="w-10 h-10 rounded-full {{ 'bg-red-100 text-red-600' if is_exhausted else 'bg-emerald-50 text-emerald-600' }} flex items-center justify-center font-bold text-sm">
+                                        {{ loop.index }}
+                                    </div>
+                                    <div>
+                                        <h4 class="font-bold text-slate-800 text-sm">{{ acc.name }}</h4>
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-[10px] text-slate-400 font-mono">ID: {{ acc.id }}</span>
+                                            {% if acc.proxy %}
+                                            <span
+                                                class="text-[10px] bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded font-bold">PROXY</span>
+                                            {% endif %}
+                                            {% if is_exhausted %}
+                                            <span
+                                                class="text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded font-bold animate-pulse">
+                                                <i class="fa-solid fa-exclamation-circle mr-0.5"></i> LIMIT REACHED
+                                            </span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <form method="POST"
+                                        onsubmit="return confirm('Reset usage counter for this account?');">
+                                        <input type="hidden" name="action" value="reset_chegg_account">
+                                        <input type="hidden" name="chegg_account_id" value="{{ acc.id }}">
+                                        <button class="text-slate-400 hover:text-blue-500 transition-colors p-1.5"
+                                            title="Reset Counter">
+                                            <i class="fa-solid fa-rotate-right text-sm"></i>
+                                        </button>
+                                    </form>
+                                    <form method="POST" onsubmit="return confirm('Delete this Chegg account?');">
+                                        <input type="hidden" name="action" value="delete_chegg_account">
+                                        <input type="hidden" name="chegg_account_id" value="{{ acc.id }}">
+                                        <button class="text-slate-400 hover:text-red-500 transition-colors p-1.5"
+                                            title="Delete Account">
+                                            <i class="fa-solid fa-trash text-sm"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                            <!-- Usage Progress Bar -->
+                            <div class="w-full bg-slate-100 rounded-full h-2.5">
+                                <div class="{{ 'bg-red-500' if is_exhausted else 'bg-emerald-500' }} h-2.5 rounded-full transition-all duration-300"
+                                    style="width: {{ (acc.questions_posted / account_limit * 100)|int }}%"></div>
+                            </div>
+                            <div class="flex justify-between mt-1">
+                                <span class="text-[10px] text-slate-400">{{ acc.questions_posted }} / {{ account_limit
+                                    }} questions used</span>
+                                <span
+                                    class="text-[10px] {{ 'text-red-500 font-bold' if is_exhausted else 'text-emerald-500' }}">
+                                    {{ account_limit - acc.questions_posted }} remaining
+                                </span>
                             </div>
                         </div>
-                        <form method="POST" onsubmit="return confirm('Force delete this account?');">
-                            <input type="hidden" name="action" value="delete_account">
-                            <input type="hidden" name="account_id" value="{{ acc.id }}">
-                            <button
-                                class="bg-white border border-slate-200 hover:border-red-500 hover:text-red-500 text-slate-400 px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm">
-                                Revoke
-                            </button>
-                        </form>
+                        {% else %}
+                        <div
+                            class="text-center py-10 text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-300">
+                            <i class="fa-solid fa-graduation-cap text-3xl mb-3 opacity-40"></i>
+                            <p>No Chegg study accounts added yet.</p>
+                            <p class="text-xs mt-1">Add accounts to enable Homework Helper auto-rotation.</p>
+                        </div>
+                        {% endfor %}
                     </div>
-                    {% else %}
-                    <p class="text-slate-400 text-sm col-span-2 text-center py-4">No user accounts found.</p>
-                    {% endfor %}
                 </div>
             </div>
+        </div>
+    </div>
 
+    <div class="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden mb-8">
+        <div class="bg-gradient-to-r from-indigo-500 to-slate-700 px-8 py-5 flex justify-between items-center cursor-pointer select-none"
+            onclick="toggleSection('section-admin-management')">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-white">
+                    <i class="fa-solid fa-user-tie text-xl"></i>
+                </div>
+                <div>
+                    <h2 class="text-white font-bold text-lg">Admin & Job Management</h2>
+                    <p class="text-indigo-100 text-xs">Admins, job history, and user service accounts</p>
+                </div>
+            </div>
+            <i class="fa-solid fa-chevron-down text-white/70 transition-transform duration-300 section-chevron"
+                id="chevron-section-admin-management"></i>
+        </div>
+        <div class="section-content" id="section-admin-management">
+            <div class="p-8">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+                    <div class="lg:col-span-1 space-y-8">
+                        <div class="bg-white rounded-2xl shadow-lg border border-slate-100 p-6">
+                            <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
+                                <span
+                                    class="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center"><i
+                                        class="fa-solid fa-user-tie"></i></span>
+                                Promote User to Admin
+                            </h3>
+                            <form method="POST" class="space-y-3">
+                                <input type="hidden" name="action" value="create_admin">
+
+                                <div class="space-y-1">
+                                    <label class="text-[10px] font-bold text-slate-400 uppercase">Existing User</label>
+                                    <input type="text" name="username" placeholder="Enter Registered Username" required
+                                        class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-500">
+                                </div>
+
+                                <button
+                                    class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-indigo-500/20">
+                                    Promote to Admin
+                                </button>
+                                <p class="text-[10px] text-center text-slate-400 mt-2">The user must register an account
+                                    first.</p>
+                            </form>
+                        </div>
+
+                        <div class="bg-white rounded-2xl shadow-lg border border-slate-100 overflow-hidden">
+                            <div class="bg-slate-50 px-6 py-4 border-b border-slate-100">
+                                <h3 class="font-bold text-slate-700 text-sm">Active Admins</h3>
+                            </div>
+                            <div class="divide-y divide-slate-50 max-h-[400px] overflow-y-auto">
+                                {% for admin in admins %}
+                                <div class="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
+                                    <div class="flex items-center gap-3">
+                                        <div
+                                            class="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-bold">
+                                            {{ admin.username[0]|upper }}</div>
+                                        <div>
+                                            <div class="font-bold text-slate-800 text-sm">{{ admin.username }}</div>
+                                            <div class="text-[10px] text-slate-400">ID: {{ admin.id }} | Credits: {{
+                                                admin.credits
+                                                }}</div>
+                                        </div>
+                                    </div>
+                                    <form method="POST"
+                                        onsubmit="return confirm('Delete Admin and ALL their users/accounts?');">
+                                        <input type="hidden" name="action" value="delete_user">
+                                        <input type="hidden" name="user_id" value="{{ admin.id }}">
+                                        <button class="text-slate-300 hover:text-red-500 transition-colors"><i
+                                                class="fa-solid fa-trash"></i></button>
+                                    </form>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="lg:col-span-2 space-y-8">
+
+                        <div class="bg-white rounded-2xl shadow-lg border border-slate-100 overflow-hidden">
+                            <div
+                                class="bg-slate-50 px-6 py-4 border-b border-slate-100 flex justify-between items-center">
+                                <h3 class="font-bold text-slate-700 text-sm">Global Job History</h3>
+                                <span class="text-[10px] font-mono text-slate-400">Latest 100 entries</span>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left">
+                                    <thead
+                                        class="bg-white text-slate-400 text-[10px] font-bold uppercase tracking-wider border-b border-slate-100">
+                                        <tr>
+                                            <th class="px-6 py-3">User</th>
+                                            <th class="px-6 py-3">Subject</th>
+                                            <th class="px-6 py-3">Status</th>
+                                            <th class="px-6 py-3 text-right">Time</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-50 text-sm">
+                                        {% for job, user in jobs %}
+                                        <tr class="hover:bg-slate-50">
+                                            <td class="px-6 py-3 font-medium text-slate-700">
+                                                <span class="inline-flex items-center gap-2">
+                                                    <i class="fa-solid fa-user text-slate-300 text-xs"></i>
+                                                    {{ user.username }}
+                                                    {% if user.role == 'admin' %}
+                                                    <span
+                                                        class="text-[9px] bg-indigo-50 text-indigo-600 px-1 rounded border border-indigo-100">ADMIN</span>
+                                                    {% endif %}
+                                                </span>
+                                            </td>
+                                            <td class="px-6 py-3 text-slate-600 truncate max-w-xs">{{ job.subject }}
+                                            </td>
+                                            <td class="px-6 py-3">
+                                                {% if job.status == 'Completed' %}
+                                                <span class="text-green-600 font-bold text-xs">SUCCESS</span>
+                                                {% else %}
+                                                <span class="text-red-500 font-bold text-xs">{{ job.status }}</span>
+                                                {% endif %}
+                                            </td>
+                                            <td class="px-6 py-3 text-right text-slate-400 text-xs">{{
+                                                job.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-2xl shadow-lg border border-slate-100 overflow-hidden">
+                            <div
+                                class="bg-slate-50 px-6 py-4 border-b border-slate-100 flex justify-between items-center">
+                                <h3 class="font-bold text-slate-700 text-sm">User Service Accounts</h3>
+                                <span class="text-[10px] font-bold text-slate-400 uppercase">For Posting</span>
+                            </div>
+                            <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {% for acc in other_accounts %}
+                                <div
+                                    class="border border-slate-200 rounded-xl p-4 flex justify-between items-center bg-slate-50/50">
+                                    <div>
+                                        <div class="font-bold text-slate-700 text-sm">{{ acc.name }}</div>
+                                        <div class="text-xs text-slate-400">
+                                            Owner ID: {{ acc.owner_id }}
+                                            {% if acc.proxy %}<span class="text-orange-500 ml-2"><i
+                                                    class="fa-solid fa-shield-halved"></i> Proxy</span>{% endif %}
+                                        </div>
+                                    </div>
+                                    <form method="POST" onsubmit="return confirm('Force delete this account?');">
+                                        <input type="hidden" name="action" value="delete_account">
+                                        <input type="hidden" name="account_id" value="{{ acc.id }}">
+                                        <button
+                                            class="bg-white border border-slate-200 hover:border-red-500 hover:text-red-500 text-slate-400 px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm">
+                                            Revoke
+                                        </button>
+                                    </form>
+                                </div>
+                                {% else %}
+                                <p class="text-slate-400 text-sm col-span-2 text-center py-4">No user accounts found.
+                                </p>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -430,7 +615,8 @@
     <!-- SCHOOL MANAGEMENT SECTION -->
     <!-- ═══════════════════════════════════════════════════════════════════ -->
     <div class="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden mt-8">
-        <div class="bg-gradient-to-r from-violet-500 to-purple-600 px-8 py-5 flex justify-between items-center">
+        <div class="bg-gradient-to-r from-violet-500 to-purple-600 px-8 py-5 flex justify-between items-center cursor-pointer select-none"
+            onclick="toggleSection('section-school-management')">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-white">
                     <i class="fa-solid fa-school text-xl"></i>
@@ -440,193 +626,341 @@
                     <p class="text-purple-100 text-xs">Manage grades, subjects, schedules, and teacher assignments</p>
                 </div>
             </div>
-            <div class="flex gap-2">
-                <button onclick="switchSchoolTab('grades')" id="tab-grades"
-                    class="school-tab bg-white/20 text-white px-4 py-2 rounded-lg text-xs font-bold transition-all">
-                    <i class="fa-solid fa-layer-group mr-1"></i> Grades
-                </button>
-                <button onclick="switchSchoolTab('global-subjects')" id="tab-global-subjects"
-                    class="school-tab bg-white/10 text-white/70 px-4 py-2 rounded-lg text-xs font-bold transition-all">
-                    <i class="fa-solid fa-globe mr-1"></i> Global Subjects
-                </button>
-                <button onclick="switchSchoolTab('subjects')" id="tab-subjects"
-                    class="school-tab bg-white/10 text-white/70 px-4 py-2 rounded-lg text-xs font-bold transition-all">
-                    <i class="fa-solid fa-book mr-1"></i> Grade Subjects
-                </button>
-                <button onclick="switchSchoolTab('classes')" id="tab-classes"
-                    class="school-tab bg-white/10 text-white/70 px-4 py-2 rounded-lg text-xs font-bold transition-all">
-                    <i class="fa-solid fa-calendar-days mr-1"></i> Class Schedule
-                </button>
+            <div class="flex items-center gap-3">
+                <div class="flex gap-2" onclick="event.stopPropagation()">
+                    <button onclick="switchSchoolTab('grades')" id="tab-grades"
+                        class="school-tab bg-white/20 text-white px-4 py-2 rounded-lg text-xs font-bold transition-all">
+                        <i class="fa-solid fa-layer-group mr-1"></i> Grades
+                    </button>
+                    <button onclick="switchSchoolTab('global-subjects')" id="tab-global-subjects"
+                        class="school-tab bg-white/10 text-white/70 px-4 py-2 rounded-lg text-xs font-bold transition-all">
+                        <i class="fa-solid fa-globe mr-1"></i> Global Subjects
+                    </button>
+                    <button onclick="switchSchoolTab('subjects')" id="tab-subjects"
+                        class="school-tab bg-white/10 text-white/70 px-4 py-2 rounded-lg text-xs font-bold transition-all">
+                        <i class="fa-solid fa-book mr-1"></i> Grade Subjects
+                    </button>
+                    <button onclick="switchSchoolTab('classes')" id="tab-classes"
+                        class="school-tab bg-white/10 text-white/70 px-4 py-2 rounded-lg text-xs font-bold transition-all">
+                        <i class="fa-solid fa-calendar-days mr-1"></i> Class Schedule
+                    </button>
+                </div>
+                <i class="fa-solid fa-chevron-down text-white/70 transition-transform duration-300 section-chevron"
+                    id="chevron-section-school-management"></i>
             </div>
         </div>
 
-        <div class="p-8">
-            <!-- GRADES TAB -->
-            <div id="panel-grades" class="school-panel">
-                <div class="grid lg:grid-cols-3 gap-8">
-                    <!-- Add Grade Form -->
-                    <div class="bg-slate-50 p-6 rounded-2xl border border-slate-200">
-                        <h3 class="font-bold text-slate-700 mb-4 flex items-center gap-2">
-                            <i class="fa-solid fa-plus-circle text-violet-500"></i> Add New Grade
-                        </h3>
-                        <form id="add-grade-form" class="space-y-4">
-                            <div>
-                                <input type="text" name="name" placeholder="Grade Name (e.g. Class 5)" required
-                                    class="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-violet-500 text-sm">
+        <div class="section-content" id="section-school-management">
+            <div class="p-8">
+                <!-- GRADES TAB -->
+                <div id="panel-grades" class="school-panel">
+                    <div class="grid lg:grid-cols-3 gap-8">
+                        <!-- Add Grade Form -->
+                        <div class="bg-slate-50 p-6 rounded-2xl border border-slate-200">
+                            <h3 class="font-bold text-slate-700 mb-4 flex items-center gap-2">
+                                <i class="fa-solid fa-plus-circle text-violet-500"></i> Add New Grade
+                            </h3>
+                            <form id="add-grade-form" class="space-y-4">
+                                <div>
+                                    <input type="text" name="name" placeholder="Grade Name (e.g. Class 5)" required
+                                        class="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-violet-500 text-sm">
+                                </div>
+                                <button type="submit"
+                                    class="w-full bg-violet-600 hover:bg-violet-700 text-white py-3 rounded-xl font-bold transition-all shadow-md">
+                                    Add Grade
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- Grades List -->
+                        <div class="lg:col-span-2">
+                            <h3 class="font-bold text-slate-700 mb-4">All Grades</h3>
+                            <div id="grades-list" class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                <div class="text-center py-10 text-slate-400">Loading...</div>
                             </div>
-                            <button type="submit"
-                                class="w-full bg-violet-600 hover:bg-violet-700 text-white py-3 rounded-xl font-bold transition-all shadow-md">
-                                Add Grade
-                            </button>
-                        </form>
-                    </div>
-
-                    <!-- Grades List -->
-                    <div class="lg:col-span-2">
-                        <h3 class="font-bold text-slate-700 mb-4">All Grades</h3>
-                        <div id="grades-list" class="grid grid-cols-2 md:grid-cols-3 gap-3">
-                            <div class="text-center py-10 text-slate-400">Loading...</div>
                         </div>
                     </div>
                 </div>
-            </div>
-            <!-- GLOBAL SUBJECTS TAB -->
-            <div id="panel-global-subjects" class="school-panel hidden">
-                <div class="grid lg:grid-cols-3 gap-8">
-                    <!-- Add Global Subject Form -->
-                    <div class="bg-slate-50 p-6 rounded-2xl border border-slate-200">
-                        <h3 class="font-bold text-slate-700 mb-4 flex items-center gap-2">
-                            <i class="fa-solid fa-plus-circle text-violet-500"></i> Add Global Subject
-                        </h3>
-                        <form id="add-global-subject-form" class="space-y-4">
-                            <div>
-                                <input type="text" name="name" placeholder="Subject Name (e.g. Physics)" required
-                                    class="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-violet-500 text-sm">
+                <!-- GLOBAL SUBJECTS TAB -->
+                <div id="panel-global-subjects" class="school-panel hidden">
+                    <div class="grid lg:grid-cols-3 gap-8">
+                        <!-- Add Global Subject Form -->
+                        <div class="bg-slate-50 p-6 rounded-2xl border border-slate-200">
+                            <h3 class="font-bold text-slate-700 mb-4 flex items-center gap-2">
+                                <i class="fa-solid fa-plus-circle text-violet-500"></i> Add Global Subject
+                            </h3>
+                            <form id="add-global-subject-form" class="space-y-4">
+                                <div>
+                                    <input type="text" name="name" placeholder="Subject Name (e.g. Physics)" required
+                                        class="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-violet-500 text-sm">
+                                </div>
+                                <button type="submit"
+                                    class="w-full bg-violet-600 hover:bg-violet-700 text-white py-3 rounded-xl font-bold transition-all shadow-md">
+                                    Add Global Subject
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- Global Subjects List -->
+                        <div class="lg:col-span-2">
+                            <h3 class="font-bold text-slate-700 mb-4">All Global Subjects</h3>
+                            <div id="global-subjects-list"
+                                class="grid grid-cols-2 md:grid-cols-3 gap-3 max-h-[500px] overflow-y-auto pr-2">
+                                <div class="text-center py-10 text-slate-400">Loading...</div>
                             </div>
-                            <button type="submit"
-                                class="w-full bg-violet-600 hover:bg-violet-700 text-white py-3 rounded-xl font-bold transition-all shadow-md">
-                                Add Global Subject
-                            </button>
-                        </form>
+                        </div>
                     </div>
+                </div>
 
-                    <!-- Global Subjects List -->
-                    <div class="lg:col-span-2">
-                        <h3 class="font-bold text-slate-700 mb-4">All Global Subjects</h3>
-                        <div id="global-subjects-list"
-                            class="grid grid-cols-2 md:grid-cols-3 gap-3 max-h-[500px] overflow-y-auto pr-2">
-                            <div class="text-center py-10 text-slate-400">Loading...</div>
+                <!-- GRADE SUBJECTS TAB (Previously Master) -->
+                <div id="panel-subjects" class="school-panel hidden">
+                    <div class="grid lg:grid-cols-3 gap-8">
+                        <!-- Add Subject Form -->
+                        <div class="bg-slate-50 p-6 rounded-2xl border border-slate-200">
+                            <h3 class="font-bold text-slate-700 mb-4 flex items-center gap-2">
+                                <i class="fa-solid fa-plus-circle text-violet-500"></i> Assign Subject to Grade
+                            </h3>
+                            <form id="add-subject-form" class="space-y-3">
+                                <select name="grade_id" required
+                                    class="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-violet-500 text-sm">
+                                    <option value="">Select Grade</option>
+                                </select>
+                                <select name="name" required id="assign-subject-select"
+                                    class="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-violet-500 text-sm">
+                                    <option value="">Select Global Subject</option>
+                                </select>
+                                <button type="submit"
+                                    class="w-full bg-violet-600 hover:bg-violet-700 text-white py-3 rounded-xl font-bold transition-all shadow-md">
+                                    Add Subject
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- Subjects List -->
+                        <div class="lg:col-span-2">
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="font-bold text-slate-700">All Subjects</h3>
+                                <select id="filter-grade"
+                                    class="px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm"
+                                    onchange="loadSubjects()">
+                                    <option value="">All Grades</option>
+                                </select>
+                            </div>
+                            <div id="subjects-list" class="space-y-3 max-h-[500px] overflow-y-auto pr-2">
+                                <div class="text-center py-10 text-slate-400">Loading...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CLASSES TAB (SCHEDULE) -->
+                <div id="panel-classes" class="school-panel hidden">
+                    <div class="grid lg:grid-cols-3 gap-8">
+                        <!-- Schedule Class Form -->
+                        <div class="bg-slate-50 p-6 rounded-2xl border border-slate-200 h-fit">
+                            <h3 class="font-bold text-slate-700 mb-4 flex items-center gap-2">
+                                <i class="fa-solid fa-calendar-plus text-violet-500"></i> Schedule Class
+                            </h3>
+                            <form id="schedule-class-form" class="space-y-3">
+                                <!-- 1. Select Grade -->
+                                <select name="grade_id" required id="schedule-grade-select"
+                                    onchange="loadSubjectsForSchedule(this.value)"
+                                    class="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-violet-500 text-sm">
+                                    <option value="">1. Select Grade</option>
+                                </select>
+
+                                <!-- 2. Select Subject (Filtered by Grade) -->
+                                <select name="subject_id" required id="schedule-subject-select" disabled
+                                    onchange="loadMatchingTutors(this.value)"
+                                    class="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-violet-500 text-sm disabled:bg-slate-100 disabled:text-slate-400">
+                                    <option value="">2. Select Subject</option>
+                                </select>
+
+                                <!-- 3. Select Teacher (Filtered by Grade + Subject) -->
+                                <select name="teacher_id" id="schedule-teacher-select" disabled
+                                    class="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-violet-500 text-sm disabled:bg-slate-100 disabled:text-slate-400">
+                                    <option value="">3. Assign Tutor (Optional)</option>
+                                </select>
+
+                                <!-- 4. Date & Time -->
+                                <input type="date" name="date" required
+                                    class="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-violet-500 text-sm">
+
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div class="space-y-1">
+                                        <label class="text-[10px] uppercase font-bold text-slate-400">Start</label>
+                                        <input type="time" name="start_time" required
+                                            class="w-full px-4 py-2 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-violet-500 text-sm">
+                                    </div>
+                                    <div class="space-y-1">
+                                        <label class="text-[10px] uppercase font-bold text-slate-400">End</label>
+                                        <input type="time" name="end_time" required
+                                            class="w-full px-4 py-2 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-violet-500 text-sm">
+                                    </div>
+                                </div>
+
+                                <button type="submit"
+                                    class="w-full bg-violet-600 hover:bg-violet-700 text-white py-3 rounded-xl font-bold transition-all shadow-md mt-2">
+                                    Schedule Class
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- Classes List -->
+                        <div class="lg:col-span-2">
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="font-bold text-slate-700">Scheduled Classes</h3>
+                                <select id="filter-class-grade"
+                                    class="px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm"
+                                    onchange="loadClasses()">
+                                    <option value="">All Grades</option>
+                                </select>
+                            </div>
+                            <div id="classes-list" class="space-y-3 max-h-[600px] overflow-y-auto pr-2">
+                                <div class="text-center py-10 text-slate-400">Loading...</div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
 
-            <!-- GRADE SUBJECTS TAB (Previously Master) -->
-            <div id="panel-subjects" class="school-panel hidden">
-                <div class="grid lg:grid-cols-3 gap-8">
-                    <!-- Add Subject Form -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- VIDEO COURSES MANAGEMENT SECTION -->
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <div class="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden mt-8" id="video-courses-section">
+        <div class="bg-gradient-to-r from-rose-500 to-purple-600 px-8 py-5 flex justify-between items-center cursor-pointer select-none"
+            onclick="toggleSection('section-video-courses')">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-white">
+                    <i class="fa-solid fa-play-circle text-xl"></i>
+                </div>
+                <div>
+                    <h2 class="text-white font-bold text-lg">Video Courses</h2>
+                    <p class="text-rose-100 text-xs">Manage courses, upload videos, set pricing</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <span class="bg-white/20 text-white px-3 py-1 rounded-lg text-xs font-bold"
+                    id="vc-course-count">Loading...</span>
+                <i class="fa-solid fa-chevron-down text-white/70 transition-transform duration-300 section-chevron"
+                    id="chevron-section-video-courses"></i>
+            </div>
+        </div>
+
+        <div class="section-content" id="section-video-courses">
+            <div class="p-8">
+                <!-- Create Course Form -->
+                <div class="grid lg:grid-cols-3 gap-8 mb-8">
                     <div class="bg-slate-50 p-6 rounded-2xl border border-slate-200">
                         <h3 class="font-bold text-slate-700 mb-4 flex items-center gap-2">
-                            <i class="fa-solid fa-plus-circle text-violet-500"></i> Assign Subject to Grade
+                            <i class="fa-solid fa-plus-circle text-rose-500"></i> Create New Course
                         </h3>
-                        <form id="add-subject-form" class="space-y-3">
-                            <select name="grade_id" required
-                                class="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-violet-500 text-sm">
-                                <option value="">Select Grade</option>
-                            </select>
-                            <select name="name" required id="assign-subject-select"
-                                class="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-violet-500 text-sm">
-                                <option value="">Select Global Subject</option>
-                            </select>
-                            <button type="submit"
-                                class="w-full bg-violet-600 hover:bg-violet-700 text-white py-3 rounded-xl font-bold transition-all shadow-md">
-                                Add Subject
-                            </button>
-                        </form>
-                    </div>
-
-                    <!-- Subjects List -->
-                    <div class="lg:col-span-2">
-                        <div class="flex justify-between items-center mb-4">
-                            <h3 class="font-bold text-slate-700">All Subjects</h3>
-                            <select id="filter-grade"
-                                class="px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm"
-                                onchange="loadSubjects()">
-                                <option value="">All Grades</option>
-                            </select>
-                        </div>
-                        <div id="subjects-list" class="space-y-3 max-h-[500px] overflow-y-auto pr-2">
-                            <div class="text-center py-10 text-slate-400">Loading...</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- CLASSES TAB (SCHEDULE) -->
-            <div id="panel-classes" class="school-panel hidden">
-                <div class="grid lg:grid-cols-3 gap-8">
-                    <!-- Schedule Class Form -->
-                    <div class="bg-slate-50 p-6 rounded-2xl border border-slate-200 h-fit">
-                        <h3 class="font-bold text-slate-700 mb-4 flex items-center gap-2">
-                            <i class="fa-solid fa-calendar-plus text-violet-500"></i> Schedule Class
-                        </h3>
-                        <form id="schedule-class-form" class="space-y-3">
-                            <!-- 1. Select Grade -->
-                            <select name="grade_id" required id="schedule-grade-select"
-                                onchange="loadSubjectsForSchedule(this.value)"
-                                class="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-violet-500 text-sm">
-                                <option value="">1. Select Grade</option>
-                            </select>
-
-                            <!-- 2. Select Subject (Filtered by Grade) -->
-                            <select name="subject_id" required id="schedule-subject-select" disabled
-                                onchange="loadMatchingTutors(this.value)"
-                                class="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-violet-500 text-sm disabled:bg-slate-100 disabled:text-slate-400">
-                                <option value="">2. Select Subject</option>
-                            </select>
-
-                            <!-- 3. Select Teacher (Filtered by Grade + Subject) -->
-                            <select name="teacher_id" id="schedule-teacher-select" disabled
-                                class="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-violet-500 text-sm disabled:bg-slate-100 disabled:text-slate-400">
-                                <option value="">3. Assign Tutor (Optional)</option>
-                            </select>
-
-                            <!-- 4. Date & Time -->
-                            <input type="date" name="date" required
-                                class="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-violet-500 text-sm">
-
+                        <form id="create-course-form" class="space-y-3" enctype="multipart/form-data">
+                            <div>
+                                <input type="text" name="title" placeholder="Course Title" required
+                                    class="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-rose-500 text-sm">
+                            </div>
+                            <div>
+                                <textarea name="description" rows="2" placeholder="Course Description"
+                                    class="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-rose-500 text-sm"></textarea>
+                            </div>
                             <div class="grid grid-cols-2 gap-2">
-                                <div class="space-y-1">
-                                    <label class="text-[10px] uppercase font-bold text-slate-400">Start</label>
-                                    <input type="time" name="start_time" required
-                                        class="w-full px-4 py-2 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-violet-500 text-sm">
+                                <div>
+                                    <label class="text-[10px] font-bold text-slate-400 uppercase">Price (₹)</label>
+                                    <input type="number" name="price" value="0" min="0" step="1"
+                                        class="w-full px-4 py-2 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-rose-500 text-sm">
                                 </div>
-                                <div class="space-y-1">
-                                    <label class="text-[10px] uppercase font-bold text-slate-400">End</label>
-                                    <input type="time" name="end_time" required
-                                        class="w-full px-4 py-2 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-violet-500 text-sm">
+                                <div>
+                                    <label class="text-[10px] font-bold text-slate-400 uppercase">Display Order</label>
+                                    <input type="number" name="display_order" value="0" min="0"
+                                        class="w-full px-4 py-2 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-rose-500 text-sm">
                                 </div>
                             </div>
-
+                            <div>
+                                <label class="text-[10px] font-bold text-slate-400 uppercase">Thumbnail Image</label>
+                                <input type="file" name="thumbnail" accept="image/*"
+                                    class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs file:mr-3 file:px-3 file:py-1 file:rounded-lg file:border-0 file:bg-rose-50 file:text-rose-600 file:font-bold file:text-xs">
+                            </div>
                             <button type="submit"
-                                class="w-full bg-violet-600 hover:bg-violet-700 text-white py-3 rounded-xl font-bold transition-all shadow-md mt-2">
-                                Schedule Class
+                                class="w-full bg-gradient-to-r from-rose-500 to-purple-600 hover:from-rose-600 hover:to-purple-700 text-white py-3 rounded-xl font-bold transition-all shadow-md">
+                                Create Course
                             </button>
                         </form>
                     </div>
 
-                    <!-- Classes List -->
+                    <!-- Courses List -->
                     <div class="lg:col-span-2">
-                        <div class="flex justify-between items-center mb-4">
-                            <h3 class="font-bold text-slate-700">Scheduled Classes</h3>
-                            <select id="filter-class-grade"
-                                class="px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm"
-                                onchange="loadClasses()">
-                                <option value="">All Grades</option>
-                            </select>
-                        </div>
-                        <div id="classes-list" class="space-y-3 max-h-[600px] overflow-y-auto pr-2">
+                        <h3 class="font-bold text-slate-700 mb-4">All Courses</h3>
+                        <div id="vc-courses-list" class="space-y-4 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
                             <div class="text-center py-10 text-slate-400">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Video Upload Section (appears when a course is expanded) -->
+                <div id="vc-video-section" class="hidden">
+                    <div class="border-t border-slate-100 pt-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="font-bold text-slate-700 flex items-center gap-2">
+                                <i class="fa-solid fa-film text-purple-500"></i>
+                                Videos for: <span id="vc-selected-course-title" class="text-purple-600"></span>
+                            </h3>
+                            <button onclick="closeVideoSection()" class="text-slate-400 hover:text-slate-600 text-sm">
+                                <i class="fa-solid fa-times mr-1"></i> Close
+                            </button>
+                        </div>
+                        <div class="grid lg:grid-cols-3 gap-6">
+                            <!-- Upload Video Form -->
+                            <div class="bg-slate-50 p-5 rounded-2xl border border-slate-200">
+                                <h4 class="font-bold text-slate-600 text-sm mb-3">
+                                    <i class="fa-solid fa-upload text-purple-500 mr-1"></i> Upload Video
+                                </h4>
+                                <form id="upload-video-form" class="space-y-3" enctype="multipart/form-data">
+                                    <input type="hidden" name="course_id" id="vc-upload-course-id">
+                                    <div>
+                                        <input type="text" name="title" placeholder="Video Title" required
+                                            class="w-full px-4 py-2 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-purple-500 text-sm">
+                                    </div>
+                                    <div>
+                                        <input type="text" name="description" placeholder="Description (optional)"
+                                            class="w-full px-4 py-2 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-purple-500 text-sm">
+                                    </div>
+                                    <div>
+                                        <label class="text-[10px] font-bold text-slate-400 uppercase">Duration
+                                            (seconds)</label>
+                                        <input type="number" name="duration" value="0" min="0"
+                                            class="w-full px-4 py-2 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-purple-500 text-sm">
+                                    </div>
+                                    <div>
+                                        <label class="text-[10px] font-bold text-slate-400 uppercase">Video File (max
+                                            500MB)</label>
+                                        <input type="file" name="video" accept="video/*" required
+                                            class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs file:mr-3 file:px-3 file:py-1 file:rounded-lg file:border-0 file:bg-purple-50 file:text-purple-600 file:font-bold file:text-xs">
+                                    </div>
+                                    <div id="vc-upload-progress" class="hidden">
+                                        <div class="bg-slate-200 rounded-full h-2">
+                                            <div id="vc-progress-bar"
+                                                class="bg-purple-600 h-2 rounded-full transition-all" style="width: 0%">
+                                            </div>
+                                        </div>
+                                        <p class="text-xs text-slate-500 mt-1 text-center" id="vc-progress-text">
+                                            Uploading...</p>
+                                    </div>
+                                    <button type="submit" id="vc-upload-btn"
+                                        class="w-full bg-purple-600 hover:bg-purple-700 text-white py-2.5 rounded-xl font-bold text-sm transition-all shadow-md">
+                                        Upload Video
+                                    </button>
+                                </form>
+                            </div>
+
+                            <!-- Video List -->
+                            <div class="lg:col-span-2">
+                                <div id="vc-videos-list" class="space-y-3 max-h-[400px] overflow-y-auto pr-2">
+                                    <div class="text-center py-10 text-slate-400">Select a course to view videos.</div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -638,7 +972,8 @@
     <!-- FEEDBACK MANAGEMENT SECTION -->
     <!-- ═══════════════════════════════════════════════════════════════════ -->
     <div class="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden mt-8 mb-12">
-        <div class="bg-gradient-to-r from-emerald-500 to-teal-600 px-8 py-5 flex justify-between items-center">
+        <div class="bg-gradient-to-r from-emerald-500 to-teal-600 px-8 py-5 flex justify-between items-center cursor-pointer select-none"
+            onclick="toggleSection('section-feedback-approval')">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-white">
                     <i class="fa-solid fa-comments text-xl"></i>
@@ -648,55 +983,64 @@
                     <p class="text-emerald-100 text-xs">Review and approve user testimonials for the landing page</p>
                 </div>
             </div>
-            <span class="bg-white/20 text-white px-3 py-1 rounded-lg text-xs font-bold">
-                {{ pending_feedbacks|length if pending_feedbacks is defined else '0' }} Pending
-            </span>
+            <div class="flex items-center gap-3">
+                <span class="bg-white/20 text-white px-3 py-1 rounded-lg text-xs font-bold">
+                    {{ pending_feedbacks|length if pending_feedbacks is defined else '0' }} Pending
+                </span>
+                <i class="fa-solid fa-chevron-down text-white/70 transition-transform duration-300 section-chevron"
+                    id="chevron-section-feedback-approval"></i>
+            </div>
         </div>
 
-        <div class="p-8">
-            {% if pending_feedbacks %}
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {% for feedback in pending_feedbacks %}
-                <div
-                    class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
-                    <div class="flex items-center gap-3 mb-4">
-                        <div
-                            class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-600">
-                            {{ feedback.user.username[0]|upper }}
-                        </div>
-                        <div>
-                            <div class="font-bold text-slate-800 text-sm">{{ feedback.user.username }}</div>
-                            <div class="text-xs text-slate-400">
-                                {% if feedback.user.role == 'user' %}Student{% else %}{{ feedback.user.role|capitalize
-                                }}{% endif %} • {{ feedback.created_at.strftime('%Y-%m-%d') }}
+        <div class="section-content" id="section-feedback-approval">
+            <div class="p-8">
+                {% if pending_feedbacks %}
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {% for feedback in pending_feedbacks %}
+                    <div
+                        class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
+                        <div class="flex items-center gap-3 mb-4">
+                            <div
+                                class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-600">
+                                {{ feedback.user.username[0]|upper }}
+                            </div>
+                            <div>
+                                <div class="font-bold text-slate-800 text-sm">{{ feedback.user.username }}</div>
+                                <div class="text-xs text-slate-400">
+                                    {% if feedback.user.role == 'user' %}Student{% else %}{{
+                                    feedback.user.role|capitalize
+                                    }}{% endif %} • {{ feedback.created_at.strftime('%Y-%m-%d') }}
+                                </div>
                             </div>
                         </div>
+                        <p class="text-slate-600 text-sm mb-6 leading-relaxed italic">"{{ feedback.content }}"</p>
+                        <div class="flex gap-2">
+                            <form action="{{ url_for('approve_feedback', id=feedback.id) }}" method="POST"
+                                class="flex-1">
+                                <button type="submit"
+                                    class="w-full bg-emerald-500 hover:bg-emerald-600 text-white py-2 rounded-lg text-xs font-bold transition-colors">
+                                    <i class="fa-solid fa-check mr-1"></i> Approve
+                                </button>
+                            </form>
+                            <form action="{{ url_for('delete_feedback', id=feedback.id) }}" method="POST"
+                                class="flex-1">
+                                <button type="submit"
+                                    class="w-full bg-white border border-slate-200 text-slate-500 hover:bg-red-50 hover:text-red-500 hover:border-red-200 py-2 rounded-lg text-xs font-bold transition-all">
+                                    <i class="fa-solid fa-trash mr-1"></i> Reject
+                                </button>
+                            </form>
+                        </div>
                     </div>
-                    <p class="text-slate-600 text-sm mb-6 leading-relaxed italic">"{{ feedback.content }}"</p>
-                    <div class="flex gap-2">
-                        <form action="{{ url_for('approve_feedback', id=feedback.id) }}" method="POST" class="flex-1">
-                            <button type="submit"
-                                class="w-full bg-emerald-500 hover:bg-emerald-600 text-white py-2 rounded-lg text-xs font-bold transition-colors">
-                                <i class="fa-solid fa-check mr-1"></i> Approve
-                            </button>
-                        </form>
-                        <form action="{{ url_for('delete_feedback', id=feedback.id) }}" method="POST" class="flex-1">
-                            <button type="submit"
-                                class="w-full bg-white border border-slate-200 text-slate-500 hover:bg-red-50 hover:text-red-500 hover:border-red-200 py-2 rounded-lg text-xs font-bold transition-all">
-                                <i class="fa-solid fa-trash mr-1"></i> Reject
-                            </button>
-                        </form>
-                    </div>
+                    {% endfor %}
                 </div>
-                {% endfor %}
+                {% else %}
+                <div class="text-center py-12 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                    <i class="fa-solid fa-check-circle text-4xl text-slate-300 mb-4"></i>
+                    <p class="text-slate-500 font-medium">No pending feedback to review.</p>
+                    <p class="text-slate-400 text-xs mt-1">Great job! You're all caught up.</p>
+                </div>
+                {% endif %}
             </div>
-            {% else %}
-            <div class="text-center py-12 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
-                <i class="fa-solid fa-check-circle text-4xl text-slate-300 mb-4"></i>
-                <p class="text-slate-500 font-medium">No pending feedback to review.</p>
-                <p class="text-slate-400 text-xs mt-1">Great job! You're all caught up.</p>
-            </div>
-            {% endif %}
         </div>
     </div>
 
@@ -704,7 +1048,8 @@
     <!-- APPROVED FEEDBACK MANAGEMENT SECTION -->
     <!-- ═══════════════════════════════════════════════════════════════════ -->
     <div class="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden mt-8 mb-12">
-        <div class="bg-gradient-to-r from-blue-500 to-indigo-600 px-8 py-5 flex justify-between items-center">
+        <div class="bg-gradient-to-r from-blue-500 to-indigo-600 px-8 py-5 flex justify-between items-center cursor-pointer select-none"
+            onclick="toggleSection('section-approved-feedback')">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-white">
                     <i class="fa-solid fa-thumbs-up text-xl"></i>
@@ -714,57 +1059,90 @@
                     <p class="text-blue-100 text-xs">Manage publicly visible testimonials</p>
                 </div>
             </div>
-            <span class="bg-white/20 text-white px-3 py-1 rounded-lg text-xs font-bold">
-                {{ approved_feedbacks|length if approved_feedbacks is defined else '0' }} Active
-            </span>
+            <div class="flex items-center gap-3">
+                <span class="bg-white/20 text-white px-3 py-1 rounded-lg text-xs font-bold">
+                    {{ approved_feedbacks|length if approved_feedbacks is defined else '0' }} Active
+                </span>
+                <i class="fa-solid fa-chevron-down text-white/70 transition-transform duration-300 section-chevron"
+                    id="chevron-section-approved-feedback"></i>
+            </div>
         </div>
 
-        <div class="p-8">
-            {% if approved_feedbacks %}
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {% for feedback in approved_feedbacks %}
-                <div
-                    class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow relative group">
-                    <div class="flex items-center gap-3 mb-4">
-                        <div
-                            class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-600 overflow-hidden">
-                            {% if feedback.user.profile_picture %}
-                            <img src="{{ url_for('static', filename=feedback.user.profile_picture) }}"
-                                alt="{{ feedback.user.username }}" class="w-full h-full object-cover">
-                            {% else %}
-                            {{ feedback.user.username[0]|upper }}
-                            {% endif %}
-                        </div>
-                        <div>
-                            <div class="font-bold text-slate-800 text-sm">{{ feedback.user.username }}</div>
-                            <div class="text-xs text-slate-400">
-                                {% if feedback.user.role == 'user' %}Student{% else %}{{ feedback.user.role|capitalize
-                                }}{% endif %} • {{ feedback.created_at.strftime('%Y-%m-%d') }}
+        <div class="section-content" id="section-approved-feedback">
+            <div class="p-8">
+                {% if approved_feedbacks %}
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {% for feedback in approved_feedbacks %}
+                    <div
+                        class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow relative group">
+                        <div class="flex items-center gap-3 mb-4">
+                            <div
+                                class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-600 overflow-hidden">
+                                {% if feedback.user.profile_picture %}
+                                <img src="{{ url_for('static', filename=feedback.user.profile_picture) }}"
+                                    alt="{{ feedback.user.username }}" class="w-full h-full object-cover">
+                                {% else %}
+                                {{ feedback.user.username[0]|upper }}
+                                {% endif %}
+                            </div>
+                            <div>
+                                <div class="font-bold text-slate-800 text-sm">{{ feedback.user.username }}</div>
+                                <div class="text-xs text-slate-400">
+                                    {% if feedback.user.role == 'user' %}Student{% else %}{{
+                                    feedback.user.role|capitalize
+                                    }}{% endif %} • {{ feedback.created_at.strftime('%Y-%m-%d') }}
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <p class="text-slate-600 text-sm mb-6 leading-relaxed italic">"{{ feedback.content }}"</p>
+                        <p class="text-slate-600 text-sm mb-6 leading-relaxed italic">"{{ feedback.content }}"</p>
 
-                    <form action="{{ url_for('delete_feedback', id=feedback.id) }}" method="POST"
-                        onsubmit="return confirm('Delete this approved feedback? It will be removed from landing page.');">
-                        <button type="submit"
-                            class="w-full bg-white border border-slate-200 text-slate-400 hover:bg-red-50 hover:text-red-500 hover:border-red-200 py-2 rounded-lg text-xs font-bold transition-all">
-                            <i class="fa-solid fa-trash mr-1"></i> Delete
-                        </button>
-                    </form>
+                        <form action="{{ url_for('delete_feedback', id=feedback.id) }}" method="POST"
+                            onsubmit="return confirm('Delete this approved feedback? It will be removed from landing page.');">
+                            <button type="submit"
+                                class="w-full bg-white border border-slate-200 text-slate-400 hover:bg-red-50 hover:text-red-500 hover:border-red-200 py-2 rounded-lg text-xs font-bold transition-all">
+                                <i class="fa-solid fa-trash mr-1"></i> Delete
+                            </button>
+                        </form>
+                    </div>
+                    {% endfor %}
                 </div>
-                {% endfor %}
+                {% else %}
+                <div class="text-center py-12 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                    <p class="text-slate-500 font-medium">No approved feedback yet.</p>
+                </div>
+                {% endif %}
             </div>
-            {% else %}
-            <div class="text-center py-12 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
-                <p class="text-slate-500 font-medium">No approved feedback yet.</p>
-            </div>
-            {% endif %}
         </div>
     </div>
 </div>
 
+<style>
+    .section-content {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.4s ease-in-out;
+    }
+
+    .section-content.open {
+        max-height: 5000px;
+    }
+
+    .section-chevron.rotated {
+        transform: rotate(180deg);
+    }
+</style>
+
 <script>
+    function toggleSection(sectionId) {
+        const section = document.getElementById(sectionId);
+        const chevron = document.getElementById('chevron-' + sectionId);
+        if (section) {
+            section.classList.toggle('open');
+        }
+        if (chevron) {
+            chevron.classList.toggle('rotated');
+        }
+    }
     // School Management JavaScript
     let teachersData = [];
     let gradesData = [];
@@ -1446,7 +1824,223 @@
     </div>
 </div>
 
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- VIDEO COURSES MANAGEMENT JAVASCRIPT -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<script>
+    let vcSelectedCourseId = null;
 
+    // Load courses on page load
+    document.addEventListener('DOMContentLoaded', function () {
+        loadVCCourses();
+    });
+
+    async function loadVCCourses() {
+        try {
+            const res = await fetch('/courses/admin/list');
+            const data = await res.json();
+            if (data.courses) {
+                document.getElementById('vc-course-count').textContent = data.courses.length + ' Courses';
+                renderVCCourses(data.courses);
+            }
+        } catch (e) {
+            console.error('Error loading courses:', e);
+        }
+    }
+
+    function renderVCCourses(courses) {
+        const container = document.getElementById('vc-courses-list');
+        if (!courses.length) {
+            container.innerHTML = '<div class="text-center py-10 text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-300"><i class="fa-solid fa-play-circle text-3xl mb-2"></i><p>No courses created yet.</p></div>';
+            return;
+        }
+        container.innerHTML = courses.map(c => `
+            <div class="bg-white border border-slate-200 rounded-xl p-5 hover:shadow-md transition-all ${vcSelectedCourseId === c.id ? 'ring-2 ring-purple-400' : ''}">
+                <div class="flex items-center gap-4">
+                    <div class="w-16 h-16 rounded-xl bg-slate-100 overflow-hidden shrink-0">
+                        ${c.thumbnail ? `<img src="/static/${c.thumbnail}" class="w-full h-full object-cover">` : '<div class="w-full h-full flex items-center justify-center text-slate-300"><i class="fa-solid fa-play-circle text-2xl"></i></div>'}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-2 mb-1">
+                            <h4 class="font-bold text-slate-800 text-sm truncate">${c.title}</h4>
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${c.is_active ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-500'}">${c.is_active ? 'Active' : 'Inactive'}</span>
+                        </div>
+                        <div class="flex items-center gap-3 text-xs text-slate-400">
+                            <span><i class="fa-solid fa-film mr-0.5"></i> ${c.video_count} videos</span>
+                            <span><i class="fa-solid fa-users mr-0.5"></i> ${c.purchase_count} purchases</span>
+                            <span class="font-bold ${c.price > 0 ? 'text-amber-600' : 'text-green-600'}">₹${c.price}</span>
+                            <span>Order: ${c.display_order}</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0">
+                        <button onclick="expandCourse(${c.id}, '${c.title.replace(/'/g, "\\'")}')" 
+                            class="px-3 py-2 rounded-lg text-xs font-bold bg-purple-50 text-purple-600 hover:bg-purple-100 transition-colors" title="Manage Videos">
+                            <i class="fa-solid fa-film mr-1"></i> Videos
+                        </button>
+                        <button onclick="deleteVCCourse(${c.id})" 
+                            class="px-3 py-2 rounded-lg text-xs font-bold bg-white border border-slate-200 text-slate-400 hover:bg-red-50 hover:text-red-500 hover:border-red-200 transition-all" title="Delete">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    // Create Course
+    document.getElementById('create-course-form').addEventListener('submit', async function (e) {
+        e.preventDefault();
+        const form = new FormData(this);
+        try {
+            const res = await fetch('/courses/admin/create', { method: 'POST', body: form });
+            const data = await res.json();
+            if (data.success) {
+                alert(data.message);
+                this.reset();
+                loadVCCourses();
+            } else {
+                alert(data.error || 'Failed to create course');
+            }
+        } catch (e) {
+            alert('Error creating course');
+        }
+    });
+
+    // Expand course to show videos
+    function expandCourse(courseId, courseTitle) {
+        vcSelectedCourseId = courseId;
+        document.getElementById('vc-video-section').classList.remove('hidden');
+        document.getElementById('vc-selected-course-title').textContent = courseTitle;
+        document.getElementById('vc-upload-course-id').value = courseId;
+        loadVCVideos(courseId);
+        loadVCCourses(); // Refresh to highlight selected
+        document.getElementById('vc-video-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function closeVideoSection() {
+        vcSelectedCourseId = null;
+        document.getElementById('vc-video-section').classList.add('hidden');
+        loadVCCourses();
+    }
+
+    async function loadVCVideos(courseId) {
+        try {
+            const res = await fetch(`/courses/admin/${courseId}/videos`);
+            const data = await res.json();
+            renderVCVideos(data.videos || []);
+        } catch (e) {
+            console.error('Error loading videos:', e);
+        }
+    }
+
+    function renderVCVideos(videos) {
+        const container = document.getElementById('vc-videos-list');
+        if (!videos.length) {
+            container.innerHTML = '<div class="text-center py-10 text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-300"><i class="fa-solid fa-cloud-arrow-up text-3xl mb-2"></i><p>No videos yet. Upload one!</p></div>';
+            return;
+        }
+        container.innerHTML = videos.map((v, i) => `
+            <div class="bg-white border border-slate-200 rounded-xl p-4 flex items-center gap-4 hover:border-purple-200 transition-colors">
+                <div class="w-10 h-10 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center font-bold text-sm shrink-0">${i + 1}</div>
+                <div class="flex-1 min-w-0">
+                    <h5 class="font-bold text-slate-700 text-sm truncate">${v.title}</h5>
+                    <div class="flex items-center gap-3 text-[10px] text-slate-400 mt-0.5">
+                        ${v.duration_seconds > 0 ? `<span><i class="fa-regular fa-clock mr-0.5"></i> ${Math.floor(v.duration_seconds / 60)}:${String(v.duration_seconds % 60).padStart(2, '0')}</span>` : ''}
+                        <span><i class="fa-solid fa-hard-drive mr-0.5"></i> ${v.file_size_mb} MB</span>
+                        <span>${v.created_at}</span>
+                    </div>
+                </div>
+                <button onclick="deleteVCVideo(${v.id})" class="text-slate-300 hover:text-red-500 transition-colors p-2" title="Delete Video">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+            </div>
+        `).join('');
+    }
+
+    // Upload Video with Progress
+    document.getElementById('upload-video-form').addEventListener('submit', async function (e) {
+        e.preventDefault();
+        const courseId = document.getElementById('vc-upload-course-id').value;
+        const form = new FormData(this);
+        const progress = document.getElementById('vc-upload-progress');
+        const progressBar = document.getElementById('vc-progress-bar');
+        const progressText = document.getElementById('vc-progress-text');
+        const uploadBtn = document.getElementById('vc-upload-btn');
+
+        progress.classList.remove('hidden');
+        uploadBtn.disabled = true;
+        uploadBtn.textContent = 'Uploading...';
+
+        const xhr = new XMLHttpRequest();
+        xhr.upload.onprogress = function (e) {
+            if (e.lengthComputable) {
+                const pct = Math.round((e.loaded / e.total) * 100);
+                progressBar.style.width = pct + '%';
+                progressText.textContent = `${pct}% uploaded (${(e.loaded / 1024 / 1024).toFixed(1)}MB / ${(e.total / 1024 / 1024).toFixed(1)}MB)`;
+            }
+        };
+        xhr.onload = function () {
+            progress.classList.add('hidden');
+            uploadBtn.disabled = false;
+            uploadBtn.textContent = 'Upload Video';
+            progressBar.style.width = '0%';
+            try {
+                const data = JSON.parse(xhr.responseText);
+                if (data.success) {
+                    alert(data.message);
+                    document.getElementById('upload-video-form').reset();
+                    document.getElementById('vc-upload-course-id').value = courseId;
+                    loadVCVideos(courseId);
+                    loadVCCourses();
+                } else {
+                    alert(data.error || 'Upload failed');
+                }
+            } catch (ex) {
+                alert('Upload failed');
+            }
+        };
+        xhr.onerror = function () {
+            progress.classList.add('hidden');
+            uploadBtn.disabled = false;
+            uploadBtn.textContent = 'Upload Video';
+            alert('Upload failed. File may be too large.');
+        };
+        xhr.open('POST', `/courses/admin/${courseId}/add-video`);
+        xhr.send(form);
+    });
+
+    async function deleteVCCourse(id) {
+        if (!confirm('Delete this course and ALL its videos? This cannot be undone.')) return;
+        try {
+            const res = await fetch(`/courses/admin/${id}/delete`, { method: 'POST' });
+            const data = await res.json();
+            if (data.success) {
+                if (vcSelectedCourseId === id) closeVideoSection();
+                loadVCCourses();
+            } else {
+                alert(data.error || 'Failed to delete');
+            }
+        } catch (e) {
+            alert('Error deleting course');
+        }
+    }
+
+    async function deleteVCVideo(id) {
+        if (!confirm('Delete this video?')) return;
+        try {
+            const res = await fetch(`/courses/admin/video/${id}/delete`, { method: 'POST' });
+            const data = await res.json();
+            if (data.success) {
+                loadVCVideos(vcSelectedCourseId);
+                loadVCCourses();
+            } else {
+                alert(data.error || 'Failed to delete');
+            }
+        } catch (e) {
+            alert('Error deleting video');
+        }
+    }
+</script>
 
 
 {% endblock %}

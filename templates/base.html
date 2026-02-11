@@ -137,6 +137,18 @@
                     </div>
 
                     <div class="flex items-center gap-3">
+                        {% if current_user.role in ['admin', 'super_admin'] %}
+                        <a href="{{ url_for('admin') }}"
+                            class="hidden md:inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800 text-white text-xs font-bold hover:bg-slate-700 transition-all shadow-sm">
+                            <i class="fa-solid fa-shield-halved text-[10px]"></i> Admin
+                        </a>
+                        {% endif %}
+                        {% if current_user.role == 'super_admin' %}
+                        <a href="{{ url_for('super_admin_dashboard') }}"
+                            class="hidden md:inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-indigo-600 text-white text-xs font-bold hover:bg-indigo-500 transition-all shadow-sm">
+                            <i class="fa-solid fa-user-astronaut text-[10px]"></i> Super Admin
+                        </a>
+                        {% endif %}
                         <a href="{{ url_for('profile') }}"
                             class="group px-4 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 text-xs font-bold hover:bg-slate-50 transition-all flex items-center gap-2 shadow-sm">
                             <span>My Profile</span>
