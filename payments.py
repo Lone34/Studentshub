@@ -21,11 +21,20 @@ RAZORPAY_KEY_ID = os.environ.get('RAZORPAY_KEY_ID', 'rzp_test_PLACEHOLDER')
 RAZORPAY_KEY_SECRET = os.environ.get('RAZORPAY_KEY_SECRET', 'secret_PLACEHOLDER')
 razorpay_client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
 
-# Plan details mapping
+# Plan details mapping — credit pools per feature
 PLANS = {
-    'basic_299': {'amount': 299, 'name': 'Basic Plan', 'currency': 'INR'},
-    'pro_499': {'amount': 499, 'name': 'Pro Plan', 'currency': 'INR'},
-    'school_1200': {'amount': 1200, 'name': 'School Plan', 'currency': 'INR'}
+    'basic_299': {
+        'amount': 299, 'name': 'Basic Plan', 'currency': 'INR',
+        'tutor_credits': 5, 'expert_credits': 10, 'ai_credits': 20,
+    },
+    'pro_499': {
+        'amount': 499, 'name': 'Pro Plan', 'currency': 'INR',
+        'tutor_credits': 10, 'expert_credits': 15, 'ai_credits': 30,
+    },
+    'school_1200': {
+        'amount': 1200, 'name': 'School Plan', 'currency': 'INR',
+        'tutor_credits': 10, 'expert_credits': 20, 'ai_credits': 20,
+    }
 }
 
 @payments_bp.route('/pricing')
@@ -115,13 +124,16 @@ def payment_success(provider, plan_id):
     if old_sub:
         old_sub.is_active = False
     
-    # Create new subscription
+    # Create new subscription with credit pools from plan
     new_sub = Subscription(
         user_id=current_user.id,
         plan_type=plan_id,
         start_date=datetime.utcnow(),
         end_date=datetime.utcnow() + timedelta(days=30), # Monthly
-        is_active=True
+        is_active=True,
+        tutor_credits=plan.get('tutor_credits', 0),
+        expert_credits=plan.get('expert_credits', 0),
+        ai_credits=plan.get('ai_credits', 0),
     )
     db.session.add(new_sub)
     db.session.commit()

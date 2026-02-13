@@ -229,3 +229,117 @@ def get_ai_response(provider: str, question: str, context: list = None) -> tuple
         return None, category, f"Unknown provider: {provider}"
 
     return response, category, error
+
+def generate_quiz(subject: str, grade: str, difficulty: str = 'hard') -> list:
+    """
+    Generates a strict and difficult quiz using Gemini.
+    Uses its own API call with higher token limit to avoid truncation.
+    Returns a list of dicts:
+    [
+        {
+            "question": "...",
+            "options": {"A": "...", "B": "...", "C": "...", "D": "..."},
+            "answer": "A",
+            "explanation": "..."
+        },
+        ...
+    ]
+    """
+    if not GEMINI_API_KEY:
+        print("Error: GEMINI_API_KEY not configured")
+        return []
+
+    prompt = (
+        f"Generate exactly 5 DIFFICULT, APPLICATION-BASED multiple-choice questions for {grade} {subject}. "
+        f"Difficulty: {difficulty.upper()}. "
+        "No simple definitions. Questions must require critical thinking and problem-solving. "
+        "Keep questions and options CONCISE (1-2 sentences max). "
+        "Keep explanations SHORT (1-2 sentences). "
+        "Respond with ONLY a valid JSON array. No markdown, no extra text. "
+        "Format: [{\"question\": \"...\", \"options\": {\"A\": \"...\", \"B\": \"...\", \"C\": \"...\", \"D\": \"...\"}, \"answer\": \"A\", \"explanation\": \"...\"}]"
+    )
+
+    payload = {
+        'contents': [{'role': 'user', 'parts': [{'text': prompt}]}],
+        'generationConfig': {
+            'temperature': 0.8,
+            'maxOutputTokens': 8192,
+            'topP': 0.95,
+        }
+    }
+
+    import json as json_mod
+
+    # Try up to 2 times in case of truncated response
+    for attempt in range(2):
+        for model_name in GEMINI_MODELS:
+            try:
+                url = f'{GEMINI_API_BASE}/{model_name}:generateContent?key={GEMINI_API_KEY}'
+                response = requests.post(
+                    url,
+                    headers={'Content-Type': 'application/json'},
+                    json=payload,
+                    timeout=45
+                )
+
+                if response.status_code in (429, 403):
+                    print(f"[Quiz] {model_name} quota exceeded, trying next...")
+                    continue
+
+                if response.status_code != 200:
+                    print(f"[Quiz] {model_name} error: HTTP {response.status_code}")
+                    continue
+
+                data = response.json()
+                candidates = data.get('candidates', [])
+                if not candidates:
+                    continue
+
+                text = candidates[0].get('content', {}).get('parts', [{}])[0].get('text', '')
+                if not text:
+                    continue
+
+                # Clean up response
+                clean = text.strip()
+                if clean.startswith('```json'):
+                    clean = clean[7:]
+                if clean.startswith('```'):
+                    clean = clean[3:]
+                if clean.endswith('```'):
+                    clean = clean[:-3]
+                clean = clean.strip()
+
+                print(f"[Quiz] Attempt {attempt+1}, model {model_name}: got {len(clean)} chars")
+
+                quiz_data = json_mod.loads(clean)
+
+                # Validate structure
+                if not isinstance(quiz_data, list) or len(quiz_data) == 0:
+                    print(f"[Quiz] Invalid structure, retrying...")
+                    continue
+
+                valid_questions = []
+                for q in quiz_data:
+                    if all(k in q for k in ('question', 'options', 'answer', 'explanation')):
+                        if isinstance(q['options'], dict) and len(q['options']) >= 4:
+                            valid_questions.append(q)
+
+                if len(valid_questions) >= 3:  # Accept if at least 3 valid questions
+                    print(f"[Quiz] Success: {len(valid_questions)} valid questions generated ✓")
+                    return valid_questions
+                else:
+                    print(f"[Quiz] Only {len(valid_questions)} valid questions, retrying...")
+                    continue
+
+            except json_mod.JSONDecodeError as e:
+                print(f"[Quiz] JSON parse error on {model_name}: {e}")
+                continue
+            except requests.exceptions.Timeout:
+                print(f"[Quiz] {model_name} timed out")
+                continue
+            except Exception as e:
+                print(f"[Quiz] Unexpected error: {e}")
+                continue
+
+    print("[Quiz] All attempts failed to generate valid quiz")
+    return []

@@ -39,6 +39,40 @@
             {% endif %}
             {% endwith %}
 
+            {% if tutor.is_profile_complete %}
+            <div class="px-8 pt-6">
+                <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded-r-lg">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <i class="fa-solid fa-lock text-yellow-500"></i>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm text-yellow-700">
+                                <strong>Profile Locked:</strong> Your details are saved permanently. Only your profile
+                                photo can be updated.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="px-8 pt-6">
+                <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <i class="fa-solid fa-circle-info text-blue-500"></i>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm text-blue-700">
+                                <strong>Important:</strong> You can update your details now. Once saved, they will be
+                                <strong>permanently locked</strong>.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
             <form method="POST" enctype="multipart/form-data" class="p-8 space-y-6">
 
                 <!-- Profile Picture -->
@@ -73,9 +107,9 @@
                     <div>
                         <label for="display_name" class="block text-sm font-medium text-gray-700">Display Name
                             (Public)</label>
-                        <input type="text" name="display_name" id="display_name" value="{{ tutor.display_name }}"
-                            required
-                            class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-4 py-3 border">
+                        <input type="text" name="display_name" id="display_name" value="{{ tutor.display_name }}" {% if
+                            tutor.is_profile_complete %}readonly{% endif %} required
+                            class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm {% if tutor.is_profile_complete %}bg-gray-100 text-gray-500 cursor-not-allowed{% else %}focus:border-indigo-500 focus:ring-indigo-500{% endif %} sm:text-sm px-4 py-3 border">
                         <p class="mt-1 text-xs text-gray-500">This is the name students will see.</p>
                     </div>
 
@@ -83,16 +117,17 @@
                     <div>
                         <label for="full_name" class="block text-sm font-medium text-gray-700">Full Name
                             (Private)</label>
-                        <input type="text" name="full_name" id="full_name" value="{{ tutor.full_name }}" required
-                            class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-4 py-3 border">
+                        <input type="text" name="full_name" id="full_name" value="{{ tutor.full_name }}" required {% if
+                            tutor.is_profile_complete %}readonly{% endif %}
+                            class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm {% if tutor.is_profile_complete %}bg-gray-100 text-gray-500 cursor-not-allowed{% else %}focus:border-indigo-500 focus:ring-indigo-500{% endif %} sm:text-sm px-4 py-3 border">
                         <p class="mt-1 text-xs text-gray-500">Used for administrative verification only.</p>
                     </div>
 
                     <!-- Bio -->
                     <div>
                         <label for="bio" class="block text-sm font-medium text-gray-700">Bio / Expertise</label>
-                        <textarea name="bio" id="bio" rows="4"
-                            class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-4 py-3 border"
+                        <textarea name="bio" id="bio" rows="4" {% if tutor.is_profile_complete %}readonly{% endif %}
+                            class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm {% if tutor.is_profile_complete %}bg-gray-100 text-gray-500 cursor-not-allowed{% else %}focus:border-indigo-500 focus:ring-indigo-500{% endif %} sm:text-sm px-4 py-3 border"
                             placeholder="Tell students about your teaching experience...">{{ tutor.bio or '' }}</textarea>
                     </div>
                 </div>

@@ -1,7 +1,7 @@
 """
 Tutoring Blueprint - Handles tutor registration, login, and video session management
 """
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, session
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, session, current_app
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from functools import wraps
@@ -10,6 +10,7 @@ import uuid
 import os
 
 from models import db, Tutor, TutoringSession, User, SchoolClass
+from flask_login import login_required, current_user
 
 tutoring_bp = Blueprint('tutoring', __name__, url_prefix='/tutoring')
 
@@ -64,95 +65,46 @@ def get_current_tutor():
 # ============================================
 
 @tutoring_bp.route('/register', methods=['GET', 'POST'])
+@tutoring_bp.route('/register', methods=['GET', 'POST'])
 def tutor_register():
-    """Tutor registration page"""
+    """Simplified Tutor registration page"""
     if request.method == 'POST':
-        # Get form data
+        # Get minimal form data
         email = request.form.get('email', '').strip().lower()
         password = request.form.get('password', '')
         confirm_password = request.form.get('confirm_password', '')
-        full_name = request.form.get('full_name', '').strip()
-        phone = request.form.get('phone', '').strip()
-        display_name = request.form.get('display_name', '').strip()
-        qualification = request.form.get('qualification', '').strip()
-        experience_years = request.form.get('experience_years', 0)
-        college = request.form.get('college', '').strip()
-        subjects_list = request.form.getlist('subjects')
-        custom_subject = request.form.get('custom_subject', '').strip()
-        if custom_subject:
-            subjects_list.append(custom_subject)
-        subjects = ", ".join([s.strip() for s in subjects_list if s.strip()])
-        teaching_grades = request.form.getlist('teaching_grades')  # Get list of selected grades
-        teaching_grades_str = ", ".join(teaching_grades) if teaching_grades else ""
-        languages = request.form.get('languages', 'English').strip()
-        bio = request.form.get('bio', '').strip()
         
         # Validations
         errors = []
-        
         if not email or '@' not in email:
             errors.append('Valid email is required')
-        
         if Tutor.query.filter_by(email=email).first():
             errors.append('Email already registered')
         
-        if len(password) < 6:
-            errors.append('Password must be at least 6 characters')
-        
+        # Password Check
+        is_valid_pass, pass_msg = validate_password(password)
+        if not is_valid_pass:
+            errors.append(pass_msg)
+            
         if password != confirm_password:
             errors.append('Passwords do not match')
-        
-        if not full_name:
-            errors.append('Full name is required')
-        
-        if not phone or len(phone) < 10:
-            errors.append('Valid phone number is required')
-        
-        if not display_name:
-            errors.append('Display name is required')
-        
-        if not qualification:
-            errors.append('Qualification is required')
-        
-        if not subjects:
-            errors.append('At least one subject is required')
             
-        if not teaching_grades_str:
-            errors.append('Please select at least one grade you can teach')
+        # OTP Check
+        otp_code = request.form.get('otp')
+        is_valid_otp, otp_msg = verify_otp(email, otp_code)
+        if not is_valid_otp:
+            errors.append(f"OTP Error: {otp_msg}")
         
         if errors:
             for error in errors:
                 flash(error, 'danger')
             return redirect(url_for('register') + '?type=tutor')
         
-        # Handle ID proof upload
-        id_proof_path = None
-        if 'id_proof' in request.files:
-            file = request.files['id_proof']
-            if file and file.filename and allowed_file(file.filename):
-                filename = secure_filename(f"tutor_{email}_{file.filename}")
-                upload_folder = os.path.join('uploads', 'tutor_docs')
-                os.makedirs(upload_folder, exist_ok=True)
-                file_path = os.path.join(upload_folder, filename)
-                file.save(file_path)
-                id_proof_path = file_path
-        
-        # Create tutor
+        # Create tutor with minimal info
         tutor = Tutor(
             email=email,
             password=generate_password_hash(password),
-            full_name=full_name,
-            phone=phone,
-            display_name=display_name,
-            qualification=qualification,
-            experience_years=int(experience_years) if experience_years else 0,
-            college=college,
-            subjects=subjects,
-            teaching_grades=teaching_grades_str,
-            languages=languages,
-            bio=bio,
-            id_proof_path=id_proof_path,
-            is_approved=False,  # Requires admin approval
+            is_approved=False,
             is_available=False,
             is_active=True
         )
@@ -160,8 +112,10 @@ def tutor_register():
         db.session.add(tutor)
         db.session.commit()
         
-        flash('Registration successful! Please wait for admin approval.', 'success')
-        return redirect(url_for('login') + '?type=tutor')
+        # Auto-login after registration
+        session['tutor_id'] = tutor.id
+        flash('Account created! Please complete your profile to start teaching.', 'success')
+        return redirect(url_for('tutoring.onboarding'))
     
     # Redirect GET requests to combined registration page
     return redirect(url_for('register') + '?type=tutor')
@@ -196,8 +150,12 @@ def tutor_login():
             return redirect(url_for('login') + '?type=tutor')
         
         # Login successful
+        # Login successful
         session['tutor_id'] = tutor.id
         
+        if not tutor.full_name:
+             return redirect(url_for('tutoring.onboarding'))
+
         if not tutor.is_approved:
             return redirect(url_for('tutoring.pending_approval'))
         
@@ -216,6 +174,66 @@ def tutor_logout():
     return redirect(url_for('tutoring.tutor_login'))
 
 
+@tutoring_bp.route('/onboarding', methods=['GET', 'POST'])
+def onboarding():
+    """Tutor onboarding / profile completion"""
+    if 'tutor_id' not in session:
+        return redirect(url_for('tutoring.tutor_login'))
+    
+    tutor = db.session.get(Tutor, session['tutor_id'])
+    
+    if request.method == 'POST':
+        # Update profile details
+        tutor.full_name = request.form.get('full_name', '').strip()
+        tutor.display_name = request.form.get('display_name', '').strip()
+        tutor.phone = request.form.get('phone', '').strip()
+        tutor.qualification = request.form.get('qualification', '').strip()
+        tutor.experience_years = int(request.form.get('experience_years', 0))
+        tutor.college = request.form.get('college', '').strip()
+        tutor.languages = request.form.get('languages', 'English').strip()
+        tutor.bio = request.form.get('bio', '').strip()
+        
+        # Handle subjects
+        subjects_list = request.form.getlist('subjects')
+        custom_subject = request.form.get('custom_subject', '').strip()
+        if custom_subject:
+            subjects_list.append(custom_subject)
+        tutor.subjects = ", ".join([s.strip() for s in subjects_list if s.strip()])
+        
+        # Handle grades
+        teaching_grades = request.form.getlist('teaching_grades')
+        tutor.teaching_grades = ", ".join(teaching_grades) if teaching_grades else ""
+        
+        # Handle ID Upload
+        if 'id_proof' in request.files:
+            file = request.files['id_proof']
+            if file and file.filename and allowed_file(file.filename):
+                filename = secure_filename(f"tutor_{tutor.email}_{file.filename}")
+                upload_folder = os.path.join(current_app.root_path, 'static', 'uploads', 'tutor_docs')
+                os.makedirs(upload_folder, exist_ok=True)
+                tutor.id_proof_path = os.path.join(upload_folder, filename)
+        
+        db.session.commit()
+
+        # Lock profile
+        tutor.is_profile_complete = True
+        db.session.commit()
+        
+        flash("Profile updated! Your account is pending admin approval.", "success")
+        return redirect(url_for('tutoring.pending_approval'))
+
+    # Load subjects/grades for dropdowns
+    # Load subjects/grades for dropdowns
+    from school import GlobalSubject
+    from models import Grade
+    
+    global_subjects = GlobalSubject.query.filter_by(is_active=True).order_by(GlobalSubject.name).all()
+    subject_names = [s.name for s in global_subjects]
+    
+    grades = Grade.query.filter_by(is_active=True).order_by(Grade.display_order).all()
+    
+    return render_template('tutoring/onboarding.html', tutor=tutor, subjects=subject_names, grades=grades)
+
 @tutoring_bp.route('/pending-approval')
 def pending_approval():
     """Show pending approval message"""
@@ -223,6 +241,11 @@ def pending_approval():
         return redirect(url_for('tutoring.tutor_login'))
     
     tutor = db.session.get(Tutor, session['tutor_id'])
+    
+    # If profile incomplete, redirect to onboarding
+    if not tutor.full_name:
+         return redirect(url_for('tutoring.onboarding'))
+
     if tutor and tutor.is_approved:
         return redirect(url_for('tutoring.tutor_dashboard'))
     
@@ -310,6 +333,28 @@ def edit_tutor_profile():
     tutor = get_current_tutor()
     
     if request.method == 'POST':
+        # Check lock
+        if tutor.is_profile_complete:
+             # Only allow Profile Picture
+            if 'profile_picture' in request.files:
+                file = request.files['profile_picture']
+                if file and allowed_file(file.filename):
+                    filename = secure_filename(file.filename)
+                    upload_folder = os.path.join(current_app.root_path, 'static', 'uploads', 'profiles')
+                    os.makedirs(upload_folder, exist_ok=True)
+                    
+                    ext = filename.rsplit('.', 1)[1].lower()
+                    unique_filename = f"tutor_{tutor.id}_{uuid.uuid4().hex[:8]}.{ext}"
+                    file.save(os.path.join(upload_folder, unique_filename))
+                    
+                    tutor.profile_image = f"uploads/profiles/{unique_filename}"
+                    db.session.commit()
+                    flash('Profile picture updated!', 'success')
+            else:
+                 flash('Profile details cannot be changed once saved.', 'warning')
+            return redirect(url_for('tutoring.edit_tutor_profile'))
+
+        # Normal Edit
         full_name = request.form.get('full_name')
         bio = request.form.get('bio')
         display_name = request.form.get('display_name')
@@ -323,8 +368,7 @@ def edit_tutor_profile():
             file = request.files['profile_picture']
             if file and allowed_file(file.filename):
                 filename = secure_filename(file.filename)
-                from flask import current_app
-                upload_folder = os.path.join(current_app.root_path, 'static/uploads/profiles')
+                upload_folder = os.path.join(current_app.root_path, 'static', 'uploads', 'profiles')
                 os.makedirs(upload_folder, exist_ok=True)
                 
                 ext = filename.rsplit('.', 1)[1].lower()
@@ -333,6 +377,7 @@ def edit_tutor_profile():
                 
                 tutor.profile_image = f"uploads/profiles/{unique_filename}"
         
+        tutor.is_profile_complete = True
         db.session.commit()
         flash('Profile updated successfully!', 'success')
         return redirect(url_for('tutoring.edit_tutor_profile'))
@@ -360,62 +405,90 @@ def toggle_availability():
 # STUDENT-FACING ROUTES (Browse Tutors)
 # ============================================
 
+@tutoring_bp.route('/subjects')
+@login_required
+def browse_subjects():
+    """Step 1: Browse available subjects based on student level"""
+    
+    # 1. Base Query: Active, Approved Tutors
+    query = Tutor.query.filter_by(is_approved=True, is_active=True)
+    
+    # 2. Filter by Student Level
+    if current_user.student_type == 'higher_ed':
+        # Must teach Higher Education
+        # We need to filter in Python or use LIKE query if DB supports it. 
+        # SQLite LIKE is case-insensitive by default usually, but let's be safe.
+        query = query.filter(Tutor.teaching_grades.ilike('%Higher Education%'))
+    else:
+        # Must teach the Student's specific grade
+        # If student has a grade assigned
+        if current_user.enrolled_grade:
+             grade_name = current_user.enrolled_grade.name
+             query = query.filter(Tutor.teaching_grades.ilike(f'%{grade_name}%'))
+        else:
+            # Fallback for students without grade? Show everything that ISN'T purely Higher Ed?
+            # Or just show all. Let's show all for now if no grade set.
+            pass
+
+    eligible_tutors = query.all()
+    
+    # 3. Aggregate Subjects and Counts
+    subject_counts = {}
+    
+    for tutor in eligible_tutors:
+        if not tutor.subjects: continue
+        
+        # Split by comma and strip
+        tutor_subs = [s.strip() for s in tutor.subjects.split(',') if s.strip()]
+        
+        for sub in tutor_subs:
+            subject_counts[sub] = subject_counts.get(sub, 0) + 1
+            
+    # Sort subjects alphabetically
+    sorted_subjects = sorted(subject_counts.keys())
+    
+    return render_template('tutoring/browse_subjects.html', 
+                         subjects=sorted_subjects, 
+                         tutor_counts=subject_counts)
+
+
 @tutoring_bp.route('/browse')
+@login_required # Enforce login for this flow now
 def browse_tutors():
-    """Browse available tutors (for students)"""
+    """Step 2: Broker Tutors for a specific subject"""
     subject_filter = request.args.get('subject', '')
+    
+    # If no subject selected, redirect to subject selection
+    if not subject_filter:
+        return redirect(url_for('tutoring.browse_subjects'))
     
     from flask_login import current_user
     
-    # Get approved and available tutors
+    # Start with all approved tutors
     query = Tutor.query.filter_by(is_approved=True, is_active=True)
     
+    # Filter by Subject
     if subject_filter:
         query = query.filter(Tutor.subjects.ilike(f'%{subject_filter}%'))
     
-    all_tutors = query.order_by(Tutor.rating.desc()).all()
-    filtered_tutors = []
+    # Filter by User Level (Strict Sync)
+    if current_user.student_type == 'higher_ed':
+         query = query.filter(Tutor.teaching_grades.ilike('%Higher Education%'))
+    elif current_user.enrolled_grade:
+         # Must match student's grade
+         grade_name = current_user.enrolled_grade.name
+         query = query.filter(Tutor.teaching_grades.ilike(f'%{grade_name}%'))
     
-    # Filter based on Student Type
-    if current_user.is_authenticated:
-        if current_user.student_type == 'higher_ed':
-            # Show ONLY tutors who teach Higher Education
-            filtered_tutors = [t for t in all_tutors if t.teaching_grades and 'Higher Education' in t.teaching_grades]
-        else:
-            # Show tutors who teach Grades (exclude those who ONLY teach Higher Ed)
-            filtered_tutors = []
-            for t in all_tutors:
-                grades = t.teaching_grades or ""
-                # Include if:
-                # 1. Does NOT contain "Higher Education"
-                # OR
-                # 2. Contains "Higher Education" BUT also other grades (length > 1 implied, but string split is safer)
-                
-                # Simplified: Exclude ONLY if "Higher Education" is the ONLY thing they teach.
-                # If grades is empty, they teach nothing? Maybe show them? Or hide? 
-                # Let's hide if empty to be safe, or show if we want.
-                # But to fix error:
-                
-                if 'Higher Education' not in grades:
-                     filtered_tutors.append(t)
-                elif len(grades.split(',')) > 1:
-                     filtered_tutors.append(t)
-            
-    else:
-        # For guests (landing page link?), show all? Or hide Higher Ed exclusive?
-        filtered_tutors = all_tutors
-
-    tutors = filtered_tutors
+    tutors = query.order_by(Tutor.rating.desc()).all()
     
-    # Get unique subjects from all tutors
-    all_subjects = set()
-    for t in Tutor.query.filter_by(is_approved=True).all():
-        for s in t.subjects.split(','):
-            all_subjects.add(s.strip())
+    # For the filter dropdown in browse.html (optional, but good for context)
+    # We can just pass the single subject since we are in a drill-down
     
     return render_template('tutoring/browse.html', 
                          tutors=tutors, 
-                         subjects=sorted(all_subjects),
+                         subjects=[subject_filter], # Only show current subject in filter to avoid confusion? Or all? 
+                         # Actually browser.html expects a list of subjects for the filter bar. 
+                         # Let's pass empty or just the current one to simplify the view.
                          current_filter=subject_filter,
                          rate_per_minute=RATE_PER_MINUTE)
 
@@ -550,12 +623,11 @@ def api_book_session():
     if not tutor.is_available:
         return jsonify({'success': False, 'error': 'Tutor is currently offline'}), 400
     
-    # Check student credits (minimum 10 minutes worth)
-    min_credits = RATE_PER_MINUTE * 10
-    if current_user.credits < min_credits:
+    # Check student subscription has tutor credits remaining
+    if not current_user.can_access('video_tutor'):
         return jsonify({
             'success': False, 
-            'error': f'Insufficient credits. You need at least {min_credits} credits (for 10 minutes)'
+            'error': 'No tutor session credits remaining. Please upgrade your plan.'
         }), 400
     
     # Create session with unique room ID
@@ -659,13 +731,18 @@ def api_end_session(room_id):
     else:
         duration_minutes = 0
     
-    # Calculate credits
-    credits_to_charge = duration_minutes * tutoring_session.rate_per_minute
-    
-    # Deduct from student
+    # Deduct 1 tutor credit (Plan -> Wallet)
+    from models import Subscription
     student = db.session.get(User, tutoring_session.student_id)
-    if student:
-        student.credits = max(0, student.credits - credits_to_charge)
+    credits_to_charge = 1  # 1 credit per session regardless of duration
+    
+    if student and student.active_subscription_id:
+        sub = Subscription.query.get(student.active_subscription_id)
+        if sub:
+            if sub.tutor_credits_used < sub.tutor_credits:
+                sub.tutor_credits_used += 1
+            elif student.credits > 0:
+                student.credits -= 1
     
     # Add to tutor earnings (80% to tutor, 20% platform fee)
     tutor = db.session.get(Tutor, tutoring_session.tutor_id)

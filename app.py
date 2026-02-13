@@ -1,11 +1,11 @@
 from flask import Flask, render_template, redirect, url_for, request, flash, jsonify, send_from_directory, Response
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
-# --- ADDED THESE IMPORTS FOR IMAGE HANDLING ---
+from urllib.parse import urlparse
 from werkzeug.utils import secure_filename
 import os
 # ----------------------------------------------
-from models import db, User, ServiceAccount, Job, ChatHistory, Document, DocumentUnlock, Tutor, TutoringSession, Grade, Subject, Feedback, Notification, Subscription, VideoCourse, CourseVideo, CoursePurchase
+from models import db, User, ServiceAccount, Job, ChatHistory, ChatConversation, Document, DocumentUnlock, Tutor, TutoringSession, Grade, Subject, Feedback, Notification, Subscription, VideoCourse, CourseVideo, CoursePurchase
 from sqlalchemy import func, or_
 import chegg_api
 import time
@@ -15,8 +15,12 @@ from datetime import datetime
 from dotenv import load_dotenv
 from flask_apscheduler import APScheduler
 import concurrent.futures
+import concurrent.futures
 from chegg_api import check_if_solved, notify_super_admin
-
+from auth_routes import auth_bp, configure_oauth
+from utils.validators import validate_password
+from utils.otp_helper import verify_otp
+import os
 load_dotenv() # Load environment variables from .env
 
 app = Flask(__name__)
@@ -43,7 +47,12 @@ def ads_txt():
 db.init_app(app)
 login_manager = LoginManager()
 login_manager.login_view = 'login'
+login_manager.login_view = 'login'
 login_manager.init_app(app)
+
+# --- AUTH CONFIG ---
+configure_oauth(app)
+app.register_blueprint(auth_bp)
 
 # --- REGISTER TUTORING BLUEPRINT ---
 from tutoring import tutoring_bp
@@ -60,6 +69,10 @@ app.register_blueprint(payments_bp)
 # --- REGISTER VIDEO COURSES BLUEPRINT ---
 from video_courses import video_courses_bp
 app.register_blueprint(video_courses_bp)
+
+# --- REGISTER QUIZ BLUEPRINT ---
+from quiz_routes import quiz_bp
+app.register_blueprint(quiz_bp)
 
 # --- SOCKETIO FOR VIDEO TUTORING ---
 from signaling import init_socketio
@@ -443,119 +456,189 @@ def index():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        username = request.form.get('username')
+        login_input = request.form.get('username')
         password = request.form.get('password')
-        user = User.query.filter_by(username=username).first()
+        remember = True if request.form.get('remember') else False
+
+        # Allow login by Username OR Email
+        user = User.query.filter((User.username == login_input) | (User.email == login_input)).first()
+
         if user and check_password_hash(user.password, password):
             # Check for verification (Disabled Students)
             if user.student_type == 'disabled' and not user.is_verified:
                 flash('Your account is pending verification by the admin. Please wait for approval.', 'warning')
                 return redirect(url_for('login'))
                 
-            login_user(user)
-            return redirect(url_for('dashboard'))
-        flash('Invalid username or password')
+            login_user(user, remember=remember)
+            
+            # Safe redirect
+            next_page = request.args.get('next')
+            if not next_page or urlparse(next_page).netloc != '':
+                next_page = url_for('dashboard')
+            return redirect(next_page)
+            
+        flash('Invalid username or password', 'danger')
     return render_template('login.html')
+
+# Helper for file validation
+def allowed_file(filename):
+    ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'pdf'}
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
-    # Helper to clean text input
-    def clean(val):
-        return val.strip() if val else None
+    # If user is already logged in
+    if current_user.is_authenticated:
+        return redirect(url_for('dashboard'))
 
     if request.method == 'POST':
+        # Get simplified form data
         username = request.form.get('username')
+        email = request.form.get('email')
         password = request.form.get('password')
+        otp_code = request.form.get('otp')
         
-        # Check if username exists
-        if User.query.filter_by(username=username).first():
-            flash('Username is already taken. Please choose another one.', 'danger')
+        # Validation
+        # 1. Verify OTP
+        is_valid_otp, otp_msg = verify_otp(email, otp_code)
+        if not is_valid_otp:
+            flash(f"OTP Verification Failed: {otp_msg}", 'danger')
             return redirect(url_for('register'))
 
-        # Get Student Type
-        student_type = request.form.get('student_type', 'grade') # 'grade', 'higher_ed', 'disabled'
-        
-        # Base User Data
-        email = clean(request.form.get('email'))
-        phone = clean(request.form.get('phone'))
-        full_name = clean(request.form.get('full_name'))
-        grade_id = request.form.get('grade_id') or None
-        
-        # New Fields
-        parent_name = clean(request.form.get('parent_name'))
-        parent_phone = clean(request.form.get('parent_phone'))
-        address = clean(request.form.get('address'))
-        school_name = clean(request.form.get('school_name'))
-        
-        # Capture class_grade for Higher Ed
-        if student_type == 'higher_ed':
-             class_grade = clean(request.form.get('class_grade'))
-        else:
-             class_grade = None
+        # 2. Check Password Strength
+        is_valid_pass, pass_msg = validate_password(password)
+        if not is_valid_pass:
+            flash(f"Weak Password: {pass_msg}", 'danger')
+            return redirect(url_for('register'))
 
-        # Capture grade_id for Disabled if provided via separate select
-        if student_type == 'disabled':
-             disabled_grade = request.form.get('disabled_grade_id')
-             if disabled_grade:
-                  grade_id = disabled_grade
+        if User.query.filter_by(username=username).first():
+            flash('Username is already taken.', 'danger')
+            return redirect(url_for('register'))
         
-        # Default verification: True unless disabled
-        is_verified = True
-        disability_path = None
-        
-        if student_type == 'disabled':
-            is_verified = False # Needs Admin Approval
+        if User.query.filter_by(email=email).first():
+            flash('Email is already registered.', 'danger')
+            return redirect(url_for('register'))
             
-            # Handle Certificate Upload
-            if 'certificate' in request.files:
-                file = request.files['certificate']
-                if file and file.filename != '':
-                    filename = secure_filename(f"cert_{int(time.time())}_{file.filename}")
-                    cert_dir = os.path.join(app.config['UPLOAD_FOLDER'], 'certificates')
-                    os.makedirs(cert_dir, exist_ok=True)
-                    
-                    file.save(os.path.join(cert_dir, filename))
-                    disability_path = f"certificates/{filename}"
-        
-        # Create User Object
+        # Create User (Student Role)
         new_user = User(
-            username=username, 
-            password=generate_password_hash(password),
-            full_name=full_name,
+            username=username,
             email=email,
-            phone=phone,
-            grade_id=grade_id,
-            
-            # New Fields
-            student_type=student_type,
-            parent_name=parent_name,
-            parent_phone=parent_phone,
-            address=address,
-            school_name=school_name,
-            class_grade=class_grade,
-            disability_certificate_path=disability_path,
-            is_verified=is_verified
+            password=generate_password_hash(password),
+            role='user',
+            credits=0,
+            is_verified=True # Basic access allowed, profile completion pending
         )
         
         db.session.add(new_user)
         db.session.commit()
         
-        if not is_verified:
-            flash('Registration successful! Your account is pending verification. You will be notified once approved.', 'info')
-            return redirect(url_for('login'))
-        else:
-            login_user(new_user)
-            flash('Account created successfully! Welcome to Students Hub.', 'success')
-            return redirect(url_for('dashboard'))
+        login_user(new_user)
+        flash('Account created! Please complete your profile details.', 'success')
+        return redirect(url_for('profile'))
 
-    # Pass grades and unique subjects to template for dropdown
+    # Render registration page (Student & Tutor tabs)
+    # Tutor registration is handled by tutoring_bp, but the form is here.
+    return render_template('register.html')
+
+
+@app.route('/profile', methods=['GET', 'POST'])
+@login_required
+def profile():
+    if request.method == 'POST':
+        # Check if profile is already complete (locked)
+        if current_user.is_profile_complete:
+            # Only allow Profile Picture update
+            if 'profile_picture' in request.files:
+                file = request.files['profile_picture']
+                if file and file.filename != '':
+                     filename = secure_filename(f"pfp_{current_user.username}_{file.filename}")
+                     file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                     current_user.profile_picture = filename
+                     db.session.commit()
+                     flash('Profile picture updated!', 'success')
+            else:
+                flash('Profile details cannot be changed once saved.', 'warning')
+            return redirect(url_for('profile'))
+
+        # --- First Time / Editable Profile Logic ---
+        full_name = request.form.get('full_name')
+        if full_name:
+            current_user.full_name = full_name
+            
+        phone = request.form.get('phone')
+        if phone:
+            current_user.phone = phone
+            
+        bio = request.form.get('bio')
+        if bio:
+            current_user.bio = bio
+            
+        # Handle Date of Birth
+        dob_str = request.form.get('dob')
+        if dob_str:
+            # format yyyy-mm-dd from input type=date
+            try:
+                current_user.dob = datetime.strptime(dob_str, '%Y-%m-%d').date()
+            except ValueError:
+                pass # ignore invalid date
+        
+        student_type = request.form.get('student_type')
+        if student_type:
+            current_user.student_type = student_type
+            
+            # School Student
+            if student_type == 'grade':
+                current_user.school_name = request.form.get('school_name')
+                current_user.grade_id = request.form.get('grade_id') or None
+                current_user.class_grade = None
+                # Parent Info
+                current_user.parent_name = request.form.get('parent_name')
+                current_user.parent_phone = request.form.get('parent_phone')
+                
+            # Higher Ed
+            elif student_type == 'higher_ed':
+                current_user.school_name = request.form.get('school_name')
+                current_user.class_grade = request.form.get('class_grade')
+                current_user.grade_id = None
+                
+            # Disabled
+            elif student_type == 'disabled':
+                current_user.school_name = request.form.get('school_name')
+                current_user.grade_id = request.form.get('grade_id') or None
+                current_user.parent_name = request.form.get('parent_name')
+                current_user.parent_phone = request.form.get('parent_phone')
+                
+                # Certificate Upload
+                if 'certificate' in request.files:
+                    file = request.files['certificate']
+                    if file and file.filename != '':
+                        filename = secure_filename(f"cert_{current_user.username}_{file.filename}")
+                        cert_dir = os.path.join(app.config['UPLOAD_FOLDER'], 'certificates')
+                        os.makedirs(cert_dir, exist_ok=True)
+                        file.save(os.path.join(cert_dir, filename))
+                        current_user.disability_certificate_path = f"certificates/{filename}"
+                        # Trigger verification needed
+                        current_user.is_verified = False
+                        flash('Disability certificate uploaded. Pending verification.', 'info')
+
+        # Profile Picture (Always allow on first save too)
+        if 'profile_picture' in request.files:
+            file = request.files['profile_picture']
+            if file and file.filename != '':
+                 filename = secure_filename(f"pfp_{current_user.username}_{file.filename}")
+                 file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                 current_user.profile_picture = filename
+
+        # Lock profile after save
+        current_user.is_profile_complete = True
+        
+        db.session.commit()
+        flash('Profile updated successfully!', 'success')
+        return redirect(url_for('profile'))
+
+    # Get grades for dropdown
     grades = Grade.query.filter_by(is_active=True).order_by(Grade.display_order).all()
-    # Get global subjects for tutor registration
-    from school import GlobalSubject
-    global_subjects = GlobalSubject.query.filter_by(is_active=True).order_by(GlobalSubject.name).all()
-    subject_names = [s.name for s in global_subjects]
-
-    return render_template('register.html', grades=grades, subjects=subject_names)
+    return render_template('profile.html', user=current_user, grades=grades)
 
 
 
@@ -656,16 +739,13 @@ def dashboard():
              flash("Expert Questions limit reached for your plan. Please upgrade.")
              return redirect(url_for('dashboard'))
         
-        # Check quota
+        # Check quota against credit pool AND wallet
         if current_user.role not in ['admin', 'super_admin'] and current_user.active_subscription_id:
              sub = Subscription.query.get(current_user.active_subscription_id)
-             limit = 0
-             if sub.plan_type == 'basic_299': limit = 20
-             elif sub.plan_type == 'pro_499': limit = 40
-             elif sub.plan_type == 'school_1200': limit = 20
-             
-             if sub.expert_used >= limit:
-                 flash(f"Not enough usage quota! Remaining: {limit - sub.expert_used}")
+             # If Plan exhausted AND Wallet empty -> Block
+             if sub.expert_credits_used >= sub.expert_credits and current_user.credits <= 0:
+                 remaining_plan = max(0, sub.expert_credits - sub.expert_credits_used)
+                 flash(f"Not enough expert credits! Plan: {remaining_plan}, Wallet: {current_user.credits}")
                  return redirect(url_for('dashboard'))
 
         # Validation
@@ -694,9 +774,15 @@ def dashboard():
             return redirect(url_for('dashboard'))
 
         # Increment Usage (once, not twice)
+        credit_source = None
         if current_user.role not in ['admin', 'super_admin'] and current_user.active_subscription_id:
             sub = Subscription.query.get(current_user.active_subscription_id)
-            sub.expert_used += 1
+            if sub.expert_credits_used < sub.expert_credits:
+                sub.expert_credits_used += 1
+                credit_source = 'plan'
+            elif current_user.credits > 0:
+                current_user.credits -= 1
+                credit_source = 'wallet'
             db.session.commit()
         
         # Post question (single post only)
@@ -748,7 +834,10 @@ def dashboard():
             # Refund Usage
             if current_user.role not in ['admin', 'super_admin'] and current_user.active_subscription_id:
                 sub = Subscription.query.get(current_user.active_subscription_id)
-                sub.expert_used = max(0, sub.expert_used - 1)
+                if credit_source == 'plan':
+                    sub.expert_credits_used = max(0, sub.expert_credits_used - 1)
+                elif credit_source == 'wallet':
+                    current_user.credits += 1
                 db.session.commit()
                 
             flash(f"Failed to post: {msg}")
@@ -891,17 +980,71 @@ def chegg_tools():
 from ai_tutor import get_ai_response
 
 @app.route('/ai-tutor')
+@app.route('/ai-tutor/<int:conversation_id>')
 @login_required
-def ai_tutor():
-    """Render AI Tutor chat page with dual AI responses"""
-    # Get user's recent chat history
-    history = ChatHistory.query.filter_by(
+def ai_tutor(conversation_id=None):
+    """Render AI Tutor chat page with conversation sidebar"""
+    # Get all conversations for sidebar
+    conversations = ChatConversation.query.filter_by(
         user_id=current_user.id
-    ).order_by(ChatHistory.timestamp.desc()).limit(50).all()
+    ).order_by(ChatConversation.updated_at.desc()).all()
     
+    # Load specific conversation or latest
+    active_conv = None
+    history = []
+    
+    if conversation_id:
+        active_conv = ChatConversation.query.filter_by(
+            id=conversation_id, user_id=current_user.id
+        ).first()
+    elif conversations:
+        active_conv = conversations[0]
+    
+    if active_conv:
+        history = ChatHistory.query.filter_by(
+            conversation_id=active_conv.id
+        ).order_by(ChatHistory.timestamp.asc()).all()
+    
+    # Build history data for client-side markdown rendering
+    history_data = [{
+        'question': h.question,
+        'answer': h.answer
+    } for h in history]
+    
+    import json
     return render_template('ai_tutor.html', 
-                         user=current_user, 
-                         history=history[::-1])
+                         user=current_user,
+                         conversations=conversations,
+                         active_conv=active_conv,
+                         history_json=json.dumps(history_data))
+
+@app.route('/api/ai-tutor/conversations')
+@login_required
+def api_ai_tutor_conversations():
+    """List all conversations for current user"""
+    convs = ChatConversation.query.filter_by(
+        user_id=current_user.id
+    ).order_by(ChatConversation.updated_at.desc()).all()
+    
+    return jsonify({
+        "conversations": [{
+            "id": c.id,
+            "title": c.title,
+            "updated_at": c.updated_at.strftime('%b %d, %Y')
+        } for c in convs]
+    })
+
+@app.route('/api/ai-tutor/new-chat', methods=['POST'])
+@login_required
+def api_ai_tutor_new_chat():
+    """Create a new conversation"""
+    conv = ChatConversation(
+        user_id=current_user.id,
+        title='New Chat'
+    )
+    db.session.add(conv)
+    db.session.commit()
+    return jsonify({"conversation_id": conv.id})
 
 @app.route('/api/ai-tutor/chat', methods=['POST'])
 @login_required
@@ -909,46 +1052,79 @@ def api_ai_tutor_chat():
     """Handle AI chat requests - calls AI Tutor (Gemini), deducts 1 credit"""
     data = request.get_json()
     question = data.get('question', '').strip()
+    conversation_id = data.get('conversation_id')
     
-    # Validation
     if not question:
         return jsonify({"error": "Please enter a question"})
     
-    # Check Access (Subscription)
     if not current_user.can_access('ai_tutor'):
         return jsonify({"error": "Daily/Monthly AI limit reached or no active plan. Please upgrade."})
-
-    # Get response from AI Tutor (Gemini)
-    # We use 'gemini' backend but store as 'ai_tutor' for branding consistency
-    response_text, category, error = get_ai_response('gemini', question)
     
+    # Create conversation if not provided
+    if not conversation_id:
+        conv = ChatConversation(
+            user_id=current_user.id,
+            title=question[:80] + ('...' if len(question) > 80 else '')
+        )
+        db.session.add(conv)
+        db.session.commit()
+        conversation_id = conv.id
+    else:
+        conv = ChatConversation.query.get(conversation_id)
+        if conv and conv.title == 'New Chat':
+            conv.title = question[:80] + ('...' if len(question) > 80 else '')
+    
+    # Get AI response
+    response_text, category, error = get_ai_response('gemini', question)
     if not category: category = 'general'
     
     # Increment Usage (if not admin)
     if current_user.role not in ['admin', 'super_admin'] and current_user.active_subscription_id:
         sub = Subscription.query.get(current_user.active_subscription_id)
-        sub.ai_used += 1
+        if sub.ai_credits_used < sub.ai_credits:
+            sub.ai_credits_used += 1
+        elif current_user.credits > 0:
+            current_user.credits -= 1
         db.session.commit()
     
-    # Save response to history
+    # Save to history
     if response_text:
         chat_entry = ChatHistory(
             user_id=current_user.id,
-            ai_provider='ai_tutor',  # Unified provider name
+            conversation_id=conversation_id,
+            ai_provider='ai_tutor',
             question=question,
             answer=response_text,
             category=category
         )
         db.session.add(chat_entry)
+        # Update conversation timestamp
+        if conv:
+            conv.updated_at = datetime.utcnow()
         db.session.commit()
     
     return jsonify({
         "success": True,
         "answer": response_text,
         "error": error,
-        "category": category,
+        "conversation_id": conversation_id,
         "credits_remaining": current_user.credits
     })
+
+@app.route('/api/ai-tutor/conversation/<int:conv_id>', methods=['DELETE'])
+@login_required
+def api_ai_tutor_delete_conversation(conv_id):
+    """Delete a conversation and its messages"""
+    conv = ChatConversation.query.filter_by(
+        id=conv_id, user_id=current_user.id
+    ).first()
+    if not conv:
+        return jsonify({"error": "Not found"}), 404
+    
+    ChatHistory.query.filter_by(conversation_id=conv_id).delete()
+    db.session.delete(conv)
+    db.session.commit()
+    return jsonify({"success": True})
 
 @app.route('/api/ai-tutor/history/<provider>')
 @login_required
@@ -1051,9 +1227,16 @@ def library_upload():
         )
         db.session.add(doc)
         
-        # Award credit to uploader
-        current_user.credits += 1
-        db.session.commit()
+        # Award credit to uploader (20 uploads = 1 credit)
+        total_uploads = Document.query.filter_by(user_id=current_user.id).count()
+        if total_uploads > 0 and total_uploads % 20 == 0:
+            current_user.credits += 1
+            db.session.commit()
+            flash(f'Document uploaded successfully! 🎉 You reached {total_uploads} uploads and earned 1 credit! Total credits: {current_user.credits}')
+        else:
+            db.session.commit()
+            uploads_until_credit = 20 - (total_uploads % 20)
+            flash(f'Document uploaded successfully! Upload {uploads_until_credit} more document(s) to earn 1 credit.')
         
         # Extract text in background (simplified - doing it synchronously here)
         extracted_text, ocr_error = extract_text_with_gemini(file_path, file_type)
@@ -1067,7 +1250,6 @@ def library_upload():
             
             db.session.commit()
         
-        flash(f'Document uploaded successfully! You earned 1 credit. Total: {current_user.credits}')
         return redirect(url_for('library'))
     
     return render_template('library_upload.html', user=current_user)
@@ -1399,38 +1581,7 @@ def api_check_balance():
         print(f"[Balance Check Error] {e}")
         return jsonify({"balance": "API Error"})
 
-# --- USER PROFILE ROUTE ---
-@app.route('/profile', methods=['GET', 'POST'])
-@login_required
-def profile():
-    if request.method == 'POST':
-        full_name = request.form.get('full_name')
-        bio = request.form.get('bio')
-        
-        current_user.full_name = full_name
-        current_user.bio = bio
-        
-        # Profile Picture
-        if 'profile_picture' in request.files:
-            file = request.files['profile_picture']
-            if file and '.' in file.filename:
-                ext = file.filename.rsplit('.', 1)[1].lower()
-                if ext in {'png', 'jpg', 'jpeg', 'gif'}:
-                    filename = secure_filename(file.filename)
-                    # Directory: static/uploads/profiles
-                    upload_folder = os.path.join(app.root_path, 'static/uploads/profiles')
-                    os.makedirs(upload_folder, exist_ok=True)
-                    
-                    unique_filename = f"user_{current_user.id}_{int(time.time())}.{ext}"
-                    file.save(os.path.join(upload_folder, unique_filename))
-                    
-                    current_user.profile_picture = f"uploads/profiles/{unique_filename}"
-        
-        db.session.commit()
-        flash('Profile updated successfully!', 'success')
-        return redirect(url_for('profile'))
-        
-    return render_template('profile.html', user=current_user)
+
 
 # --- FEEDBACK ROUTES ---
 @app.route('/submit_feedback', methods=['POST'])

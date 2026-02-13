@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-100 flex flex-col items-center justify-center py-10" id="quiz-container">
+    <div class="bg-white w-full max-w-4xl rounded-lg shadow-xl overflow-hidden">
+
+        <!-- Header -->
+        <div class="bg-gray-800 text-white p-4 flex justify-between items-center">
+            <h2 class="text-xl font-bold">{{ quiz_session.subject }} ({{ quiz_session.grade }})</h2>
+            <div class="flex items-center space-x-4">
+                <span class="text-sm">Strict Mode Active 🔒</span>
+                <div class="bg-red-600 px-3 py-1 rounded text-white font-mono" id="timer">--:--</div>
+            </div>
+        </div>
+
+        <!-- content -->
+        <div class="p-8">
+            <form id="quiz-form" onsubmit="submitQuiz(event)">
+                <div id="questions-wrapper">
+                    {% for q in questions %}
+                    {% set q_idx = loop.index0 %}
+                    <div class="question-block hidden" data-index="{{ q_idx }}">
+                        <h3 class="text-lg font-semibold mb-4 text-gray-800">
+                            Question {{ loop.index }} of {{ total_questions }}
+                        </h3>
+                        <div class="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-100 text-lg">
+                            {{ q.question }}
+                        </div>
+
+                        <div class="space-y-3">
+                            {% for key, val in q.options.items() %}
+                            <label
+                                class="flex items-center p-3 border rounded cursor-pointer hover:bg-gray-50 transition-colors">
+                                <input type="radio" name="q_{{ q_idx }}" value="{{ key }}"
+                                    class="mr-3 h-5 w-5 text-blue-600">
+                                <span class="font-medium mr-2">{{ key }}.</span>
+                                <span>{{ val }}</span>
+                            </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Controls -->
+                <div class="mt-8 flex justify-between">
+                    <button type="button" id="prev-btn" class="bg-gray-300 text-gray-700 px-6 py-2 rounded hidden"
+                        onclick="prevQuestion()">Previous</button>
+                    <button type="button" id="next-btn"
+                        class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
+                        onclick="nextQuestion()">Next</button>
+                    <button type="submit" id="submit-btn"
+                        class="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 hidden">Submit Quiz</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="bg-gray-200 h-2 w-full">
+            <div class="bg-blue-600 h-2 transition-all duration-300" id="progress-bar" style="width: 0%"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentQuestion = 0;
+    const totalQuestions = {{ total_questions }};
+    const sessionId = {{ quiz_session.id }};
+    // 60 seconds per question * total questions
+    let timeLeft = 60 * totalQuestions;
+    let timerInterval;
+
+    // Strict Mode: Fullscreen & Anti-Cheat
+    document.addEventListener('DOMContentLoaded', () => {
+        enterFullscreen();
+        startTimer();
+        showQuestion(0);
+
+        // Disable back button
+        history.pushState(null, null, location.href);
+        window.onpopstate = function () {
+            history.go(1);
+            alert("Leaving is not allowed during the quiz!");
+        };
+
+        // Tab switch warning
+        document.addEventListener("visibilitychange", () => {
+            if (document.hidden) {
+                alert("⚠️ WARNING: Tab switching is monitored. Do not cheat!");
+            }
+        });
+    });
+
+    function showQuestion(index) {
+        document.querySelectorAll('.question-block').forEach(el => el.classList.add('hidden'));
+        document.querySelector(`.question-block[data-index="${index}"]`).classList.remove('hidden');
+
+        // Button Logic
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const submitBtn = document.getElementById('submit-btn');
+
+        // Strict Mode: No Previous Button allowed? User asked for "Strict".
+        // Let's keep Previous disabled if we want it REALLY strict (linear).
+        // For now, I'll allow it but maybe limit it. Let's just allow it for usability.
+        if (index === 0) prevBtn.classList.add('hidden');
+        else prevBtn.classList.remove('hidden');
+
+        if (index === totalQuestions - 1) {
+            nextBtn.classList.add('hidden');
+            submitBtn.classList.remove('hidden');
+        } else {
+            nextBtn.classList.remove('hidden');
+            submitBtn.classList.add('hidden');
+        }
+
+        // Progress
+        const progress = ((index + 1) / totalQuestions) * 100;
+        document.getElementById('progress-bar').style.width = `${progress}%`;
+
+        currentQuestion = index;
+    }
+
+    function nextQuestion() {
+        if (currentQuestion < totalQuestions - 1) {
+            showQuestion(currentQuestion + 1);
+        }
+    }
+
+    function prevQuestion() {
+        if (currentQuestion > 0) {
+            showQuestion(currentQuestion - 1);
+        }
+    }
+
+    function startTimer() {
+        timerInterval = setInterval(() => {
+            timeLeft--;
+
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            document.getElementById('timer').innerText = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                alert("Time's up! Submitting your quiz now.");
+                document.getElementById('quiz-form').dispatchEvent(new Event('submit'));
+            }
+        }, 1000);
+    }
+
+    function enterFullscreen() {
+        const elem = document.documentElement;
+        if (elem.requestFullscreen) {
+            elem.requestFullscreen().catch(err => {
+                console.log("Fullscreen denied");
+            });
+        }
+    }
+
+    async function submitQuiz(e) {
+        e.preventDefault();
+        clearInterval(timerInterval);
+
+        // Gather answers
+        const formData = new FormData(document.getElementById('quiz-form'));
+        const answers = {};
+        for (let [key, value] of formData.entries()) {
+            // Strip 'q_' prefix to get question index
+            answers[key.replace('q_', '')] = value;
+        }
+
+        // Show loading state
+        document.getElementById('submit-btn').innerText = "Submitting...";
+        document.getElementById('submit-btn').disabled = true;
+
+        try {
+            const res = await fetch(`/quiz/submit/${sessionId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ answers: answers })
+            });
+
+            const data = await res.json();
+
+            if (data.redirect_url) {
+                // Exit fullscreen success
+                if (document.exitFullscreen) document.exitFullscreen();
+                window.location.href = data.redirect_url;
+            } else {
+                alert("Error submitting quiz: " + (data.error || "Unknown Error"));
+            }
+        } catch (err) {
+            console.error(err);
+            alert("Network error. Please try again.");
+            document.getElementById('submit-btn').innerText = "Submit Quiz";
+            document.getElementById('submit-btn').disabled = false;
+        }
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,292 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="min-h-screen flex items-center justify-center p-4 py-12 bg-gray-50">
+    <div class="bg-white rounded-3xl shadow-xl w-full max-w-4xl p-8 md:p-12 border border-purple-100">
+        <!-- Header -->
+        <div class="text-center mb-10">
+            <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-purple-100 mb-4">
+                <i class="fa-solid fa-user-tie text-2xl text-purple-600"></i>
+            </div>
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">Complete Your Tutor Profile</h1>
+            <p class="text-gray-500">Just a few more details to set up your teaching profile.</p>
+        </div>
+
+        <!-- Progress Steps -->
+        <div class="flex items-center justify-center mb-10 gap-4 text-sm font-medium">
+            <div class="flex items-center gap-2 text-green-600">
+                <div class="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
+                    <i class="fa-solid fa-check"></i>
+                </div>
+                <span>Account Created</span>
+            </div>
+            <div class="h-1 w-16 bg-gradient-to-r from-green-200 to-purple-200 rounded"></div>
+            <div class="flex items-center gap-2 text-purple-600">
+                <div
+                    class="w-8 h-8 rounded-full bg-purple-600 text-white flex items-center justify-center shadow-lg shadow-purple-200">
+                    2
+                </div>
+                <span>Profile Details</span>
+            </div>
+            <div class="h-1 w-16 bg-gray-200 rounded"></div>
+            <div class="flex items-center gap-2 text-gray-400">
+                <div class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
+                    3
+                </div>
+                <span>Approval</span>
+            </div>
+        </div>
+
+        <form method="POST" enctype="multipart/form-data" class="space-y-8">
+
+            <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg mb-6">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <i class="fa-solid fa-circle-info text-blue-500"></i>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm text-blue-700">
+                            <strong>Note:</strong> You can only complete your profile once. After submission, it will be
+                            locked for editing.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Personal Details Section -->
+            <div class="bg-slate-50 p-6 rounded-2xl border border-slate-100">
+                <h2 class="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+                    <i class="fa-solid fa-id-card text-purple-500"></i> Personal Details
+                </h2>
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Full Name * <span
+                                class="text-gray-400 font-normal text-xs">(Legal Name for verification)</span></label>
+                        <input type="text" name="full_name" required value="{{ tutor.full_name or '' }}" {% if
+                            tutor.is_profile_complete %}readonly
+                            class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-500 cursor-not-allowed font-medium"
+                            {% else
+                            %}class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-purple-500 focus:ring-4 focus:ring-purple-50 transition-all font-medium"
+                            {% endif %} placeholder="Your legal Name">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Display Name * <span
+                                class="text-gray-400 font-normal text-xs">(Shown to students)</span></label>
+                        <input type="text" name="display_name" required value="{{ tutor.display_name or '' }}" {% if
+                            tutor.is_profile_complete %}readonly
+                            class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-500 cursor-not-allowed"
+                            {% else
+                            %}class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-purple-500 focus:ring-4 focus:ring-purple-50 transition-all"
+                            {% endif %} placeholder="e.g., Prof. John, MathExpert">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Phone Number *</label>
+                        <input type="tel" name="phone" required value="{{ tutor.phone or '' }}" {% if tutor.is_approved
+                            or tutor.is_profile_complete %}readonly
+                            class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-500 cursor-not-allowed"
+                            {% else
+                            %}class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-purple-500 focus:ring-4 focus:ring-purple-50 transition-all"
+                            {% endif %} placeholder="+91 9876543210">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Qualifications Section -->
+            <div class="bg-indigo-50/50 p-6 rounded-2xl border border-indigo-100">
+                <h2 class="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+                    <i class="fa-solid fa-graduation-cap text-indigo-500"></i> Qualifications
+                </h2>
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Highest Qualification *</label>
+                        <input type="text" name="qualification" required value="{{ tutor.qualification or '' }}" {% if
+                            tutor.is_profile_complete %}readonly
+                            class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-500 cursor-not-allowed"
+                            {% else
+                            %}class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50 transition-all"
+                            {% endif %} placeholder="e.g., B.Tech, M.Sc, PhD">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Years of Experience</label>
+                        <input type="number" name="experience_years" min="0" max="50"
+                            value="{{ tutor.experience_years or 0 }}" {% if tutor.is_profile_complete
+                            %}readonly
+                            class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-500 cursor-not-allowed"
+                            {% else
+                            %}class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50 transition-all"
+                            {% endif %}>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">College/University</label>
+                        <input type="text" name="college" value="{{ tutor.college or '' }}"
+                            class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50 transition-all"
+                            placeholder="Where you studied/teach">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Upload ID Proof * <span
+                                class="text-gray-400 font-normal text-xs">(PDF, JPG, PNG)</span></label>
+                        <input type="file" name="id_proof" accept=".pdf,.jpg,.jpeg,.png" {% if not tutor.id_proof_path
+                            %}required{% endif %}
+                            class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50 transition-all file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-indigo-600 file:text-white hover:file:bg-indigo-700">
+                        {% if tutor.id_proof_path %}
+                        <p class="text-xs text-green-600 mt-2"><i class="fa-solid fa-check-circle"></i> ID Proof already
+                            uploaded. Upload new file to replace.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Teaching Info Section -->
+            <div class="bg-orange-50/50 p-6 rounded-2xl border border-orange-100">
+                <h2 class="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+                    <i class="fa-solid fa-book-open text-orange-500"></i> Teaching Information
+                </h2>
+                <div class="space-y-6">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Grades Your Can Teach *</label>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            {% for grade in grades %}
+                            <label
+                                class="relative flex items-center justify-center p-3 rounded-xl border border-gray-200 bg-white hover:bg-orange-50 cursor-pointer transition-all peer-checked:border-orange-500 peer-checked:bg-orange-50 grade-option">
+                                <input type="checkbox" name="teaching_grades" value="{{ grade.name }}"
+                                    class="peer sr-only grade-checkbox" onchange="handleGradeSelection(this)" {% if
+                                    grade.name in (tutor.teaching_grades or '' ) %}checked{% endif %}>
+                                <span
+                                    class="text-sm font-medium text-gray-700 peer-checked:text-orange-600 peer-checked:font-bold">{{
+                                    grade.name }}</span>
+                                <i
+                                    class="fa-solid fa-check absolute top-2 right-2 text-xs text-orange-500 opacity-0 peer-checked:opacity-100 transition-opacity"></i>
+                            </label>
+                            {% endfor %}
+                            <label
+                                class="relative flex items-center justify-center p-3 rounded-xl border border-gray-200 bg-white hover:bg-orange-50 cursor-pointer transition-all peer-checked:border-orange-500 peer-checked:bg-orange-50 md:col-span-2">
+                                <input type="checkbox" name="teaching_grades" value="Higher Education"
+                                    class="peer sr-only" id="higher-ed-checkbox" onchange="handleHigherEd(this)" {%
+                                    if 'Higher Education' in (tutor.teaching_grades or '' ) %}checked{% endif %}>
+                                <span
+                                    class="text-sm font-medium text-gray-700 peer-checked:text-orange-600 peer-checked:font-bold">Higher
+                                    Education</span>
+                                <i
+                                    class="fa-solid fa-check absolute top-2 right-2 text-xs text-orange-500 opacity-0 peer-checked:opacity-100 transition-opacity"></i>
+                            </label>
+                        </div>
+                        <p
+                            class="text-xs text-red-500 mt-2  {% if not (tutor.is_profile_complete) %}hidden{% endif %}">
+                            <i class="fa-solid fa-lock"></i> Grade selection is locked.
+                        </p>
+                    </div>
+
+                    <script>
+                        function handleHigherEd(checkbox) {
+                            const gradeCheckboxes = document.querySelectorAll('.grade-checkbox');
+                            const gradeLabels = document.querySelectorAll('.grade-option');
+
+                            if (checkbox.checked) {
+                                // Disable and uncheck all grades
+                                gradeCheckboxes.forEach(cb => {
+                                    cb.checked = false;
+                                    cb.disabled = true;
+                                });
+                                gradeLabels.forEach(label => label.classList.add('opacity-50', 'cursor-not-allowed'));
+                            } else {
+                                // Enable grades
+                                gradeCheckboxes.forEach(cb => cb.disabled = false);
+                                gradeLabels.forEach(label => label.classList.remove('opacity-50', 'cursor-not-allowed'));
+                            }
+                        }
+
+                        function handleGradeSelection(checkbox) {
+                            const higherEdCheckbox = document.getElementById('higher-ed-checkbox');
+                            const gradeCheckboxes = document.querySelectorAll('.grade-checkbox');
+
+                            // Check if ANY grade is checked
+                            let anyGradeChecked = Array.from(gradeCheckboxes).some(cb => cb.checked);
+
+                            if (anyGradeChecked) {
+                                higherEdCheckbox.checked = false;
+                                higherEdCheckbox.disabled = true;
+                                higherEdCheckbox.parentElement.classList.add('opacity-50', 'cursor-not-allowed');
+                            } else {
+                                higherEdCheckbox.disabled = false;
+                                higherEdCheckbox.parentElement.classList.remove('opacity-50', 'cursor-not-allowed');
+                            }
+                        }
+
+                        // Run on load to set initial state
+                        document.addEventListener('DOMContentLoaded', () => {
+                            const higherEd = document.getElementById('higher-ed-checkbox');
+                            if (higherEd.checked) handleHigherEd(higherEd);
+                            else handleGradeSelection(); // Check if grades are selected
+                        });
+                    </script>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Subjects You Can Teach *</label>
+                        <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                            {% for subject in subjects %}
+                            <label
+                                class="flex items-center gap-3 p-3 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 cursor-pointer">
+                                <input type="checkbox" name="subjects" value="{{ subject }}"
+                                    class="w-5 h-5 text-orange-500 rounded focus:ring-orange-500" {% if subject in
+                                    (tutor.subjects or '' ) %}checked{% endif %}>
+                                <span class="text-sm text-gray-700">{{ subject }}</span>
+                            </label>
+                            {% endfor %}
+                            <div
+                                class="md:col-span-2 relative {% if tutor.is_profile_complete %}hidden{% endif %}">
+                                <input type="text" name="custom_subject" placeholder="Add other subject..."
+                                    class="w-full px-4 py-3 pl-10 rounded-xl border border-gray-200 focus:border-orange-500 focus:ring-4 focus:ring-orange-50 transition-all text-sm">
+                                <i class="fa-solid fa-plus absolute left-3 top-3.5 text-gray-400"></i>
+                            </div>
+                        </div>
+                        <p
+                            class="text-xs text-red-500 mt-2 {% if not (tutor.is_profile_complete) %}hidden{% endif %}">
+                            <i class="fa-solid fa-lock"></i> Subject selection is locked.
+                        </p>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Languages</label>
+                        <input type="text" name="languages" value="{{ tutor.languages or 'English' }}" {% if
+                            tutor.is_profile_complete %}readonly
+                            class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-500 cursor-not-allowed"
+                            {% else
+                            %}class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-orange-500 focus:ring-4 focus:ring-orange-50 transition-all"
+                            {% endif %} placeholder="e.g., English, Hindi">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Bio / About You</label>
+                        <textarea name="bio" rows="4"
+                            class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-orange-500 focus:ring-4 focus:ring-orange-50 transition-all resize-none"
+                            placeholder="Tell students about your teaching style, experience, and how you can help them...">{{ tutor.bio or '' }}</textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submit Button -->
+            <button type="submit" {% if tutor.is_profile_complete %}disabled{% endif %}
+                class="w-full py-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold rounded-xl hover:from-purple-700 hover:to-indigo-700 transition-all transform hover:scale-[1.01] shadow-xl shadow-purple-200 flex items-center justify-center gap-2 text-lg disabled:opacity-50 disabled:cursor-not-allowed">
+                <span>{% if tutor.is_approved %}Profile Approved (Locked){% elif tutor.is_profile_complete %}Pending
+                    Approval (Locked){% else %}Submit Profile for Approval{% endif %}</span>
+                <i class="fa-solid fa-arrow-right"></i>
+            </button>
+        </form>
+    </div>
+</div>
+</div>
+
+<script>
+    // Logic to disable checkboxes if locked
+    document.addEventListener('DOMContentLoaded', () => {
+        const isLocked = {{ 'true' if (tutor.is_profile_complete) else 'false' }};
+    if (isLocked) {
+        const allInputs = document.querySelectorAll('input, select, textarea');
+        allInputs.forEach(input => {
+            if (input.type !== 'hidden') {
+                input.disabled = true;
+            }
+        });
+    }
+    });
+</script>
+{% endblock %}

@@ -1,4 +1,4 @@
-const POLL_INTERVAL = 5000;
+const POLL_INTERVAL = 900000; // 15 minutes
 let seenIds = new Set();
 let isFirstLoad = true;
 

@@ -3,75 +3,245 @@
 {% block title %}My Profile{% endblock %}
 
 {% block content %}
-<div class="max-w-2xl mx-auto py-8">
-    <div class="bg-white rounded-xl shadow-lg border border-slate-100 overflow-hidden">
-        <div class="p-6 border-b border-slate-100 bg-slate-50">
-            <h1 class="text-2xl font-bold text-slate-800">Edit Profile</h1>
-            <p class="text-slate-500 text-sm">Update your personal information</p>
-        </div>
+<div class="max-w-4xl mx-auto py-8 px-4">
+    <div class="bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden">
 
-        <form method="POST" enctype="multipart/form-data" class="p-6 space-y-6">
-            <!-- Profile Picture -->
-            <div class="flex items-center space-x-6">
-                <div class="shrink-0 relative">
-                    {% if user.profile_picture %}
-                    <img class="h-24 w-24 object-cover rounded-full ring-4 ring-white shadow-md"
-                        src="{{ url_for('static', filename=user.profile_picture) }}" alt="Current profile photo" />
-                    {% else %}
-                    <div
-                        class="h-24 w-24 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-500 font-bold text-3xl ring-4 ring-white shadow-md">
-                        {{ user.username[0]|upper }}
-                    </div>
-                    {% endif %}
+        <!-- Profile Header -->
+        <div class="p-8 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white flex items-center gap-6">
+            <div class="relative group">
+                {% if user.profile_picture %}
+                <img class="h-24 w-24 object-cover rounded-full ring-4 ring-white shadow-lg"
+                    src="{{ url_for('static', filename=user.profile_picture) }}" alt="Profile" />
+                {% else %}
+                <div
+                    class="h-24 w-24 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-3xl ring-4 ring-white shadow-lg">
+                    {{ user.username[0]|upper }}
                 </div>
-                <label class="block">
-                    <span class="sr-only">Choose profile photo</span>
-                    <input type="file" name="profile_picture" accept="image/*" class="block w-full text-sm text-slate-500
-                        file:mr-4 file:py-2 file:px-4
-                        file:rounded-full file:border-0
-                        file:text-sm file:font-semibold
-                        file:bg-indigo-50 file:text-indigo-700
-                        hover:file:bg-indigo-100 transition-colors
-                    " />
+                {% endif %}
+                <label
+                    class="absolute bottom-0 right-0 bg-white rounded-full p-2 shadow-md cursor-pointer hover:bg-slate-50 transition-colors border border-slate-200">
+                    <i class="fa-solid fa-camera text-slate-600"></i>
+                    <input type="file" form="profile-form" name="profile_picture" accept="image/*" class="hidden">
                 </label>
             </div>
-
-            <!-- Full Name -->
             <div>
-                <label for="full_name" class="block text-sm font-medium text-slate-700">Full Name</label>
-                <input type="text" name="full_name" id="full_name" value="{{ user.full_name or '' }}"
-                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-4 py-2 border"
-                    placeholder="John Doe">
+                <h1 class="text-3xl font-bold text-slate-800">{{ user.full_name or user.username }}</h1>
+                <p class="text-slate-500 flex items-center gap-2">
+                    <span
+                        class="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wide">{{
+                        user.role }}</span>
+                    {% if user.student_type %}
+                    <span class="text-slate-400">•</span>
+                    <span class="capitalize">{{ user.student_type|replace('_', ' ') }} Student</span>
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+
+        {% if user.is_profile_complete %}
+        <div class="px-8 pt-6">
+            <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded-r-lg">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <i class="fa-solid fa-lock text-yellow-500"></i>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm text-yellow-700">
+                            <strong>Profile Locked:</strong> Your profile details are saved and cannot be changed. Only
+                            your profile picture can be updated.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="px-8 pt-6">
+            <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <i class="fa-solid fa-circle-info text-blue-500"></i>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm text-blue-700">
+                            <strong>Important:</strong> You can update your details now. Once saved, they will be
+                            <strong>permanently locked</strong>.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+
+        <form id="profile-form" method="POST" enctype="multipart/form-data" class="p-8 space-y-8">
+
+            <!-- 1. Personal Information -->
+            <div class="space-y-6">
+                <h3 class="text-lg font-bold text-slate-700 border-b border-slate-100 pb-2 flex items-center gap-2">
+                    <i class="fa-solid fa-user text-indigo-500"></i> Personal Information
+                </h3>
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-600 mb-2">Username</label>
+                        <input type="text" value="{{ user.username }}" disabled
+                            class="w-full px-4 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-slate-500 cursor-not-allowed">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-600 mb-2">Email</label>
+                        <input type="email" value="{{ user.email }}" disabled
+                            class="w-full px-4 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-slate-500 cursor-not-allowed">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-600 mb-2">Full Name</label>
+                        <input type="text" name="full_name" value="{{ user.full_name or '' }}" {% if
+                            user.is_profile_complete %}readonly{% endif %}
+                            class="w-full px-4 py-2.5 rounded-lg border border-slate-200 {% if user.is_profile_complete %}bg-slate-50 text-slate-500 cursor-not-allowed{% else %}focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50 transition-all{% endif %}">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-600 mb-2">Phone</label>
+                        <input type="tel" name="phone" value="{{ user.phone or '' }}" {% if user.is_profile_complete
+                            %}readonly{% endif %}
+                            class="w-full px-4 py-2.5 rounded-lg border border-slate-200 {% if user.is_profile_complete %}bg-slate-50 text-slate-500 cursor-not-allowed{% else %}focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50 transition-all{% endif %}">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-600 mb-2">Student Type</label>
+                        <select name="student_type" id="student_type" onchange="toggleProfileFields()" {% if
+                            user.is_profile_complete %}disabled{% endif %}
+                            class="w-full px-4 py-2.5 rounded-lg border border-slate-200 {% if user.is_profile_complete %}bg-slate-50 text-slate-500 cursor-not-allowed{% else %}focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50 transition-all{% endif %}">
+                            <option value="grade" {% if user.student_type=='grade' %}selected{% endif %}>School Student
+                                (K-12)</option>
+                            <option value="higher_ed" {% if user.student_type=='higher_ed' %}selected{% endif %}>Higher
+                                Education (College)</option>
+                            <option value="disabled" {% if user.student_type=='disabled' %}selected{% endif %}>Special
+                                Ability Support</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-600 mb-2">Date of Birth</label>
+                        <input type="date" name="dob" value="{{ user.dob or '' }}" {% if user.is_profile_complete
+                            %}readonly{% endif %}
+                            class="w-full px-4 py-2.5 rounded-lg border border-slate-200 {% if user.is_profile_complete %}bg-slate-50 text-slate-500 cursor-not-allowed{% else %}focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50 transition-all{% endif %}">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-semibold text-slate-600 mb-2">Bio</label>
+                        <textarea name="bio" rows="3" {% if user.is_profile_complete %}readonly{% endif %}
+                            class="w-full px-4 py-2.5 rounded-lg border border-slate-200 {% if user.is_profile_complete %}bg-slate-50 text-slate-500 cursor-not-allowed{% else %}focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50 transition-all{% endif %} resize-none">{{ user.bio or '' }}</textarea>
+                    </div>
+                </div>
             </div>
 
-            <!-- Bio -->
-            <div>
-                <label for="bio" class="block text-sm font-medium text-slate-700">Bio</label>
-                <textarea name="bio" id="bio" rows="4"
-                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-4 py-2 border"
-                    placeholder="Tell us about yourself...">{{ user.bio or '' }}</textarea>
+            <!-- 2. Academic Details -->
+            <div id="school-section" class="space-y-6">
+                <h3 class="text-lg font-bold text-slate-700 border-b border-slate-100 pb-2 flex items-center gap-2">
+                    <i class="fa-solid fa-graduation-cap text-orange-500"></i> Academic Details
+                </h3>
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-semibold text-slate-600 mb-2">School / Institute Name</label>
+                        <input type="text" name="school_name" value="{{ user.school_name or '' }}" {% if
+                            user.is_profile_complete %}readonly{% endif %}
+                            class="w-full px-4 py-2.5 rounded-lg border border-slate-200 {% if user.is_profile_complete %}bg-slate-50 text-slate-500 cursor-not-allowed{% else %}focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50 transition-all{% endif %}">
+                    </div>
+
+                    <!-- Grade Selection (For School/Disabled) -->
+                    <div id="grade-field">
+                        <label class="block text-sm font-semibold text-slate-600 mb-2">Grade / Class</label>
+                        <select name="grade_id" {% if user.is_profile_complete %}disabled{% endif %}
+                            class="w-full px-4 py-2.5 rounded-lg border border-slate-200 {% if user.is_profile_complete %}bg-slate-50 text-slate-500 cursor-not-allowed{% else %}focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50 transition-all{% endif %}">
+                            <option value="">-- Select Grade --</option>
+                            {% for grade in grades %}
+                            <option value="{{ grade.id }}" {% if user.grade_id==grade.id %}selected{% endif %}>{{
+                                grade.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Course Field (For Higher Ed) -->
+                    <div id="course-field" class="hidden">
+                        <label class="block text-sm font-semibold text-slate-600 mb-2">Course / Stream</label>
+                        <input type="text" name="class_grade" value="{{ user.class_grade or '' }}"
+                            placeholder="e.g. B.Tech CS" {% if user.is_profile_complete %}readonly{% endif %}
+                            class="w-full px-4 py-2.5 rounded-lg border border-slate-200 {% if user.is_profile_complete %}bg-slate-50 text-slate-500 cursor-not-allowed{% else %}focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50 transition-all{% endif %}">
+                    </div>
+                </div>
             </div>
 
-            <!-- Read Only Info -->
-            <div class="grid grid-cols-2 gap-4 pt-4 border-t border-slate-100">
-                <div>
-                    <span class="block text-xs font-medium text-slate-500 uppercase">Username</span>
-                    <span class="block text-sm text-slate-800">{{ user.username }}</span>
+            <!-- 3. Parent / Guardian Info -->
+            <div id="parent-section" class="space-y-6">
+                <h3 class="text-lg font-bold text-slate-700 border-b border-slate-100 pb-2 flex items-center gap-2">
+                    <i class="fa-solid fa-users text-blue-500"></i> Parent / Guardian
+                </h3>
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-600 mb-2">Name</label>
+                        <input type="text" name="parent_name" value="{{ user.parent_name or '' }}" {% if
+                            user.is_profile_complete %}readonly{% endif %}
+                            class="w-full px-4 py-2.5 rounded-lg border border-slate-200 {% if user.is_profile_complete %}bg-slate-50 text-slate-500 cursor-not-allowed{% else %}focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50 transition-all{% endif %}">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-600 mb-2">Phone</label>
+                        <input type="tel" name="parent_phone" value="{{ user.parent_phone or '' }}" {% if
+                            user.is_profile_complete %}readonly{% endif %}
+                            class="w-full px-4 py-2.5 rounded-lg border border-slate-200 {% if user.is_profile_complete %}bg-slate-50 text-slate-500 cursor-not-allowed{% else %}focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50 transition-all{% endif %}">
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. Documents (For Disabled) -->
+            <div id="document-section" class="space-y-6 hidden">
+                <h3 class="text-lg font-bold text-slate-700 border-b border-slate-100 pb-2 flex items-center gap-2">
+                    <i class="fa-solid fa-file-medical text-red-500"></i> Verification Documents
+                </h3>
+                <div class="p-4 bg-yellow-50 border border-yellow-100 rounded-lg text-sm text-yellow-800 mb-4">
+                    <i class="fa-solid fa-triangle-exclamation mr-1"></i>
+                    Upload valid disability certificate for fee waivers and support.
                 </div>
                 <div>
-                    <span class="block text-xs font-medium text-slate-500 uppercase">Role</span>
-                    <span class="block text-sm text-slate-800 capitalize">{{ user.role }}</span>
+                    <label class="block text-sm font-semibold text-slate-600 mb-2">Disability Certificate</label>
+                    <input type="file" name="certificate" accept=".pdf,.jpg,.jpeg,.png"
+                        class="w-full px-4 py-2.5 rounded-lg border border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50 transition-all file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-indigo-600 file:text-white hover:file:bg-indigo-700">
+                    {% if user.disability_certificate_path %}
+                    <p class="text-xs text-green-600 mt-2"><i class="fa-solid fa-check-circle"></i> Document uploaded
+                    </p>
+                    {% endif %}
                 </div>
             </div>
 
             <!-- Submit -->
-            <div class="pt-4">
+            <div class="pt-6 border-t border-slate-100 flex justify-end">
                 <button type="submit"
-                    class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all">
-                    Save Changes
+                    class="px-8 py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition-all transform hover:scale-[1.02] flex items-center gap-2">
+                    <i class="fa-solid fa-save"></i> Save Changes
                 </button>
             </div>
         </form>
     </div>
 </div>
+
+<script>
+    function toggleProfileFields() {
+        const type = document.getElementById('student_type').value;
+        const gradeField = document.getElementById('grade-field');
+        const courseField = document.getElementById('course-field');
+        const documentSection = document.getElementById('document-section');
+        const parentSection = document.getElementById('parent-section');
+
+        // Reset
+        gradeField.classList.remove('hidden');
+        courseField.classList.add('hidden');
+        documentSection.classList.add('hidden');
+        parentSection.classList.remove('hidden');
+
+        if (type === 'higher_ed') {
+            gradeField.classList.add('hidden');
+            courseField.classList.remove('hidden');
+            // Higher ed might not need parent info strictly, but keeping it visible as optional/standard
+        } else if (type === 'disabled') {
+            documentSection.classList.remove('hidden');
+        }
+    }
+
+    // Run on load
+    document.addEventListener('DOMContentLoaded', toggleProfileFields);
+</script>
 {% endblock %}

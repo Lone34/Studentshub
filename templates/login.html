@@ -81,18 +81,31 @@
 
         <!-- STUDENT LOGIN FORM -->
         <div id="login-content-student" class="tab-content active">
+            <!-- Google Login -->
+            <a href="{{ url_for('auth_bp.google_login', role='student') }}"
+                class="w-full py-3 mb-6 bg-white border border-slate-200 text-slate-700 font-bold rounded-xl hover:bg-slate-50 transition-all flex items-center justify-center gap-3 shadow-sm">
+                <img src="https://www.svgrepo.com/show/475656/google-color.svg" class="w-6 h-6" alt="Google">
+                Continue with Google
+            </a>
+
+            <div class="relative flex py-2 items-center mb-6">
+                <div class="flex-grow border-t border-gray-200"></div>
+                <span class="flex-shrink-0 mx-4 text-gray-400 text-sm">Or login with email</span>
+                <div class="flex-grow border-t border-gray-200"></div>
+            </div>
+
             <form method="POST" action="{{ url_for('login') }}" class="space-y-5">
                 <input type="hidden" name="user_type" value="student">
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-600 mb-2">Username</label>
+                    <label class="block text-sm font-medium text-gray-600 mb-2">Username or Email</label>
                     <div class="relative">
                         <span class="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400">
                             <i class="fa-solid fa-user"></i>
                         </span>
                         <input type="text" name="username" required
                             class="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-100 transition-all"
-                            placeholder="Your username">
+                            placeholder="Username or Email">
                     </div>
                 </div>
 
@@ -102,9 +115,13 @@
                         <span class="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400">
                             <i class="fa-solid fa-lock"></i>
                         </span>
-                        <input type="password" name="password" required
-                            class="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-100 transition-all"
+                        <input type="password" name="password" id="student_login_pass" required
+                            class="w-full pl-12 pr-10 py-3 rounded-xl border border-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-100 transition-all"
                             placeholder="••••••••">
+                        <button type="button" onclick="togglePassword('student_login_pass')"
+                            class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                            <i class="fa-regular fa-eye"></i>
+                        </button>
                     </div>
                 </div>
 
@@ -118,6 +135,19 @@
 
         <!-- TUTOR LOGIN FORM -->
         <div id="login-content-tutor" class="tab-content">
+            <!-- Google Login -->
+            <a href="{{ url_for('auth_bp.google_login', role='tutor') }}"
+                class="w-full py-3 mb-6 bg-white border border-slate-200 text-slate-700 font-bold rounded-xl hover:bg-slate-50 transition-all flex items-center justify-center gap-3 shadow-sm">
+                <img src="https://www.svgrepo.com/show/475656/google-color.svg" class="w-6 h-6" alt="Google">
+                Continue with Google
+            </a>
+
+            <div class="relative flex py-2 items-center mb-6">
+                <div class="flex-grow border-t border-gray-200"></div>
+                <span class="flex-shrink-0 mx-4 text-gray-400 text-sm">Or login with email</span>
+                <div class="flex-grow border-t border-gray-200"></div>
+            </div>
+
             <form method="POST" action="{{ url_for('tutoring.tutor_login') }}" class="space-y-5">
                 <div>
                     <label class="block text-sm font-medium text-gray-600 mb-2">Email Address</label>
@@ -137,9 +167,13 @@
                         <span class="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400">
                             <i class="fa-solid fa-lock"></i>
                         </span>
-                        <input type="password" name="password" required
-                            class="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-100 transition-all"
+                        <input type="password" name="password" id="tutor_login_pass" required
+                            class="w-full pl-12 pr-10 py-3 rounded-xl border border-gray-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-100 transition-all"
                             placeholder="••••••••">
+                        <button type="button" onclick="togglePassword('tutor_login_pass')"
+                            class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                            <i class="fa-regular fa-eye"></i>
+                        </button>
                     </div>
                 </div>
 
@@ -187,5 +221,21 @@
             switchLoginTab('tutor');
         }
     });
+
+    // --- TOGGLE PASSWORD VISIBILITY ---
+    function togglePassword(inputId) {
+        const input = document.getElementById(inputId);
+        const icon = event.currentTarget.querySelector('i');
+
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
+        } else {
+            input.type = 'password';
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
+        }
+    }
 </script>
 {% endblock %}

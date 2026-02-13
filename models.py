@@ -11,6 +11,7 @@ class User(UserMixin, db.Model):
     role = db.Column(db.String(50), default='user')
     credits = db.Column(db.Integer, default=0)
     manager_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    google_id = db.Column(db.String(100), unique=True, nullable=True)  # For Google Login
     
     # Student profile fields
     full_name = db.Column(db.String(150), nullable=True)
@@ -32,6 +33,7 @@ class User(UserMixin, db.Model):
     class_grade = db.Column(db.String(50), nullable=True)
     disability_certificate_path = db.Column(db.String(255), nullable=True)
     is_verified = db.Column(db.Boolean, default=True)
+    is_profile_complete = db.Column(db.Boolean, default=False) # Profile editable only once
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     service_accounts = db.relationship('ServiceAccount', backref='owner', lazy=True, foreign_keys='ServiceAccount.owner_id')
@@ -40,14 +42,14 @@ class User(UserMixin, db.Model):
         """
         Checks if the user can access a specific feature based on their subscription.
         Features: 'ai_tutor', 'expert_ask', 'video_tutor', 'school', 'unblur', 'notes'
+        Uses per-feature credit pools stored on the Subscription.
+        Fallback: Checks self.credits (earned via uploads) if plan credits are exhausted.
         """
         # 1. Super Admin / Admin Bypass
         if self.role in ['admin', 'super_admin']:
             return True
 
-        # 2. Check for Active Subscription
-        # 2. Check for Active Subscription
-        # Exception: Verified Disabled Students for 'school' feature
+        # 2. Exception: Verified Disabled Students for 'school' feature
         if feature == 'school' and self.student_type == 'disabled' and self.is_verified:
             return True
 
@@ -58,46 +60,27 @@ class User(UserMixin, db.Model):
         if not sub or not sub.is_active or sub.end_date < datetime.utcnow():
             return False
 
-        # 3. Plan Limits
-        # Plans: 'basic_299', 'pro_499', 'school_1200'
+        # 3. Feature-specific credit pool checks and Fallback
         
-        # --- SCHOOL ACCESS ---
+        # --- SCHOOL ACCESS (only school_1200 plan) ---
         if feature == 'school':
-            # Free access for verified disabled students
-            if self.student_type == 'disabled' and self.is_verified:
-                return True
             return sub.plan_type == 'school_1200'
 
-        # --- UNLIMITED FEATURES ---
+        # --- UNLIMITED FEATURES (all paid plans) ---
         if feature in ['unblur', 'notes']:
-            return True # All paid plans have unlimited unblur/notes
+            return True
 
-        # --- AI TUTOR LIMITS (Monthly) ---
+        # --- AI TUTOR: check credit pool OR wallet ---
         if feature == 'ai_tutor':
-            limit = 0
-            if sub.plan_type == 'basic_299': limit = 10
-            elif sub.plan_type == 'pro_499': limit = 50
-            elif sub.plan_type == 'school_1200': limit = 20
-            
-            return sub.ai_used < limit
+            return sub.ai_credits_used < sub.ai_credits or self.credits > 0
 
-        # --- EXPERT ASK LIMITS (Monthly) ---
+        # --- EXPERT ASK: check credit pool OR wallet ---
         if feature == 'expert_ask':
-            limit = 0
-            if sub.plan_type == 'basic_299': limit = 20
-            elif sub.plan_type == 'pro_499': limit = 40
-            elif sub.plan_type == 'school_1200': limit = 20
-            
-            return sub.expert_used < limit
+            return sub.expert_credits_used < sub.expert_credits or self.credits > 0
 
-        # --- VIDEO TUTOR LIMITS (Monthly) ---
+        # --- VIDEO TUTOR: check credit pool OR wallet ---
         if feature == 'video_tutor':
-            limit = 0
-            if sub.plan_type == 'basic_299': limit = 5
-            elif sub.plan_type == 'pro_499': limit = 10
-            elif sub.plan_type == 'school_1200': limit = 10
-            
-            return sub.tutor_sessions_used < limit
+            return sub.tutor_credits_used < sub.tutor_credits or self.credits > 0
             
         return False
 
@@ -132,14 +115,26 @@ class Notification(db.Model):
     # Relationship to user
     user = db.relationship('User', backref=db.backref('notifications', lazy=True))
 
+class ChatConversation(db.Model):
+    """Groups chat messages into distinct conversations for the sidebar"""
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    title = db.Column(db.String(200), default='New Chat')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    user = db.relationship('User', backref=db.backref('chat_conversations', lazy=True))
+    messages = db.relationship('ChatHistory', backref='conversation', lazy=True, order_by='ChatHistory.timestamp')
+
 class ChatHistory(db.Model):
     """Stores AI Tutor conversations for history and analytics"""
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    conversation_id = db.Column(db.Integer, db.ForeignKey('chat_conversation.id'), nullable=True)
     ai_provider = db.Column(db.String(20), nullable=False)  # 'chatgpt' or 'gemini'
     question = db.Column(db.Text, nullable=False)
     answer = db.Column(db.Text, nullable=True)
-    category = db.Column(db.String(50), default='general')  # 'questions', 'exams', 'news', 'answers', etc
+    category = db.Column(db.String(50), default='general')
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
     
     user = db.relationship('User', backref=db.backref('chat_history', lazy=True))
@@ -196,24 +191,25 @@ class Tutor(db.Model):
     # Login credentials (separate from User to keep tutors isolated)
     email = db.Column(db.String(150), unique=True, nullable=False)
     password = db.Column(db.String(255), nullable=False)
+    google_id = db.Column(db.String(100), unique=True, nullable=True)  # For Google Login
     
     # Personal details (for admin verification, not shown to students)
-    full_name = db.Column(db.String(150), nullable=False)
-    phone = db.Column(db.String(20), nullable=False)
+    full_name = db.Column(db.String(150), nullable=True)
+    phone = db.Column(db.String(20), nullable=True)
     
     # Public profile (shown to students)
-    display_name = db.Column(db.String(100), nullable=False)  # Anonymous name
+    display_name = db.Column(db.String(100), nullable=True)  # Anonymous name
     bio = db.Column(db.Text, nullable=True)
     profile_image = db.Column(db.String(500), nullable=True)
     
     # Qualifications (for admin verification)
-    qualification = db.Column(db.String(200), nullable=False)  # e.g., "B.Tech Computer Science"
+    qualification = db.Column(db.String(200), nullable=True)  # e.g., "B.Tech Computer Science"
     experience_years = db.Column(db.Integer, default=0)
     college = db.Column(db.String(200), nullable=True)
     id_proof_path = db.Column(db.String(500), nullable=True)  # Uploaded ID for verification
     
     # Teaching details
-    subjects = db.Column(db.String(500), nullable=False)  # Comma-separated: "Math,Physics,Chemistry"
+    subjects = db.Column(db.String(500), nullable=True)  # Comma-separated: "Math,Physics,Chemistry"
     teaching_grades = db.Column(db.String(500), nullable=True)  # Comma-separated: "Class 9, Class 10"
     languages = db.Column(db.String(200), default="English")  # Languages they can teach in
     
@@ -221,9 +217,10 @@ class Tutor(db.Model):
     is_approved = db.Column(db.Boolean, default=False)  # Requires admin approval
     is_available = db.Column(db.Boolean, default=False)  # Online/offline toggle
     is_active = db.Column(db.Boolean, default=True)  # Account active
+    is_profile_complete = db.Column(db.Boolean, default=False) # Profile editable only once
     
     # Stats
-    rating = db.Column(db.Float, default=5.0)
+    rating = db.Column(db.Float, default=0.0)
     total_sessions = db.Column(db.Integer, default=0)
     total_minutes = db.Column(db.Integer, default=0)
     total_earnings = db.Column(db.Integer, default=0)  # In credits
@@ -376,7 +373,17 @@ class Subscription(db.Model):
     end_date = db.Column(db.DateTime, nullable=False)
     is_active = db.Column(db.Boolean, default=True)
     
-    # Usage Counters (Reset monthly)
+    # Per-feature credit pools (allocated on plan activation)
+    tutor_credits = db.Column(db.Integer, default=0)   # Total 1-on-1 tutor session credits
+    expert_credits = db.Column(db.Integer, default=0)   # Total Ask an Expert credits
+    ai_credits = db.Column(db.Integer, default=0)       # Total AI Tutor credits
+    
+    # Usage counters (each use consumes 1 credit)
+    tutor_credits_used = db.Column(db.Integer, default=0)
+    expert_credits_used = db.Column(db.Integer, default=0)
+    ai_credits_used = db.Column(db.Integer, default=0)
+    
+    # Legacy counters (kept for backward compatibility)
     ai_used = db.Column(db.Integer, default=0)
     expert_used = db.Column(db.Integer, default=0)
     tutor_sessions_used = db.Column(db.Integer, default=0)
@@ -443,3 +450,39 @@ class CoursePurchase(db.Model):
     purchased_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     user = db.relationship('User', backref=db.backref('course_purchases', lazy=True))
+
+
+# ============================================
+# AI QUIZ MODELS
+# ============================================
+
+class QuizSession(db.Model):
+    """Stores active quiz sessions (generated by AI)"""
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    subject = db.Column(db.String(100), nullable=False)
+    grade = db.Column(db.String(50), nullable=False)
+    difficulty = db.Column(db.String(20), default='hard')
+    
+    # JSON Blob of questions: [{q: '...', options: {...}, answer: 'A'}, ...]
+    questions_json = db.Column(db.Text, nullable=False) 
+    
+    start_time = db.Column(db.DateTime, default=datetime.utcnow)
+    is_completed = db.Column(db.Boolean, default=False)
+    
+    user = db.relationship('User', backref=db.backref('quiz_sessions', lazy=True))
+
+class QuizAttempt(db.Model):
+    """Stores completed quiz results"""
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    subject = db.Column(db.String(100), nullable=False)
+    score = db.Column(db.Integer, nullable=False) # e.g. 8 (out of 10)
+    total_questions = db.Column(db.Integer, default=10)
+    
+    # JSON Blob of results: [{q: '...', user_ans: 'A', correct_ans: 'A', correct: True}, ...]
+    details_json = db.Column(db.Text, nullable=True) 
+    
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    user = db.relationship('User', backref=db.backref('quiz_attempts', lazy=True))

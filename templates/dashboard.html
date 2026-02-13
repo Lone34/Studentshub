@@ -381,6 +381,28 @@
                         </div>
                     </div>
                 </a>
+
+                <!-- AI Quiz -->
+                <a href="{{ url_for('quiz_bp.quiz_home') }}"
+                    class="dash-card group p-7 rounded-3xl cursor-pointer block"
+                    style="--icon-shadow: rgba(239, 68, 68, 0.3)">
+                    <div
+                        class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-red-500/10 to-transparent rounded-bl-full transition-all group-hover:from-red-500/20">
+                    </div>
+                    <div class="flex items-start gap-5">
+                        <div
+                            class="card-icon w-14 h-14 bg-gradient-to-br from-red-500 to-orange-600 rounded-2xl flex items-center justify-center text-white text-2xl shadow-lg shadow-red-500/20 shrink-0">
+                            <i class="fa-solid fa-brain"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <h3 class="text-lg font-bold text-slate-900 mb-1">AI Quiz Challenge</h3>
+                            <p class="text-slate-500 text-sm leading-relaxed mb-3">Test yourself with AI-generated
+                                difficult quizzes. Strict mode with timer & anti-cheat.</p>
+                            <span class="text-red-600 font-bold text-sm flex items-center gap-2">Take Challenge <i
+                                    class="fa-solid fa-arrow-right card-arrow"></i></span>
+                        </div>
+                    </div>
+                </a>
             </div>
         </div>
 
@@ -393,7 +415,7 @@
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <!-- Live Tutoring -->
-                <a href="{{ url_for('tutoring.browse_tutors') }}"
+                <a href="{{ url_for('tutoring.browse_subjects') }}"
                     class="dash-card group p-7 rounded-3xl cursor-pointer block"
                     style="--icon-shadow: rgba(245, 158, 11, 0.3)">
                     <div
@@ -459,7 +481,7 @@
                         <div class="flex-1 min-w-0">
                             <h3 class="text-lg font-bold text-slate-900 mb-1">Library</h3>
                             <p class="text-slate-500 text-sm leading-relaxed mb-3">Download notes, upload papers, and
-                                earn credits.</p>
+                                earn credits (20 uploads = 1 credit).</p>
                             <span class="text-blue-600 font-bold text-sm flex items-center gap-2">Browse Docs <i
                                     class="fa-solid fa-arrow-right card-arrow"></i></span>
                         </div>
@@ -652,7 +674,7 @@
                                     class="text-orange-400">School</span></span>
                         </div>
                         <p class="text-slate-400 text-sm leading-relaxed">
-                            PanunSchool is an all-in-one academic platform built for Kashmiri Pandit students worldwide.
+                            PanunSchool is an all-in-one academic platform built for students worldwide.
                             We provide AI-powered homework help, live tutoring, a resource library, video courses,
                             and instant answer unblurring — everything you need to excel in your studies.
                         </p>
