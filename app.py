@@ -25,7 +25,7 @@ load_dotenv() # Load environment variables from .env
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev_default_secret_key')
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///chegg_bot.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///chegg_bot.db')
 
 UPLOAD_FOLDER = 'static/uploads'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER

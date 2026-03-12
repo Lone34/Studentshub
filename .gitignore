@@ -1,16 +1,47 @@
+# ==========================
+# Environment & Secrets
+# ==========================
+.env
+.env.local
+.env.production
+
+# ==========================
 # Python
+# ==========================
 __pycache__/
 *.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
 
-# Virtual environments
+# ==========================
+# Virtual Environments
+# ==========================
 venv/
 env/
+.venv/
 
-# Databases & runtime data
+# ==========================
+# Databases & Runtime Data
+# ==========================
 instance/
 *.db
 *.sqlite3
 
-# Uploads
+# ==========================
+# Uploads & Logs
+# ==========================
 uploads/
-.env
+logs/
+*.log
+
+# ==========================
+# OS & IDE
+# ==========================
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
