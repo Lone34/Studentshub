@@ -703,7 +703,7 @@ def get_trending_topics():
         func.count(ChatHistory.id).label('count')
     ).filter(
         ChatHistory.timestamp >= week_ago
-    ).group_by(ChatHistory.question).order_by(
+    ).group_by(ChatHistory.question, ChatHistory.category).order_by(
         func.count(ChatHistory.id).desc()
     ).limit(5).all()
     
