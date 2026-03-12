@@ -7,7 +7,7 @@ db = SQLAlchemy()
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(150), unique=True, nullable=False)
-    password = db.Column(db.String(150), nullable=False)
+    password = db.Column(db.String(512), nullable=False)
     role = db.Column(db.String(50), default='user')
     credits = db.Column(db.Integer, default=0)
     manager_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
@@ -18,7 +18,7 @@ class User(UserMixin, db.Model):
     email = db.Column(db.String(150), nullable=True)
     phone = db.Column(db.String(20), nullable=True)
     bio = db.Column(db.Text, nullable=True)
-    profile_picture = db.Column(db.String(255), nullable=True) # Path to image
+    profile_picture = db.Column(db.String(500), nullable=True) # Path to image or URL
     grade_id = db.Column(db.Integer, db.ForeignKey('grade.id'), nullable=True)  # Enrolled grade for school
     
     # Subscription
