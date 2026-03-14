@@ -721,7 +721,12 @@ def api_end_session(room_id):
         return jsonify({'success': False, 'error': 'Session not found'}), 404
     
     if tutoring_session.status == 'completed':
-        return jsonify({'success': True, 'message': 'Session already ended'})
+        return jsonify({
+            'success': True,
+            'message': 'Session already ended',
+            'duration_minutes': tutoring_session.duration_minutes or 0,
+            'credits_charged': tutoring_session.credits_paid or 0
+        })
     
     # Calculate duration
     now = datetime.utcnow()
@@ -787,7 +792,7 @@ def api_upload_recording(room_id):
     if file.filename:
         # Save recording
         filename = f"session_{room_id}_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.webm"
-        upload_folder = os.path.join('uploads', 'recordings')
+        upload_folder = os.path.join(current_app.root_path, 'uploads', 'recordings')
         os.makedirs(upload_folder, exist_ok=True)
         file_path = os.path.join(upload_folder, filename)
         
