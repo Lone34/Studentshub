@@ -2,580 +2,425 @@
 {% block content %}
 
 <style>
+    /* ===== DARK THEME OVERRIDE ===== */
+    body { background: #0a0a0f !important; color: #e2e8f0 !important; }
+    .glass-nav { background: rgba(10,10,18,0.85) !important; border-color: rgba(255,255,255,0.06) !important; }
+    .glass-nav span, .glass-nav a, .glass-nav button, .glass-nav i { color: #cbd5e1; }
+    .glass-nav .font-extrabold { color: #f1f5f9 !important; }
+    footer { color: #334155 !important; }
+
+    /* ===== ANIMATED MESH BG ===== */
+    @keyframes meshMove { 0%{transform:translate(0,0) scale(1)} 33%{transform:translate(30px,-50px) scale(1.1)} 66%{transform:translate(-20px,20px) scale(0.9)} 100%{transform:translate(0,0) scale(1)} }
+    .mesh-orb { position:fixed; border-radius:50%; filter:blur(100px); opacity:0.15; animation:meshMove 20s ease-in-out infinite; pointer-events:none; z-index:0; }
+
     /* ===== ANIMATIONS ===== */
-    @keyframes fadeInUp {
-        from {
-            opacity: 0;
-            transform: translateY(30px);
-        }
+    @keyframes revealUp { from{opacity:0;transform:translateY(60px) scale(0.95)} to{opacity:1;transform:translateY(0) scale(1)} }
+    @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
+    @keyframes float-reverse { 0%,100%{transform:translateY(0)} 50%{transform:translateY(12px)} }
+    @keyframes shimmer { 0%{background-position:-200% center} 100%{background-position:200% center} }
+    @keyframes spin-slow { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+    @keyframes gradientShift { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
+    @keyframes borderGlow { 0%,100%{opacity:0.5} 50%{opacity:1} }
+    @keyframes pulseRing { 0%{transform:scale(0.9);opacity:1} 100%{transform:scale(1.8);opacity:0} }
+    @keyframes counterUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+    @keyframes scaleIn { from{opacity:0;transform:scale(0.8)} to{opacity:1;transform:scale(1)} }
+    @keyframes slideInLeft { from{opacity:0;transform:translateX(-40px)} to{opacity:1;transform:translateX(0)} }
 
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
+    .animate-float { animation: float 6s ease-in-out infinite; }
+    .animate-float-reverse { animation: float-reverse 7s ease-in-out infinite; }
+    .animate-spin-slow { animation: spin-slow 20s linear infinite; }
+
+    /* ===== SCROLL REVEAL ===== */
+    .reveal { opacity:0; transform:translateY(50px); transition:all 0.8s cubic-bezier(0.16,1,0.3,1); }
+    .reveal.active { opacity:1; transform:translateY(0); }
+    .reveal-delay-1 { transition-delay:0.1s; }
+    .reveal-delay-2 { transition-delay:0.2s; }
+    .reveal-delay-3 { transition-delay:0.3s; }
+    .reveal-delay-4 { transition-delay:0.4s; }
+    .reveal-delay-5 { transition-delay:0.5s; }
+
+    /* ===== GLASS CARDS (DARK) ===== */
+    .neo-card {
+        position:relative; overflow:hidden; border-radius:24px;
+        background: rgba(255,255,255,0.03);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255,255,255,0.06);
+        transition: all 0.5s cubic-bezier(0.16,1,0.3,1);
+        transform-style: preserve-3d;
+        perspective: 800px;
     }
-
-    @keyframes fadeInScale {
-        from {
-            opacity: 0;
-            transform: scale(0.9);
-        }
-
-        to {
-            opacity: 1;
-            transform: scale(1);
-        }
+    .neo-card::before {
+        content:''; position:absolute; inset:0; border-radius:24px;
+        background: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, transparent 50%, rgba(255,255,255,0.02) 100%);
+        opacity:0; transition:opacity 0.5s; pointer-events:none;
     }
+    .neo-card:hover { transform:translateY(-8px) scale(1.02); border-color:var(--glow,rgba(249,115,22,0.3)); box-shadow:0 20px 60px -15px var(--shadow,rgba(249,115,22,0.15)),0 0 30px -10px var(--glow,rgba(249,115,22,0.1)); }
+    .neo-card:hover::before { opacity:1; }
+    .neo-card:hover .card-icon { transform:scale(1.15) rotate(-5deg); }
+    .neo-card:hover .card-arrow { transform:translateX(8px); opacity:1; }
 
-    @keyframes float {
+    .card-icon { transition: all 0.5s cubic-bezier(0.16,1,0.3,1); }
+    .card-arrow { transition: all 0.4s ease; opacity:0.5; }
 
-        0%,
-        100% {
-            transform: translateY(0);
-        }
-
-        50% {
-            transform: translateY(-12px);
-        }
-    }
-
-    @keyframes float-reverse {
-
-        0%,
-        100% {
-            transform: translateY(0);
-        }
-
-        50% {
-            transform: translateY(12px);
-        }
-    }
-
-    @keyframes pulse-glow {
-
-        0%,
-        100% {
-            box-shadow: 0 0 20px rgba(249, 115, 22, 0.15);
-        }
-
-        50% {
-            box-shadow: 0 0 40px rgba(249, 115, 22, 0.3);
-        }
-    }
-
-    @keyframes shimmer {
-        0% {
-            background-position: -200% center;
-        }
-
-        100% {
-            background-position: 200% center;
-        }
-    }
-
-    @keyframes spin-slow {
-        from {
-            transform: rotate(0deg);
-        }
-
-        to {
-            transform: rotate(360deg);
-        }
-    }
-
-    @keyframes icon-bounce {
-
-        0%,
-        100% {
-            transform: scale(1);
-        }
-
-        50% {
-            transform: scale(1.15);
-        }
-    }
-
-    @keyframes gradient-shift {
-        0% {
-            background-position: 0% 50%;
-        }
-
-        50% {
-            background-position: 100% 50%;
-        }
-
-        100% {
-            background-position: 0% 50%;
-        }
-    }
-
-    .animate-fade-in-up {
-        opacity: 0;
-        animation: fadeInUp 0.6s ease-out forwards;
-    }
-
-    .animate-fade-in-scale {
-        opacity: 0;
-        animation: fadeInScale 0.5s ease-out forwards;
-    }
-
-    .animate-float {
-        animation: float 6s ease-in-out infinite;
-    }
-
-    .animate-float-reverse {
-        animation: float-reverse 7s ease-in-out infinite;
-    }
-
-    .animate-pulse-glow {
-        animation: pulse-glow 3s ease-in-out infinite;
-    }
-
-    .animate-spin-slow {
-        animation: spin-slow 20s linear infinite;
-    }
-
-    .delay-100 {
-        animation-delay: 0.1s;
-    }
-
-    .delay-200 {
-        animation-delay: 0.2s;
-    }
-
-    .delay-300 {
-        animation-delay: 0.3s;
-    }
-
-    .delay-400 {
-        animation-delay: 0.4s;
-    }
-
-    .delay-500 {
-        animation-delay: 0.5s;
-    }
-
-    .delay-600 {
-        animation-delay: 0.6s;
-    }
-
-    .delay-700 {
-        animation-delay: 0.7s;
-    }
-
-    .delay-800 {
-        animation-delay: 0.8s;
-    }
-
-    .delay-900 {
-        animation-delay: 0.9s;
-    }
-
-    .delay-1000 {
-        animation-delay: 1.0s;
-    }
-
-    /* ===== CARD STYLES ===== */
-    .dash-card {
-        position: relative;
-        overflow: hidden;
-        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        background: rgba(255, 255, 255, 0.7);
-        backdrop-filter: blur(12px);
-        border: 1px solid rgba(226, 232, 240, 0.6);
-    }
-
-    .dash-card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: linear-gradient(135deg, transparent 0%, rgba(255, 255, 255, 0.4) 50%, transparent 100%);
-        opacity: 0;
-        transition: opacity 0.4s;
-        pointer-events: none;
-    }
-
-    .dash-card:hover {
-        transform: translateY(-8px);
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(249, 115, 22, 0.1);
-        border-color: rgba(249, 115, 22, 0.2);
-    }
-
-    .dash-card:hover::before {
-        opacity: 1;
-    }
-
-    .dash-card:hover .card-icon {
-        transform: scale(1.1);
-        box-shadow: 0 8px 25px -5px var(--icon-shadow);
-    }
-
-    .dash-card:hover .card-arrow {
-        transform: translateX(6px);
-        opacity: 1;
-    }
-
-    .card-icon {
-        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    .card-arrow {
-        transition: all 0.3s ease;
-        opacity: 0.7;
-    }
-
-    /* ===== GLASS ===== */
-    .glass {
-        background: rgba(255, 255, 255, 0.6);
-        backdrop-filter: blur(16px);
-        border: 1px solid rgba(255, 255, 255, 0.3);
-    }
+    /* ===== GLASS PANELS ===== */
+    .glass { background:rgba(255,255,255,0.04); backdrop-filter:blur(16px); border:1px solid rgba(255,255,255,0.06); }
 
     /* ===== SHIMMER TEXT ===== */
-    .shimmer-text {
-        background: linear-gradient(90deg, #f97316, #ef4444, #8b5cf6, #f97316);
-        background-size: 200% auto;
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-        animation: shimmer 4s linear infinite;
-    }
+    .shimmer-text { background:linear-gradient(90deg,#f97316,#f43e5e,#a855f7,#3b82f6,#f97316); background-size:300% auto; -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; animation:shimmer 5s linear infinite; }
 
-    /* ===== GRADIENT BG RING ===== */
-    .gradient-ring {
-        background: conic-gradient(from 0deg, #f97316, #ef4444, #8b5cf6, #3b82f6, #10b981, #f97316);
-        animation: spin-slow 20s linear infinite;
-    }
+    /* ===== GLOW BUTTON ===== */
+    .glow-btn { position:relative; overflow:hidden; }
+    .glow-btn::after { content:''; position:absolute; inset:-2px; background:linear-gradient(135deg,#f97316,#ef4444,#a855f7); border-radius:inherit; z-index:-1; filter:blur(12px); opacity:0; transition:opacity 0.4s; }
+    .glow-btn:hover::after { opacity:0.6; }
 
-    /* Dashboard card - keep old class for tool/session/modal views */
-    .dashboard-card {
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
+    /* ===== BENTO GRID ===== */
+    .bento-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:20px; }
+    @media(max-width:768px) { .bento-grid { grid-template-columns:1fr; } }
 
-    .dashboard-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-    }
+    /* ===== STAT CARD ===== */
+    .stat-value { font-size:2rem; font-weight:800; background:linear-gradient(135deg,#fff,#94a3b8); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+
+    /* ===== SECTION LABEL ===== */
+    .section-label { display:flex; align-items:center; gap:10px; margin-bottom:24px; }
+    .section-label .dot { width:8px; height:8px; border-radius:50%; }
+    .section-label h3 { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:3px; color:#64748b; }
+    .section-label .line { flex:1; height:1px; background:rgba(255,255,255,0.06); }
+
+    /* Legacy compat */
+    .dash-card { position:relative; overflow:hidden; transition:all 0.4s; background:rgba(255,255,255,0.03); backdrop-filter:blur(12px); border:1px solid rgba(255,255,255,0.06); }
+    .dash-card:hover { transform:translateY(-8px); box-shadow:0 25px 50px -12px rgba(0,0,0,0.3); }
+    .dashboard-card { transition:all 0.3s; }
+    .dashboard-card:hover { transform:translateY(-5px); }
+
+    /* Animations compat */
+    .animate-fade-in-up { opacity:0; animation:revealUp 0.7s cubic-bezier(0.16,1,0.3,1) forwards; }
+    .animate-fade-in-scale { opacity:0; animation:scaleIn 0.5s ease-out forwards; }
+    .delay-100{animation-delay:.1s} .delay-200{animation-delay:.2s} .delay-300{animation-delay:.3s}
+    .delay-400{animation-delay:.4s} .delay-500{animation-delay:.5s} .delay-600{animation-delay:.6s}
+    .delay-700{animation-delay:.7s} .delay-800{animation-delay:.8s} .delay-900{animation-delay:.9s}
+    .delay-1000{animation-delay:1s}
+
+    /* Override light text in tool/session/modal views */
+    #tool-view, #session-view, #detailsModal .bg-white { color:#1e293b; }
+    #tool-view .text-slate-900, #session-view .text-slate-900 { color:#1e293b; }
 </style>
 
-<div id="hub-view" class="max-w-7xl mx-auto">
+<div id="hub-view" class="max-w-7xl mx-auto relative">
 
-    <!-- ===== GREETING SECTION ===== -->
-    <div class="relative mb-12 pt-4">
-        <!-- Floating Ambient Orbs -->
-        <div
-            class="absolute -top-20 -left-20 w-72 h-72 bg-gradient-to-br from-orange-400/20 to-rose-500/20 rounded-full blur-3xl animate-float pointer-events-none">
-        </div>
-        <div
-            class="absolute -top-10 right-10 w-56 h-56 bg-gradient-to-br from-violet-400/15 to-indigo-500/15 rounded-full blur-3xl animate-float-reverse pointer-events-none">
-        </div>
+    <!-- ===== ANIMATED MESH BACKGROUND ===== -->
+    <div class="mesh-orb" style="width:500px;height:500px;background:#f97316;top:-100px;left:-200px;animation-duration:25s"></div>
+    <div class="mesh-orb" style="width:400px;height:400px;background:#a855f7;top:200px;right:-150px;animation-duration:30s;animation-delay:-5s"></div>
+    <div class="mesh-orb" style="width:350px;height:350px;background:#3b82f6;bottom:100px;left:30%;animation-duration:22s;animation-delay:-10s"></div>
 
-        <div class="relative z-10 animate-fade-in-up">
-            <p class="text-2xl md:text-3xl font-semibold text-slate-600 mb-2">
-                Welcome back, <span
-                    class="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-rose-600 font-extrabold">{{
-                    user.username }}</span> 👋
-            </p>
-            <p class="text-slate-400 text-sm">Your academic command center is ready.</p>
+    <!-- ===== HERO GREETING ===== -->
+    <div class="relative mb-14 pt-6 reveal">
+        <div class="relative z-10">
+            <p class="text-sm font-bold text-slate-500 uppercase tracking-[4px] mb-3 animate-fade-in-up">Dashboard</p>
+            <h1 class="text-3xl md:text-5xl font-extrabold text-white mb-3 animate-fade-in-up delay-100">
+                Welcome back, <span class="shimmer-text">{{ user.username }}</span> ðŸ‘‹
+            </h1>
+            <p class="text-slate-500 text-base animate-fade-in-up delay-200">Your academic command center is ready.</p>
         </div>
     </div>
 
     <!-- ===== SUBSCRIPTION STATUS ===== -->
-    <div class="mb-10 animate-fade-in-up delay-300">
-        <div
-            class="relative p-6 rounded-3xl glass shadow-sm overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6">
-            <!-- Gradient accent -->
-            <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-amber-400 via-orange-500 to-rose-500">
-            </div>
+    <div class="mb-12 reveal reveal-delay-1">
+        <div class="relative p-6 rounded-3xl glass overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6">
+            <div class="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-amber-400 via-orange-500 to-rose-500" style="background-size:200% 100%;animation:gradientShift 4s ease infinite"></div>
             <div>
-                <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
-                    <div
-                        class="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
+                <h2 class="text-lg font-bold text-white flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-orange-600 flex items-center justify-center shadow-lg shadow-orange-500/20">
                         <i class="fa-solid fa-crown text-white text-sm"></i>
                     </div>
                     Current Plan:
-                    <span
-                        class="text-transparent bg-clip-text bg-gradient-to-r from-amber-500 to-orange-600 font-extrabold">
-                        {% if user.role in ['admin', 'super_admin'] %}
-                        Unlimited Admin Access
-                        {% elif user.active_subscription_id %}
-                        Premium Member
-                        {% else %}
-                        Free Tier
-                        {% endif %}
+                    <span class="shimmer-text font-extrabold">
+                        {% if user.role in ['admin', 'super_admin'] %}Unlimited Admin Access
+                        {% elif user.active_subscription_id %}Premium Member
+                        {% else %}Free Tier{% endif %}
                     </span>
                 </h2>
-                <p class="text-slate-500 text-sm mt-1 ml-10">
-                    {% if user.active_subscription_id %}
-                    Your subscription is active. Enjoy full access!
-                    {% elif user.role in ['admin', 'super_admin'] %}
-                    You have unrestricted access to all features.
-                    {% else %}
-                    You are on the limited usage free tier. Upgrade to unlock more.
-                    {% endif %}
+                <p class="text-slate-500 text-sm mt-2 ml-[52px]">
+                    {% if user.active_subscription_id %}Your subscription is active. Enjoy full access!
+                    {% elif user.role in ['admin', 'super_admin'] %}You have unrestricted access to all features.
+                    {% else %}You are on the limited usage free tier. Upgrade to unlock more.{% endif %}
                 </p>
             </div>
-
             {% if not user.active_subscription_id and user.role not in ['admin', 'super_admin'] %}
-            <a href="{{ url_for('payments.pricing') }}"
-                class="group relative px-7 py-3 bg-gradient-to-r from-amber-500 to-orange-600 text-white font-bold rounded-xl shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 transition-all transform hover:-translate-y-0.5 overflow-hidden">
-                <span class="relative z-10">Upgrade Now <i
-                        class="fa-solid fa-arrow-right ml-2 group-hover:translate-x-1 transition-transform"></i></span>
+            <a href="{{ url_for('payments.pricing') }}" class="glow-btn px-7 py-3 bg-gradient-to-r from-amber-500 to-orange-600 text-white font-bold rounded-xl shadow-lg transition-all transform hover:-translate-y-1 hover:shadow-orange-500/40 shrink-0">
+                Upgrade Now <i class="fa-solid fa-arrow-right ml-2"></i>
             </a>
             {% endif %}
         </div>
     </div>
 
-    <!-- ===== LEARNING HUB ===== -->
-    <div class="mb-12">
-
-        <!-- ── Study Tools Row ── -->
-        <div class="mb-10 animate-fade-in-up delay-500">
-            <div class="flex items-center gap-2 mb-5">
-                <span class="w-2 h-2 rounded-full bg-rose-500"></span>
-                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest">Study Tools</h3>
-                <div class="flex-1 h-px bg-slate-100 ml-2"></div>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <!-- Homework Helper -->
-                <div onclick="openTool()" class="dash-card group p-7 rounded-3xl cursor-pointer"
-                    style="--icon-shadow: rgba(244, 63, 94, 0.3)">
-                    <div
-                        class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-rose-500/10 to-transparent rounded-bl-full transition-all group-hover:from-rose-500/20">
-                    </div>
-                    <div class="flex items-start gap-5">
-                        <div
-                            class="card-icon w-14 h-14 bg-gradient-to-br from-rose-500 to-pink-600 rounded-2xl flex items-center justify-center text-white text-2xl shadow-lg shadow-rose-500/20 shrink-0">
-                            <i class="fa-solid fa-pen-to-square"></i>
-                        </div>
-                        <div class="flex-1 min-w-0">
-                            <h3 class="text-lg font-bold text-slate-900 mb-1">Homework Helper</h3>
-                            <p class="text-slate-500 text-sm leading-relaxed mb-3">Post questions to experts, use OCR
-                                for images, and get detailed solutions.</p>
-                            <span class="text-rose-600 font-bold text-sm flex items-center gap-2">Launch Tool <i
-                                    class="fa-solid fa-arrow-right card-arrow"></i></span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- AI Tutor -->
-                <a href="{{ url_for('ai_tutor') }}" class="dash-card group p-7 rounded-3xl cursor-pointer block"
-                    style="--icon-shadow: rgba(16, 185, 129, 0.3)">
-                    <div
-                        class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-emerald-500/10 to-transparent rounded-bl-full transition-all group-hover:from-emerald-500/20">
-                    </div>
-                    <div class="flex items-start gap-5">
-                        <div
-                            class="card-icon w-14 h-14 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl flex items-center justify-center text-white text-2xl shadow-lg shadow-emerald-500/20 shrink-0">
-                            <i class="fa-solid fa-microchip"></i>
-                        </div>
-                        <div class="flex-1 min-w-0">
-                            <h3 class="text-lg font-bold text-slate-900 mb-1">AI Tutor</h3>
-                            <p class="text-slate-500 text-sm leading-relaxed mb-3">Get instant, personalized answers
-                                from your personal AI tutor.</p>
-                            <span class="text-emerald-600 font-bold text-sm flex items-center gap-2">Start Chat <i
-                                    class="fa-solid fa-arrow-right card-arrow"></i></span>
-                        </div>
-                    </div>
-                </a>
-
-                <!-- AI Quiz -->
-                <a href="{{ url_for('quiz_bp.quiz_home') }}"
-                    class="dash-card group p-7 rounded-3xl cursor-pointer block"
-                    style="--icon-shadow: rgba(239, 68, 68, 0.3)">
-                    <div
-                        class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-red-500/10 to-transparent rounded-bl-full transition-all group-hover:from-red-500/20">
-                    </div>
-                    <div class="flex items-start gap-5">
-                        <div
-                            class="card-icon w-14 h-14 bg-gradient-to-br from-red-500 to-orange-600 rounded-2xl flex items-center justify-center text-white text-2xl shadow-lg shadow-red-500/20 shrink-0">
-                            <i class="fa-solid fa-brain"></i>
-                        </div>
-                        <div class="flex-1 min-w-0">
-                            <h3 class="text-lg font-bold text-slate-900 mb-1">AI Quiz Challenge</h3>
-                            <p class="text-slate-500 text-sm leading-relaxed mb-3">Test yourself with AI-generated
-                                difficult quizzes. Strict mode with timer & anti-cheat.</p>
-                            <span class="text-red-600 font-bold text-sm flex items-center gap-2">Take Challenge <i
-                                    class="fa-solid fa-arrow-right card-arrow"></i></span>
-                        </div>
-                    </div>
-                </a>
-            </div>
+    <!-- ===== STUDY TOOLS ===== -->
+    <div class="mb-14">
+        <div class="section-label reveal reveal-delay-2">
+            <span class="dot bg-rose-500" style="box-shadow:0 0 12px rgba(244,63,94,0.5)"></span>
+            <h3>Study Tools</h3>
+            <div class="line"></div>
         </div>
-
-        <!-- ── Expert Help Row ── -->
-        <div class="mb-10 animate-fade-in-up delay-600">
-            <div class="flex items-center gap-2 mb-5">
-                <span class="w-2 h-2 rounded-full bg-amber-500"></span>
-                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest">Expert Help</h3>
-                <div class="flex-1 h-px bg-slate-100 ml-2"></div>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <!-- Live Tutoring -->
-                <a href="{{ url_for('tutoring.browse_subjects') }}"
-                    class="dash-card group p-7 rounded-3xl cursor-pointer block"
-                    style="--icon-shadow: rgba(245, 158, 11, 0.3)">
-                    <div
-                        class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-amber-500/10 to-transparent rounded-bl-full transition-all group-hover:from-amber-500/20">
-                    </div>
-                    <div class="flex items-start gap-5">
-                        <div
-                            class="card-icon w-14 h-14 bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl flex items-center justify-center text-white text-2xl shadow-lg shadow-amber-500/20 shrink-0">
-                            <i class="fa-solid fa-video"></i>
+        <div class="bento-grid">
+            <!-- Homework Helper -->
+            <div onclick="openTool()" class="neo-card group cursor-pointer reveal reveal-delay-2" style="--glow:rgba(244,63,94,0.3);--shadow:rgba(244,63,94,0.15)">
+                <div class="h-1.5 bg-gradient-to-r from-rose-500 via-pink-500 to-rose-400 rounded-t-3xl"></div>
+                <div class="p-8 pb-7">
+                    <div class="absolute top-0 right-0 w-44 h-44 bg-gradient-to-bl from-rose-500/8 to-transparent rounded-bl-full transition-all group-hover:from-rose-500/15"></div>
+                    <div class="absolute bottom-6 right-6 w-16 h-16 rounded-full border border-rose-500/10 group-hover:border-rose-500/25 transition-all group-hover:scale-125 duration-700"></div>
+                    <div class="flex items-start gap-5 mb-6">
+                        <div class="relative card-icon shrink-0">
+                            <div class="w-16 h-16 bg-gradient-to-br from-rose-500 to-pink-600 rounded-2xl flex items-center justify-center text-white text-3xl shadow-xl shadow-rose-500/30">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                            </div>
+                            <div class="absolute -top-1 -right-1 w-5 h-5 bg-rose-400 rounded-full flex items-center justify-center animate-pulse"><i class="fa-solid fa-star text-[8px] text-white"></i></div>
                         </div>
-                        <div class="flex-1 min-w-0">
-                            <h3 class="text-lg font-bold text-slate-900 mb-1">Live Tutoring</h3>
-                            <p class="text-slate-500 text-sm leading-relaxed mb-3">Book 1-on-1 video sessions with real
-                                tutors & whiteboard support.</p>
-                            <span class="text-amber-600 font-bold text-sm flex items-center gap-2">Find Tutor <i
-                                    class="fa-solid fa-arrow-right card-arrow"></i></span>
+                        <div class="flex-1 min-w-0 pt-1">
+                            <h3 class="text-xl font-extrabold text-white mb-1.5 tracking-tight">Homework Helper</h3>
+                            <p class="text-slate-400 text-sm leading-relaxed">Post questions to experts, use OCR for images, and get detailed step-by-step solutions.</p>
                         </div>
                     </div>
-                </a>
-
-                <!-- My Recordings -->
-                <div onclick="openSessions()" class="dash-card group p-7 rounded-3xl cursor-pointer"
-                    style="--icon-shadow: rgba(6, 182, 212, 0.3)">
-                    <div
-                        class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-cyan-500/10 to-transparent rounded-bl-full transition-all group-hover:from-cyan-500/20">
-                    </div>
-                    <div class="flex items-start gap-5">
-                        <div
-                            class="card-icon w-14 h-14 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-2xl flex items-center justify-center text-white text-2xl shadow-lg shadow-cyan-500/20 shrink-0">
-                            <i class="fa-solid fa-film"></i>
+                    <div class="flex items-center justify-between">
+                        <div class="flex gap-2">
+                            <span class="px-2.5 py-1 rounded-full bg-rose-500/10 text-rose-400 text-[10px] font-bold">OCR</span>
+                            <span class="px-2.5 py-1 rounded-full bg-rose-500/10 text-rose-400 text-[10px] font-bold">Expert</span>
                         </div>
-                        <div class="flex-1 min-w-0">
-                            <h3 class="text-lg font-bold text-slate-900 mb-1">My Recordings</h3>
-                            <p class="text-slate-500 text-sm leading-relaxed mb-3">Watch past tutoring sessions and
-                                review your learning history.</p>
-                            <span class="text-cyan-600 font-bold text-sm flex items-center gap-2">View Archive <i
-                                    class="fa-solid fa-arrow-right card-arrow"></i></span>
-                        </div>
+                        <span class="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-rose-500 to-pink-600 text-white rounded-xl text-xs font-bold shadow-lg shadow-rose-500/20 group-hover:shadow-rose-500/40 transition-all group-hover:-translate-y-0.5">Launch Tool <i class="fa-solid fa-arrow-right card-arrow text-[10px]"></i></span>
                     </div>
                 </div>
             </div>
+            <!-- AI Tutor -->
+            <a href="{{ url_for('ai_tutor') }}" class="neo-card group cursor-pointer block reveal reveal-delay-3" style="--glow:rgba(16,185,129,0.3);--shadow:rgba(16,185,129,0.15)">
+                <div class="h-1.5 bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-400 rounded-t-3xl"></div>
+                <div class="p-8 pb-7">
+                    <div class="absolute top-0 right-0 w-44 h-44 bg-gradient-to-bl from-emerald-500/8 to-transparent rounded-bl-full transition-all group-hover:from-emerald-500/15"></div>
+                    <div class="absolute bottom-6 right-6 w-16 h-16 rounded-full border border-emerald-500/10 group-hover:border-emerald-500/25 transition-all group-hover:scale-125 duration-700"></div>
+                    <div class="flex items-start gap-5 mb-6">
+                        <div class="relative card-icon shrink-0">
+                            <div class="w-16 h-16 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl flex items-center justify-center text-white text-3xl shadow-xl shadow-emerald-500/30">
+                                <i class="fa-solid fa-microchip"></i>
+                            </div>
+                            <div class="absolute -top-1 -right-1 w-5 h-5 bg-emerald-400 rounded-full flex items-center justify-center"><i class="fa-solid fa-bolt text-[8px] text-white"></i></div>
+                        </div>
+                        <div class="flex-1 min-w-0 pt-1">
+                            <h3 class="text-xl font-extrabold text-white mb-1.5 tracking-tight">AI Tutor</h3>
+                            <p class="text-slate-400 text-sm leading-relaxed">Get instant, personalized answers from your AI-powered personal tutor anytime.</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <div class="flex gap-2">
+                            <span class="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-bold">AI</span>
+                            <span class="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-bold">Instant</span>
+                        </div>
+                        <span class="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl text-xs font-bold shadow-lg shadow-emerald-500/20 group-hover:shadow-emerald-500/40 transition-all group-hover:-translate-y-0.5">Start Chat <i class="fa-solid fa-arrow-right card-arrow text-[10px]"></i></span>
+                    </div>
+                </div>
+            </a>
+            <!-- AI Quiz -->
+            <a href="{{ url_for('quiz_bp.quiz_home') }}" class="neo-card group cursor-pointer block reveal reveal-delay-4" style="--glow:rgba(239,68,68,0.3);--shadow:rgba(239,68,68,0.15)">
+                <div class="h-1.5 bg-gradient-to-r from-red-500 via-orange-500 to-amber-500 rounded-t-3xl"></div>
+                <div class="p-8 pb-7">
+                    <div class="absolute top-0 right-0 w-44 h-44 bg-gradient-to-bl from-red-500/8 to-transparent rounded-bl-full transition-all group-hover:from-red-500/15"></div>
+                    <div class="absolute bottom-6 right-6 w-16 h-16 rounded-full border border-red-500/10 group-hover:border-red-500/25 transition-all group-hover:scale-125 duration-700"></div>
+                    <div class="flex items-start gap-5 mb-6">
+                        <div class="relative card-icon shrink-0">
+                            <div class="w-16 h-16 bg-gradient-to-br from-red-500 to-orange-600 rounded-2xl flex items-center justify-center text-white text-3xl shadow-xl shadow-red-500/30">
+                                <i class="fa-solid fa-brain"></i>
+                            </div>
+                            <div class="absolute -top-1 -right-1 w-5 h-5 bg-red-400 rounded-full flex items-center justify-center"><i class="fa-solid fa-fire text-[8px] text-white"></i></div>
+                        </div>
+                        <div class="flex-1 min-w-0 pt-1">
+                            <h3 class="text-xl font-extrabold text-white mb-1.5 tracking-tight">AI Quiz Challenge</h3>
+                            <p class="text-slate-400 text-sm leading-relaxed">Test yourself with AI-generated quizzes. Strict mode with timer & anti-cheat.</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <div class="flex gap-2">
+                            <span class="px-2.5 py-1 rounded-full bg-red-500/10 text-red-400 text-[10px] font-bold">Timed</span>
+                            <span class="px-2.5 py-1 rounded-full bg-red-500/10 text-red-400 text-[10px] font-bold">Anti-Cheat</span>
+                        </div>
+                        <span class="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-red-500 to-orange-600 text-white rounded-xl text-xs font-bold shadow-lg shadow-red-500/20 group-hover:shadow-red-500/40 transition-all group-hover:-translate-y-0.5">Take Challenge <i class="fa-solid fa-arrow-right card-arrow text-[10px]"></i></span>
+                    </div>
+                </div>
+            </a>
         </div>
+    </div>
 
-        <!-- ── Knowledge Base Row ── -->
-        <div class="mb-2 animate-fade-in-up delay-700">
-            <div class="flex items-center gap-2 mb-5">
-                <span class="w-2 h-2 rounded-full bg-blue-500"></span>
-                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest">Knowledge Base</h3>
-                <div class="flex-1 h-px bg-slate-100 ml-2"></div>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <!-- Library -->
-                <a href="{{ url_for('library') }}" class="dash-card group p-7 rounded-3xl cursor-pointer block"
-                    style="--icon-shadow: rgba(59, 130, 246, 0.3)">
-                    <div
-                        class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-blue-500/10 to-transparent rounded-bl-full transition-all group-hover:from-blue-500/20">
-                    </div>
-                    <div class="flex items-start gap-5">
-                        <div
-                            class="card-icon w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center text-white text-2xl shadow-lg shadow-blue-500/20 shrink-0">
-                            <i class="fa-solid fa-book-open"></i>
+    <!-- ===== EXPERT HELP ===== -->
+    <div class="mb-14">
+        <div class="section-label reveal">
+            <span class="dot bg-amber-500" style="box-shadow:0 0 12px rgba(245,158,11,0.5)"></span>
+            <h3>Expert Help</h3>
+            <div class="line"></div>
+        </div>
+        <div class="bento-grid">
+            <!-- Live Tutoring -->
+            <a href="{{ url_for('tutoring.browse_subjects') }}" class="neo-card group cursor-pointer block reveal reveal-delay-1" style="--glow:rgba(245,158,11,0.3);--shadow:rgba(245,158,11,0.15)">
+                <div class="h-1.5 bg-gradient-to-r from-amber-500 via-orange-500 to-yellow-400 rounded-t-3xl"></div>
+                <div class="p-8 pb-7">
+                    <div class="absolute top-0 right-0 w-44 h-44 bg-gradient-to-bl from-amber-500/8 to-transparent rounded-bl-full transition-all group-hover:from-amber-500/15"></div>
+                    <div class="absolute bottom-6 right-6 w-16 h-16 rounded-full border border-amber-500/10 group-hover:border-amber-500/25 transition-all group-hover:scale-125 duration-700"></div>
+                    <div class="flex items-start gap-5 mb-6">
+                        <div class="relative card-icon shrink-0">
+                            <div class="w-16 h-16 bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl flex items-center justify-center text-white text-3xl shadow-xl shadow-amber-500/30">
+                                <i class="fa-solid fa-video"></i>
+                            </div>
+                            <div class="absolute -top-1 -right-1 w-5 h-5 bg-green-400 rounded-full flex items-center justify-center animate-pulse"><span class="w-2 h-2 bg-white rounded-full"></span></div>
                         </div>
-                        <div class="flex-1 min-w-0">
-                            <h3 class="text-lg font-bold text-slate-900 mb-1">Library</h3>
-                            <p class="text-slate-500 text-sm leading-relaxed mb-3">Download notes, upload papers, and
-                                earn credits (20 uploads = 1 credit).</p>
-                            <span class="text-blue-600 font-bold text-sm flex items-center gap-2">Browse Docs <i
-                                    class="fa-solid fa-arrow-right card-arrow"></i></span>
-                        </div>
-                    </div>
-                </a>
-
-                <!-- Video Courses -->
-                <a href="{{ url_for('video_courses.browse_courses') }}"
-                    class="dash-card group p-7 rounded-3xl cursor-pointer block"
-                    style="--icon-shadow: rgba(168, 85, 247, 0.3)">
-                    <div
-                        class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-purple-500/10 to-transparent rounded-bl-full transition-all group-hover:from-purple-500/20">
-                    </div>
-                    <div class="flex items-start gap-5">
-                        <div
-                            class="card-icon w-14 h-14 bg-gradient-to-br from-purple-500 via-violet-500 to-indigo-600 rounded-2xl flex items-center justify-center text-white text-2xl shadow-lg shadow-purple-500/20 shrink-0">
-                            <i class="fa-solid fa-play-circle"></i>
-                        </div>
-                        <div class="flex-1 min-w-0">
-                            <h3 class="text-lg font-bold text-slate-900 mb-1">Video Courses</h3>
-                            <p class="text-slate-500 text-sm leading-relaxed mb-3">Premium video lessons from expert
-                                tutors. Learn at your own pace.</p>
-                            <span class="text-purple-600 font-bold text-sm flex items-center gap-2">Browse Courses <i
-                                    class="fa-solid fa-arrow-right card-arrow"></i></span>
+                        <div class="flex-1 min-w-0 pt-1">
+                            <h3 class="text-xl font-extrabold text-white mb-1.5 tracking-tight">Live Tutoring</h3>
+                            <p class="text-slate-400 text-sm leading-relaxed">Book 1-on-1 video sessions with real tutors & whiteboard support.</p>
                         </div>
                     </div>
-                </a>
+                    <div class="flex items-center justify-between">
+                        <div class="flex gap-2">
+                            <span class="px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-400 text-[10px] font-bold">1-on-1</span>
+                            <span class="px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-400 text-[10px] font-bold">Video</span>
+                        </div>
+                        <span class="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-xl text-xs font-bold shadow-lg shadow-amber-500/20 group-hover:shadow-amber-500/40 transition-all group-hover:-translate-y-0.5">Find Tutor <i class="fa-solid fa-arrow-right card-arrow text-[10px]"></i></span>
+                    </div>
+                </div>
+            </a>
+            <!-- My Recordings -->
+            <div onclick="openSessions()" class="neo-card group cursor-pointer reveal reveal-delay-2" style="--glow:rgba(6,182,212,0.3);--shadow:rgba(6,182,212,0.15)">
+                <div class="h-1.5 bg-gradient-to-r from-cyan-500 via-blue-500 to-cyan-400 rounded-t-3xl"></div>
+                <div class="p-8 pb-7">
+                    <div class="absolute top-0 right-0 w-44 h-44 bg-gradient-to-bl from-cyan-500/8 to-transparent rounded-bl-full transition-all group-hover:from-cyan-500/15"></div>
+                    <div class="absolute bottom-6 right-6 w-16 h-16 rounded-full border border-cyan-500/10 group-hover:border-cyan-500/25 transition-all group-hover:scale-125 duration-700"></div>
+                    <div class="flex items-start gap-5 mb-6">
+                        <div class="relative card-icon shrink-0">
+                            <div class="w-16 h-16 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-2xl flex items-center justify-center text-white text-3xl shadow-xl shadow-cyan-500/30">
+                                <i class="fa-solid fa-film"></i>
+                            </div>
+                        </div>
+                        <div class="flex-1 min-w-0 pt-1">
+                            <h3 class="text-xl font-extrabold text-white mb-1.5 tracking-tight">My Recordings</h3>
+                            <p class="text-slate-400 text-sm leading-relaxed">Watch past tutoring sessions and review your learning history.</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <div class="flex gap-2">
+                            <span class="px-2.5 py-1 rounded-full bg-cyan-500/10 text-cyan-400 text-[10px] font-bold">Replay</span>
+                            <span class="px-2.5 py-1 rounded-full bg-cyan-500/10 text-cyan-400 text-[10px] font-bold">Archive</span>
+                        </div>
+                        <span class="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-xl text-xs font-bold shadow-lg shadow-cyan-500/20 group-hover:shadow-cyan-500/40 transition-all group-hover:-translate-y-0.5">View Archive <i class="fa-solid fa-arrow-right card-arrow text-[10px]"></i></span>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
+    <!-- ===== KNOWLEDGE BASE ===== -->
+    <div class="mb-14">
+        <div class="section-label reveal">
+            <span class="dot bg-blue-500" style="box-shadow:0 0 12px rgba(59,130,246,0.5)"></span>
+            <h3>Knowledge Base</h3>
+            <div class="line"></div>
+        </div>
+        <div class="bento-grid">
+            <!-- Library -->
+            <a href="{{ url_for('library') }}" class="neo-card group cursor-pointer block reveal reveal-delay-1" style="--glow:rgba(59,130,246,0.3);--shadow:rgba(59,130,246,0.15)">
+                <div class="h-1.5 bg-gradient-to-r from-blue-500 via-indigo-500 to-blue-400 rounded-t-3xl"></div>
+                <div class="p-8 pb-7">
+                    <div class="absolute top-0 right-0 w-44 h-44 bg-gradient-to-bl from-blue-500/8 to-transparent rounded-bl-full transition-all group-hover:from-blue-500/15"></div>
+                    <div class="absolute bottom-6 right-6 w-16 h-16 rounded-full border border-blue-500/10 group-hover:border-blue-500/25 transition-all group-hover:scale-125 duration-700"></div>
+                    <div class="flex items-start gap-5 mb-6">
+                        <div class="relative card-icon shrink-0">
+                            <div class="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center text-white text-3xl shadow-xl shadow-blue-500/30">
+                                <i class="fa-solid fa-book-open"></i>
+                            </div>
+                        </div>
+                        <div class="flex-1 min-w-0 pt-1">
+                            <h3 class="text-xl font-extrabold text-white mb-1.5 tracking-tight">Library</h3>
+                            <p class="text-slate-400 text-sm leading-relaxed">Download notes, upload papers, and earn credits (20 uploads = 1 credit).</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <div class="flex gap-2">
+                            <span class="px-2.5 py-1 rounded-full bg-blue-500/10 text-blue-400 text-[10px] font-bold">Notes</span>
+                            <span class="px-2.5 py-1 rounded-full bg-blue-500/10 text-blue-400 text-[10px] font-bold">Papers</span>
+                        </div>
+                        <span class="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl text-xs font-bold shadow-lg shadow-blue-500/20 group-hover:shadow-blue-500/40 transition-all group-hover:-translate-y-0.5">Browse Docs <i class="fa-solid fa-arrow-right card-arrow text-[10px]"></i></span>
+                    </div>
+                </div>
+            </a>
+            <!-- Video Courses -->
+            <a href="{{ url_for('video_courses.browse_courses') }}" class="neo-card group cursor-pointer block reveal reveal-delay-2" style="--glow:rgba(168,85,247,0.3);--shadow:rgba(168,85,247,0.15)">
+                <div class="h-1.5 bg-gradient-to-r from-purple-500 via-violet-500 to-fuchsia-500 rounded-t-3xl"></div>
+                <div class="p-8 pb-7">
+                    <div class="absolute top-0 right-0 w-44 h-44 bg-gradient-to-bl from-purple-500/8 to-transparent rounded-bl-full transition-all group-hover:from-purple-500/15"></div>
+                    <div class="absolute bottom-6 right-6 w-16 h-16 rounded-full border border-purple-500/10 group-hover:border-purple-500/25 transition-all group-hover:scale-125 duration-700"></div>
+                    <div class="flex items-start gap-5 mb-6">
+                        <div class="relative card-icon shrink-0">
+                            <div class="w-16 h-16 bg-gradient-to-br from-purple-500 via-violet-500 to-indigo-600 rounded-2xl flex items-center justify-center text-white text-3xl shadow-xl shadow-purple-500/30">
+                                <i class="fa-solid fa-play-circle"></i>
+                            </div>
+                            <div class="absolute -top-1 -right-1 w-5 h-5 bg-purple-400 rounded-full flex items-center justify-center"><i class="fa-solid fa-crown text-[8px] text-white"></i></div>
+                        </div>
+                        <div class="flex-1 min-w-0 pt-1">
+                            <h3 class="text-xl font-extrabold text-white mb-1.5 tracking-tight">Video Courses</h3>
+                            <p class="text-slate-400 text-sm leading-relaxed">Premium video lessons from expert tutors. Learn at your own pace.</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <div class="flex gap-2">
+                            <span class="px-2.5 py-1 rounded-full bg-purple-500/10 text-purple-400 text-[10px] font-bold">Premium</span>
+                            <span class="px-2.5 py-1 rounded-full bg-purple-500/10 text-purple-400 text-[10px] font-bold">Self-paced</span>
+                        </div>
+                        <span class="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-violet-600 text-white rounded-xl text-xs font-bold shadow-lg shadow-purple-500/20 group-hover:shadow-purple-500/40 transition-all group-hover:-translate-y-0.5">Browse Courses <i class="fa-solid fa-arrow-right card-arrow text-[10px]"></i></span>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
 
-    <!-- Online School (conditional) -->
+    <!-- ===== ONLINE SCHOOL (conditional) ===== -->
     {% if user.student_type != 'higher_ed' %}
-    <div class="mb-12 animate-fade-in-up delay-1000">
-        <a href="{{ url_for('school.index') }}" class="dash-card group p-8 rounded-3xl cursor-pointer block"
-            style="--icon-shadow: rgba(139, 92, 246, 0.3)">
-            <div
-                class="absolute top-0 right-0 w-40 h-40 bg-gradient-to-bl from-violet-500/10 to-transparent rounded-bl-full transition-all group-hover:from-violet-500/20">
-            </div>
+    <div class="mb-12 reveal">
+        <a href="{{ url_for('school.index') }}" class="neo-card group p-8 cursor-pointer block" style="--glow:rgba(139,92,246,0.3);--shadow:rgba(139,92,246,0.15)">
+            <div class="absolute top-0 right-0 w-40 h-40 bg-gradient-to-bl from-violet-500/10 to-transparent rounded-bl-full transition-all group-hover:from-violet-500/20"></div>
             <div class="flex items-center gap-6">
-                <div
-                    class="card-icon w-16 h-16 bg-gradient-to-br from-violet-500 to-purple-700 rounded-2xl flex items-center justify-center text-white text-3xl shadow-lg shadow-violet-500/20 shrink-0">
+                <div class="card-icon w-16 h-16 bg-gradient-to-br from-violet-500 to-purple-700 rounded-2xl flex items-center justify-center text-white text-3xl shadow-lg shadow-violet-500/30 shrink-0">
                     <i class="fa-solid fa-chalkboard-user"></i>
                 </div>
                 <div>
-                    <h3 class="text-xl font-bold text-slate-900 mb-1">Online School</h3>
-                    <p class="text-slate-500 text-sm leading-relaxed">Join live video classes, view schedules, and
-                        attend subjects.</p>
+                    <h3 class="text-xl font-bold text-white mb-1">Online School</h3>
+                    <p class="text-slate-500 text-sm leading-relaxed">Join live video classes, view schedules, and attend subjects.</p>
                 </div>
-                <span class="text-violet-600 font-bold text-sm flex items-center gap-2 ml-auto shrink-0">Enter School <i
-                        class="fa-solid fa-arrow-right card-arrow"></i></span>
+                <span class="text-violet-400 font-bold text-sm flex items-center gap-2 ml-auto shrink-0">Enter School <i class="fa-solid fa-arrow-right card-arrow"></i></span>
             </div>
         </a>
     </div>
     {% endif %}
 
-    <!-- ===== BOTTOM SECTION ===== -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 animate-fade-in-up delay-1000">
-
+    <!-- ===== BOTTOM WIDGETS ===== -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-10 reveal">
         <!-- Quick Search -->
-        <div class="lg:col-span-1 glass p-6 rounded-3xl shadow-sm">
-            <h4 class="font-bold text-slate-900 mb-4 flex items-center gap-2">
-                <div class="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center">
-                    <i class="fa-solid fa-magnifying-glass text-slate-500 text-xs"></i>
+        <div class="lg:col-span-1 glass p-6 rounded-3xl">
+            <h4 class="font-bold text-white mb-4 flex items-center gap-2">
+                <div class="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center">
+                    <i class="fa-solid fa-magnifying-glass text-slate-400 text-xs"></i>
                 </div>
                 Quick Search
             </h4>
             <div class="relative">
-                <input type="text" id="dashboard-search" placeholder="Search notes, exams..."
-                    class="w-full bg-white/80 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/10 transition-all">
-                <div id="dashboard-search-results"
-                    class="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-100 rounded-xl shadow-xl z-20 hidden max-h-60 overflow-y-auto">
-                </div>
+                <input type="text" id="dashboard-search" placeholder="Search notes, exams..." class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/10 transition-all">
+                <div id="dashboard-search-results" class="absolute top-full left-0 right-0 mt-2 bg-slate-900 border border-white/10 rounded-xl shadow-xl z-20 hidden max-h-60 overflow-y-auto"></div>
             </div>
         </div>
-
         <!-- Recent Activity -->
-        <div class="lg:col-span-2 glass p-6 rounded-3xl shadow-sm flex items-center justify-between">
+        <div class="lg:col-span-2 glass p-6 rounded-3xl flex items-center justify-between">
             <div class="flex items-center gap-4">
-                <div
-                    class="w-10 h-10 rounded-xl bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center shrink-0">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center shrink-0 shadow-lg shadow-emerald-500/20">
                     <i class="fa-solid fa-bolt text-white"></i>
                 </div>
                 <div>
-                    <h4 class="font-bold text-slate-900 mb-0.5">Recent Activity</h4>
+                    <h4 class="font-bold text-white mb-0.5">Recent Activity</h4>
                     {% if jobs %}
                     {% set latest = jobs[0] %}
                     <p class="text-sm text-slate-500">
-                        <span class="font-semibold text-slate-700">{{ latest.subject }}</span> —
-                        <span
-                            class="inline-flex items-center gap-1 {{ 'text-green-500' if latest.status == 'Completed' else 'text-red-500' }} font-bold">
-                            <span
-                                class="w-1.5 h-1.5 rounded-full {{ 'bg-green-500' if latest.status == 'Completed' else 'bg-red-500' }} animate-pulse"></span>
+                        <span class="font-semibold text-slate-300">{{ latest.subject }}</span> â€”
+                        <span class="inline-flex items-center gap-1 {{ 'text-green-400' if latest.status == 'Completed' else 'text-red-400' }} font-bold">
+                            <span class="w-1.5 h-1.5 rounded-full {{ 'bg-green-400' if latest.status == 'Completed' else 'bg-red-400' }} animate-pulse"></span>
                             {{ latest.status }}
                         </span>
                     </p>
@@ -584,69 +429,54 @@
                     {% endif %}
                 </div>
             </div>
-            <button onclick="openTool(); switchTab('history')"
-                class="px-5 py-2.5 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 transition-all shadow-sm hover:shadow-md hover:-translate-y-0.5 shrink-0">
+            <button onclick="openTool(); switchTab('history')" class="px-5 py-2.5 bg-white/10 text-white rounded-xl text-xs font-bold hover:bg-white/15 transition-all shadow-sm hover:shadow-md hover:-translate-y-0.5 shrink-0 border border-white/10">
                 View History
             </button>
         </div>
-
-        <!-- Feedback Section -->
-        <div class="lg:col-span-3 glass p-6 rounded-3xl shadow-sm">
-            <h4 class="font-bold text-slate-900 mb-4 flex items-center gap-2">
-                <div class="w-7 h-7 rounded-lg bg-orange-100 flex items-center justify-center">
-                    <i class="fa-solid fa-comment-dots text-orange-500 text-xs"></i>
+        <!-- Feedback -->
+        <div class="lg:col-span-3 glass p-6 rounded-3xl">
+            <h4 class="font-bold text-white mb-4 flex items-center gap-2">
+                <div class="w-7 h-7 rounded-lg bg-orange-500/10 flex items-center justify-center">
+                    <i class="fa-solid fa-comment-dots text-orange-400 text-xs"></i>
                 </div>
                 Share Your Experience
             </h4>
             <form action="{{ url_for('submit_feedback') }}" method="POST" class="flex flex-col gap-4">
-                <textarea name="content" rows="3"
-                    placeholder="Tell us how we helped you! (Minimum 10 words to be featured)"
-                    class="w-full bg-white/80 border border-slate-200 rounded-xl p-4 text-sm focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/10 transition-all resize-none"></textarea>
-                <button type="submit"
-                    class="self-end px-6 py-2.5 bg-gradient-to-r from-orange-500 to-rose-500 text-white rounded-xl font-bold text-sm hover:shadow-lg hover:shadow-orange-500/20 transition-all hover:-translate-y-0.5">
+                <textarea name="content" rows="3" placeholder="Tell us how we helped you! (Minimum 10 words to be featured)" class="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/10 transition-all resize-none"></textarea>
+                <button type="submit" class="glow-btn self-end px-6 py-2.5 bg-gradient-to-r from-orange-500 to-rose-500 text-white rounded-xl font-bold text-sm hover:shadow-lg hover:shadow-orange-500/20 transition-all hover:-translate-y-0.5">
                     <i class="fa-solid fa-paper-plane mr-2"></i>Submit Feedback
                 </button>
             </form>
         </div>
     </div>
 
-    <!-- ===== ONLINE PLATFORMS FOR UNBLUR ANSWERS ===== -->
-    <div class="mb-10 animate-fade-in-up delay-1000">
-        <div class="flex items-center gap-2 mb-5">
-            <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
-            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest">Online Platforms</h3>
-            <div class="flex-1 h-px bg-slate-100 ml-2"></div>
+    <!-- ===== UNBLUR ANSWERS ===== -->
+    <div class="mb-12 reveal">
+        <div class="section-label">
+            <span class="dot bg-indigo-500" style="box-shadow:0 0 12px rgba(99,102,241,0.5)"></span>
+            <h3>Online Platforms</h3>
+            <div class="line"></div>
         </div>
-        <a href="{{ url_for('unblur') }}"
-            class="group relative block rounded-3xl overflow-hidden transition-all duration-500 hover:-translate-y-1 hover:shadow-2xl hover:shadow-indigo-500/20">
-            <!-- Background Gradient -->
-            <div class="absolute inset-0 bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-700 opacity-95">
-            </div>
-            <div
-                class="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.15),transparent_60%)]">
-            </div>
-            <!-- Floating Decorations -->
+        <a href="{{ url_for('unblur') }}" class="group relative block rounded-3xl overflow-hidden transition-all duration-500 hover:-translate-y-1 hover:shadow-2xl hover:shadow-indigo-500/20">
+            <div class="absolute inset-0 bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-700 opacity-95"></div>
+            <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.15),transparent_60%)]"></div>
             <div class="absolute top-4 right-8 w-20 h-20 rounded-full bg-white/5 animate-float"></div>
             <div class="absolute bottom-4 right-24 w-12 h-12 rounded-full bg-white/5 animate-float-reverse"></div>
             <div class="absolute top-1/2 right-4 -translate-y-1/2 opacity-10">
                 <i class="fa-solid fa-unlock-keyhole text-[120px] text-white"></i>
             </div>
-            <!-- Content -->
             <div class="relative z-10 p-8 md:p-10 flex items-center gap-6">
-                <div
-                    class="w-16 h-16 rounded-2xl bg-white/15 backdrop-blur-sm flex items-center justify-center text-white text-3xl shrink-0 shadow-lg border border-white/10 group-hover:scale-110 transition-transform">
+                <div class="w-16 h-16 rounded-2xl bg-white/15 backdrop-blur-sm flex items-center justify-center text-white text-3xl shrink-0 shadow-lg border border-white/10 group-hover:scale-110 transition-transform">
                     <i class="fa-solid fa-unlock-keyhole"></i>
                 </div>
                 <div class="flex-1">
                     <h3 class="text-2xl font-extrabold text-white mb-1 tracking-tight">Unblur Answers</h3>
                     <p class="text-sm text-indigo-100 font-medium">Online Platforms for Unblur Answers</p>
-                    <p class="text-indigo-200/70 text-xs mt-2 max-w-lg">Paste any Chegg, Course Hero, or Bartleby URL to
-                        instantly reveal the complete solution. Fast, reliable, and hassle-free.</p>
+                    <p class="text-indigo-200/70 text-xs mt-2 max-w-lg">Paste any Chegg, Course Hero, or Bartleby URL to instantly reveal the complete solution. Fast, reliable, and hassle-free.</p>
                 </div>
                 <div class="hidden md:flex items-center gap-3 shrink-0">
                     <span class="text-white font-bold text-sm">Unblur Now</span>
-                    <div
-                        class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white group-hover:bg-white/30 group-hover:translate-x-1 transition-all">
+                    <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white group-hover:bg-white/30 group-hover:translate-x-1 transition-all">
                         <i class="fa-solid fa-arrow-right"></i>
                     </div>
                 </div>
@@ -654,121 +484,64 @@
         </a>
     </div>
 
-    <!-- ===== ABOUT & INFO FOOTER ===== -->
-    <div class="mt-8 mb-4">
-        <div
-            class="rounded-3xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white overflow-hidden shadow-2xl">
-            <!-- Top Accent -->
-            <div class="h-1 bg-gradient-to-r from-orange-500 via-rose-500 to-violet-600"></div>
-
+    <!-- ===== DARK FOOTER ===== -->
+    <div class="mt-8 mb-4 reveal">
+        <div class="rounded-3xl bg-gradient-to-br from-[#0d0d14] via-[#111118] to-[#0d0d14] overflow-hidden border border-white/[0.04] shadow-2xl">
+            <div class="h-[2px] bg-gradient-to-r from-orange-500 via-rose-500 to-violet-600" style="background-size:200% 100%;animation:gradientShift 4s ease infinite"></div>
             <div class="p-8 md:p-12">
-                <!-- Brand + Description -->
                 <div class="flex flex-col md:flex-row gap-10 mb-10">
                     <div class="md:w-2/5">
                         <div class="flex items-center gap-3 mb-4">
-                            <div
-                                class="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-rose-600 flex items-center justify-center text-white shadow-lg">
+                            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-rose-600 flex items-center justify-center text-white shadow-lg shadow-orange-500/20">
                                 <i class="fa-solid fa-graduation-cap"></i>
                             </div>
-                            <span class="font-extrabold text-xl tracking-tight">Panun<span
-                                    class="text-orange-400">School</span></span>
+                            <span class="font-extrabold text-xl tracking-tight text-white">Panun<span class="text-orange-400">School</span></span>
                         </div>
-                        <p class="text-slate-400 text-sm leading-relaxed">
+                        <p class="text-slate-500 text-sm leading-relaxed">
                             PanunSchool is an all-in-one academic platform built for students worldwide.
                             We provide AI-powered homework help, live tutoring, a resource library, video courses,
-                            and instant answer unblurring — everything you need to excel in your studies.
+                            and instant answer unblurring â€” everything you need to excel in your studies.
                         </p>
                     </div>
-
-                    <!-- Links Grid -->
                     <div class="flex-1 grid grid-cols-2 md:grid-cols-3 gap-8">
-                        <!-- Quick Links -->
                         <div>
-                            <h4 class="font-bold text-white text-sm mb-4 flex items-center gap-2">
-                                <span class="w-1.5 h-1.5 rounded-full bg-orange-500"></span> Quick Links
-                            </h4>
+                            <h4 class="font-bold text-white text-sm mb-4 flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-orange-500"></span> Quick Links</h4>
                             <ul class="space-y-2.5 text-sm">
-                                <li><a href="{{ url_for('dashboard') }}"
-                                        class="text-slate-400 hover:text-orange-400 transition-colors flex items-center gap-2"><i
-                                            class="fa-solid fa-chevron-right text-[8px] text-slate-600"></i>
-                                        Dashboard</a></li>
-                                <li><a href="{{ url_for('library') }}"
-                                        class="text-slate-400 hover:text-orange-400 transition-colors flex items-center gap-2"><i
-                                            class="fa-solid fa-chevron-right text-[8px] text-slate-600"></i> Library</a>
-                                </li>
-                                <li><a href="{{ url_for('ai_tutor') }}"
-                                        class="text-slate-400 hover:text-orange-400 transition-colors flex items-center gap-2"><i
-                                            class="fa-solid fa-chevron-right text-[8px] text-slate-600"></i> AI
-                                        Tutor</a></li>
-                                <li><a href="{{ url_for('tutoring.browse_tutors') }}"
-                                        class="text-slate-400 hover:text-orange-400 transition-colors flex items-center gap-2"><i
-                                            class="fa-solid fa-chevron-right text-[8px] text-slate-600"></i> Find a
-                                        Tutor</a></li>
-                                <li><a href="{{ url_for('payments.pricing') }}"
-                                        class="text-slate-400 hover:text-orange-400 transition-colors flex items-center gap-2"><i
-                                            class="fa-solid fa-chevron-right text-[8px] text-slate-600"></i> Pricing</a>
-                                </li>
+                                <li><a href="{{ url_for('dashboard') }}" class="text-slate-500 hover:text-orange-400 transition-colors flex items-center gap-2"><i class="fa-solid fa-chevron-right text-[8px] text-slate-700"></i> Dashboard</a></li>
+                                <li><a href="{{ url_for('library') }}" class="text-slate-500 hover:text-orange-400 transition-colors flex items-center gap-2"><i class="fa-solid fa-chevron-right text-[8px] text-slate-700"></i> Library</a></li>
+                                <li><a href="{{ url_for('ai_tutor') }}" class="text-slate-500 hover:text-orange-400 transition-colors flex items-center gap-2"><i class="fa-solid fa-chevron-right text-[8px] text-slate-700"></i> AI Tutor</a></li>
+                                <li><a href="{{ url_for('tutoring.browse_tutors') }}" class="text-slate-500 hover:text-orange-400 transition-colors flex items-center gap-2"><i class="fa-solid fa-chevron-right text-[8px] text-slate-700"></i> Find a Tutor</a></li>
+                                <li><a href="{{ url_for('payments.pricing') }}" class="text-slate-500 hover:text-orange-400 transition-colors flex items-center gap-2"><i class="fa-solid fa-chevron-right text-[8px] text-slate-700"></i> Pricing</a></li>
                             </ul>
                         </div>
-
-                        <!-- Legal -->
                         <div>
-                            <h4 class="font-bold text-white text-sm mb-4 flex items-center gap-2">
-                                <span class="w-1.5 h-1.5 rounded-full bg-violet-500"></span> Legal
-                            </h4>
+                            <h4 class="font-bold text-white text-sm mb-4 flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-violet-500"></span> Legal</h4>
                             <ul class="space-y-2.5 text-sm">
-                                <li><a href="#"
-                                        class="text-slate-400 hover:text-violet-400 transition-colors flex items-center gap-2"><i
-                                            class="fa-solid fa-chevron-right text-[8px] text-slate-600"></i> Terms &
-                                        Conditions</a></li>
-                                <li><a href="#"
-                                        class="text-slate-400 hover:text-violet-400 transition-colors flex items-center gap-2"><i
-                                            class="fa-solid fa-chevron-right text-[8px] text-slate-600"></i> Privacy
-                                        Policy</a></li>
-                                <li><a href="#"
-                                        class="text-slate-400 hover:text-violet-400 transition-colors flex items-center gap-2"><i
-                                            class="fa-solid fa-chevron-right text-[8px] text-slate-600"></i> Refund
-                                        Policy</a></li>
-                                <li><a href="#"
-                                        class="text-slate-400 hover:text-violet-400 transition-colors flex items-center gap-2"><i
-                                            class="fa-solid fa-chevron-right text-[8px] text-slate-600"></i> Acceptable
-                                        Use</a></li>
+                                <li><a href="#" class="text-slate-500 hover:text-violet-400 transition-colors flex items-center gap-2"><i class="fa-solid fa-chevron-right text-[8px] text-slate-700"></i> Terms & Conditions</a></li>
+                                <li><a href="#" class="text-slate-500 hover:text-violet-400 transition-colors flex items-center gap-2"><i class="fa-solid fa-chevron-right text-[8px] text-slate-700"></i> Privacy Policy</a></li>
+                                <li><a href="#" class="text-slate-500 hover:text-violet-400 transition-colors flex items-center gap-2"><i class="fa-solid fa-chevron-right text-[8px] text-slate-700"></i> Refund Policy</a></li>
+                                <li><a href="#" class="text-slate-500 hover:text-violet-400 transition-colors flex items-center gap-2"><i class="fa-solid fa-chevron-right text-[8px] text-slate-700"></i> Acceptable Use</a></li>
                             </ul>
                         </div>
-
-                        <!-- Contact -->
                         <div>
-                            <h4 class="font-bold text-white text-sm mb-4 flex items-center gap-2">
-                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Contact Us
-                            </h4>
+                            <h4 class="font-bold text-white text-sm mb-4 flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Contact Us</h4>
                             <ul class="space-y-2.5 text-sm">
-                                <li class="text-slate-400 flex items-center gap-2"><i
-                                        class="fa-solid fa-envelope text-slate-600 text-xs w-4"></i>
-                                    support@panunschool.com</li>
-                                <li class="text-slate-400 flex items-center gap-2"><i
-                                        class="fa-brands fa-instagram text-slate-600 text-xs w-4"></i> @panunschool</li>
-                                <li class="text-slate-400 flex items-center gap-2"><i
-                                        class="fa-brands fa-telegram text-slate-600 text-xs w-4"></i> PanunSchool</li>
-                                <li class="text-slate-400 flex items-center gap-2"><i
-                                        class="fa-solid fa-clock text-slate-600 text-xs w-4"></i> Mon-Sat, 9AM-9PM IST
-                                </li>
+                                <li class="text-slate-500 flex items-center gap-2"><i class="fa-solid fa-envelope text-slate-700 text-xs w-4"></i> support@panunschool.com</li>
+                                <li class="text-slate-500 flex items-center gap-2"><i class="fa-brands fa-instagram text-slate-700 text-xs w-4"></i> @panunschool</li>
+                                <li class="text-slate-500 flex items-center gap-2"><i class="fa-brands fa-telegram text-slate-700 text-xs w-4"></i> PanunSchool</li>
+                                <li class="text-slate-500 flex items-center gap-2"><i class="fa-solid fa-clock text-slate-700 text-xs w-4"></i> Mon-Sat, 9AM-9PM IST</li>
                             </ul>
                         </div>
                     </div>
                 </div>
-
-                <!-- Divider -->
-                <div class="h-px bg-slate-700/50 mb-6"></div>
-
-                <!-- Bottom Row -->
-                <div class="flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-slate-500">
-                    <p>&copy; 2025 PanunSchool. All rights reserved. Built with <i
-                            class="fa-solid fa-heart text-rose-500 mx-0.5"></i> for Kashmiri Pandit students.</p>
+                <div class="h-px bg-white/[0.04] mb-6"></div>
+                <div class="flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-slate-600">
+                    <p>&copy; 2025 PanunSchool. All rights reserved. Built with <i class="fa-solid fa-heart text-rose-500 mx-0.5"></i> for Kashmiri Pandit students.</p>
                     <div class="flex items-center gap-4">
                         <a href="#" class="hover:text-orange-400 transition-colors">Terms</a>
-                        <span class="text-slate-700">•</span>
+                        <span class="text-slate-800">â€¢</span>
                         <a href="#" class="hover:text-orange-400 transition-colors">Privacy</a>
-                        <span class="text-slate-700">•</span>
+                        <span class="text-slate-800">â€¢</span>
                         <a href="#" class="hover:text-orange-400 transition-colors">Support</a>
                     </div>
                 </div>
@@ -776,6 +549,7 @@
         </div>
     </div>
 </div>
+
 
 
 <div id="tool-view" class="hidden max-w-5xl mx-auto">
@@ -1111,6 +885,16 @@
         const d = new Date(el.getAttribute('data-time') + " UTC");
         if (!isNaN(d)) el.innerText = d.toLocaleString();
     });
+    // Scroll Reveal (Intersection Observer)
+    const revealObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('active');
+                revealObserver.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+    document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
 </script>
 
 {% endblock %}
