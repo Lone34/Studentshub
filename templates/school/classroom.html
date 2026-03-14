@@ -285,7 +285,10 @@
         }
 
         function initSocket() {
-            socket = io();
+            socket = io({
+                transports: ['websocket'],
+                upgrade: false
+            });
 
             socket.on('connect', () => {
                 console.log('✓ Socket connected:', socket.id);
