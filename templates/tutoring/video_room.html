@@ -833,42 +833,49 @@
         async function endCall() {
             if (!confirm('Are you sure you want to end this session?')) return;
 
-            // Notify others
-            socket.emit('session_end', { room_id: roomId });
-
             // Stop timer
             clearInterval(timerInterval);
 
-            // Close peer connection
-            if (peerConnection) {
-                peerConnection.close();
-            }
-
-            // Disconnect socket
-            if (socket) {
-                socket.disconnect();
-            }
-
-            // Stop media
-            if (localStream) {
-                localStream.getTracks().forEach(track => track.stop());
-            }
-
-            // Upload recording
+            // 1. Upload recording FIRST (before disconnecting anything)
             await stopAndUploadRecording();
 
-            // End session on server
-            const res = await fetch(`/tutoring/api/session/${roomId}/end`, { method: 'POST' });
-            const data = await res.json();
+            // 2. End session on server
+            try {
+                const res = await fetch(`/tutoring/api/session/${roomId}/end`, { method: 'POST' });
+                const data = await res.json();
 
-            // Show rating/summary
-            if (isTutor) {
-                alert(`Session ended!\nDuration: ${data.duration_minutes} minutes\nValues: ${data.credits_charged * 0.8} credits earned`);
-                window.location.href = '/tutoring/dashboard';
-            } else {
-                // Show rating modal for student
-                document.getElementById('ratingModal').classList.remove('hidden');
-                document.getElementById('ratingModal').classList.add('flex');
+                // 3. Notify others via socket
+                if (socket) {
+                    socket.emit('session_end', { room_id: roomId });
+                }
+
+                // 4. Clean up peer connection
+                if (peerConnection) {
+                    peerConnection.close();
+                }
+
+                // 5. Disconnect socket
+                if (socket) {
+                    socket.disconnect();
+                }
+
+                // 6. Stop media tracks
+                if (localStream) {
+                    localStream.getTracks().forEach(track => track.stop());
+                }
+
+                // Show rating/summary
+                if (isTutor) {
+                    alert(`Session ended!\nDuration: ${data.duration_minutes} minutes\nEarned: ${data.credits_charged * 0.8} credits`);
+                    window.location.href = '/tutoring/dashboard';
+                } else {
+                    // Show rating modal for student
+                    document.getElementById('ratingModal').classList.remove('hidden');
+                    document.getElementById('ratingModal').classList.add('flex');
+                }
+            } catch (err) {
+                console.error('End session error:', err);
+                alert('Error ending session. Please try again.');
             }
         }
 
