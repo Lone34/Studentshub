@@ -812,15 +812,27 @@
                         method: 'POST',
                         body: formData
                     });
+                    
+                    if (!res.ok) {
+                        const errorText = await res.text();
+                        console.error(`Upload failed: HTTP ${res.status}`, errorText);
+                        if (res.status === 413) {
+                            alert('Recording too large to upload. Server limit exceeded.');
+                        } else {
+                            alert(`Recording upload failed (HTTP ${res.status}): ${errorText.substring(0, 100)}`);
+                        }
+                        return;
+                    }
+                    
                     const data = await res.json();
-                    if (!res.ok || !data.success) {
+                    if (!data.success) {
                         alert(`Recording upload failed: ${data.error || 'Unknown error'}`);
                     } else {
                         console.log('Recording uploaded successfully');
                     }
                 } catch (err) {
                     console.error('Upload error:', err);
-                    alert('Error uploading recording. Please check console.');
+                    alert(`Error uploading recording: ${err.message}`);
                 }
             } else {
                 console.warn('No recorded chunks to upload.');
