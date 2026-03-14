@@ -800,12 +800,14 @@ def api_upload_recording(room_id):
             file.save(file_path)
             print(f"DEBUG: File saved to {file_path}, Size: {os.path.getsize(file_path)}")
             
-            # Update session
-            tutoring_session.recording_path = file_path
+            # Store web-accessible relative path (not filesystem path)
+            # Templates link as href="/{{ recording_path }}" and Nginx serves /uploads from disk
+            web_path = f"uploads/recordings/{filename}"
+            tutoring_session.recording_path = web_path
             db.session.commit()
             print("DEBUG: Database updated with recording path")
             
-            return jsonify({'success': True, 'path': file_path})
+            return jsonify({'success': True, 'path': web_path})
         except Exception as e:
             print(f"DEBUG: Error saving file: {e}")
             return jsonify({'success': False, 'error': str(e)}), 500
