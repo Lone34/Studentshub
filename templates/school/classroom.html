@@ -304,25 +304,30 @@
                 if (isTeacher && data.existing_users) {
                     data.existing_users.forEach(user => {
                         if (user.user_type === 'student') {
-                            console.log(`Checking existing student: ${user.user_name} (${user.sid})`);
-                            addChatMessage(`${user.user_name} is already in class`, true);
-                            createPeerConnection(user.sid);
-                            createOffer(user.sid);
+                            console.log(`Connecting to existing student: ${user.sid}`);
+                            // 1s delay to ensure student socket is fully ready
+                            setTimeout(() => {
+                                createPeerConnection(user.sid);
+                                createOffer(user.sid);
+                            }, 1000);
                         }
                     });
                 }
             });
 
             socket.on('user_joined', (data) => {
-                console.log('→ User joined:', data.user_name, data.sid);
-                addChatMessage(`${data.user_name} joined the class`, true);
+                const name = data.user_name || 'A student';
+                addChatMessage(`${name} joined the class`, true);
                 updateStudentCount();
 
-                // If teacher, initiate connection to this specific student
+                // Teacher initiates connection to NEW student
                 if (isTeacher && data.user_type === 'student') {
-                    console.log(`Initiating connection to student ${data.sid}`);
-                    createPeerConnection(data.sid);
-                    createOffer(data.sid);
+                    console.log(`Teacher initiating connection to NEW student: ${data.sid}`);
+                    // 1s delay to ensure student socket is fully ready
+                    setTimeout(() => {
+                        createPeerConnection(data.sid);
+                        createOffer(data.sid);
+                    }, 1000);
                 }
             });
 
@@ -335,6 +340,9 @@
                 if (isTeacher && peers[data.sid]) {
                     peers[data.sid].close();
                     delete peers[data.sid];
+                }
+                if (pendingCandidates[data.sid]) {
+                    delete pendingCandidates[data.sid];
                 }
             });
 

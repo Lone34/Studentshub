@@ -242,6 +242,7 @@
         let localStream = null;
         let remoteStream = null;
         let peerConnection = null;
+        let otherPeerSid = null;
         let socket = null;
         let mediaRecorder = null;
         let recordedChunks = [];
@@ -351,55 +352,70 @@
             socket.on('room_joined', (data) => {
                 console.log('✓ Joined room, users:', data.users_in_room);
 
-                // Only the STUDENT creates the offer (to avoid race conditions)
-                // And only if there's already someone (the tutor) in the room
-                if (!isTutor && data.users_in_room > 1) {
-                    console.log('Student initiating connection...');
-                    setTimeout(() => createOffer(), 500); // Small delay to ensure tutor is ready
+                // If someone is already here, they are our target
+                if (data.existing_users && data.existing_users.length > 0) {
+                    otherPeerSid = data.existing_users[0].sid;
+                    console.log('Target peer found:', otherPeerSid);
+                }
+
+                // The SECOND person to join initiates the offer
+                if (data.users_in_room > 1) {
+                    console.log('We are the second person, initiating connection...');
+                    pendingCandidates = [];
+                    setTimeout(() => createOffer(), 1000);
                 }
             });
 
             socket.on('user_joined', async (data) => {
-                console.log('→ User joined:', data.user_name, data.user_type);
+                console.log('→ User joined:', data.user_name, data.sid);
                 addChatMessage(`${data.user_name} joined the session`, false, true);
 
-                // If we're the tutor and a student joined, wait for their offer
-                // If we're the student and someone joined, we initiate the offer
-                if (!isTutor) {
-                    console.log('Student creating offer for new user...');
-                    setTimeout(() => createOffer(), 500);
+                otherPeerSid = data.sid;
+
+                // Reset connection state for a new participant
+                if (peerConnection) {
+                    peerConnection.close();
+                    peerConnection = null;
                 }
+                pendingCandidates = [];
             });
 
             socket.on('user_left', (data) => {
                 console.log('← User left:', data.sid);
-                addChatMessage('Other participant left', false, true);
+                if (data.sid === otherPeerSid) {
+                    addChatMessage('Other participant left', false, true);
+                    otherPeerSid = null;
 
-                // Show waiting overlay
-                waitingOverlay.style.display = 'flex';
-                remoteVideo.srcObject = null;
+                    // Show waiting overlay
+                    waitingOverlay.style.display = 'flex';
+                    remoteVideo.srcObject = null;
 
-                // Reset peer connection for potential reconnection
-                if (peerConnection) {
-                    peerConnection.close();
-                    peerConnection = null;
+                    // Reset peer connection for potential reconnection
+                    if (peerConnection) {
+                        peerConnection.close();
+                        peerConnection = null;
+                    }
+                    pendingCandidates = [];
                 }
             });
 
             // WebRTC Signaling
             socket.on('offer', async (data) => {
                 console.log('← Received offer from:', data.from);
+                otherPeerSid = data.from;
                 await handleOffer(data.offer);
             });
 
             socket.on('answer', async (data) => {
                 console.log('← Received answer from:', data.from);
+                otherPeerSid = data.from;
                 await handleAnswer(data.answer);
             });
 
             socket.on('ice_candidate', async (data) => {
-                console.log('← Received ICE candidate');
-                await handleIceCandidate(data.candidate);
+                if (data.from === otherPeerSid) {
+                    await handleIceCandidate(data.candidate);
+                }
             });
 
             // Chat
@@ -459,10 +475,11 @@
 
             // Handle ICE candidates
             peerConnection.onicecandidate = (event) => {
-                if (event.candidate) {
+                if (event.candidate && otherPeerSid) {
                     socket.emit('ice_candidate', {
                         room_id: roomId,
-                        candidate: event.candidate
+                        candidate: event.candidate,
+                        to: otherPeerSid
                     });
                 }
             };
@@ -485,9 +502,10 @@
 
                 socket.emit('offer', {
                     room_id: roomId,
-                    offer: offer
+                    offer: offer,
+                    to: otherPeerSid
                 });
-                console.log('→ Sent offer');
+                console.log('→ Sent offer to:', otherPeerSid);
             } catch (err) {
                 console.error('Offer error:', err);
             }
@@ -516,9 +534,10 @@
 
                 socket.emit('answer', {
                     room_id: roomId,
-                    answer: answer
+                    answer: answer,
+                    to: otherPeerSid
                 });
-                console.log('→ Sent answer');
+                console.log('→ Sent answer to:', otherPeerSid);
             } catch (err) {
                 console.error('Answer error:', err);
             }
