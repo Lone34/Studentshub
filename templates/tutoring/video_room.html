@@ -336,9 +336,14 @@
 
         function initSocket() {
             // Connect to Socket.IO server
+            // Allow polling fallback for production (Nginx may not proxy WebSocket initially)
             socket = io({
-                transports: ['websocket'],
-                upgrade: false
+                transports: ['polling', 'websocket'],
+                upgrade: true,
+                reconnection: true,
+                reconnectionAttempts: 5,
+                reconnectionDelay: 1000,
+                timeout: 20000
             });
 
             socket.on('connect', () => {
