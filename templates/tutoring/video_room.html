@@ -335,9 +335,7 @@
 
         function initSocket() {
             // Connect to Socket.IO server
-            socket = io({
-                transports: ['websocket']
-            });
+            socket = io();
 
             socket.on('connect', () => {
                 console.log('✓ Socket connected:', socket.id);

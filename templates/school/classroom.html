@@ -206,12 +206,13 @@
         const roomId = '{{ school_class.room_id }}';
         const classId = {{ school_class.id }};
         const isTeacher = {{ 'true' if is_teacher else 'false' }};
-        const userName = isTeacher ? {{ (teacher.display_name if teacher else "Teacher") | tojson }} : { { student_name | tojson } };
+        const userName = isTeacher ? {{ (teacher.display_name if teacher else "Teacher") | tojson }} : {{ student_name | tojson }};
 
         // State
         let localStream = null;
         let peers = {}; // For teacher: map of socketId -> RTCPeerConnection
         let peerConnection = null; // For student: single connection to teacher
+        let pendingCandidates = {}; // Map of sid -> array of candidates
         let socket = null;
         let micEnabled = true;
         let cameraEnabled = true;
@@ -248,29 +249,43 @@
 
         // Initialize
         document.addEventListener('DOMContentLoaded', async () => {
-            if (isTeacher) {
-                await initTeacherMedia();
-            }
+            // Everyone initializes media to ensure they can send/receive
+            await initMedia();
             initSocket();
         });
 
-        async function initTeacherMedia() {
+        async function initMedia() {
             try {
                 localStream = await navigator.mediaDevices.getUserMedia({
                     video: true,
                     audio: true
                 });
-                localVideo.srcObject = localStream;
-                teacherVideo.srcObject = localStream; // Show on main view too
-                console.log('✓ Teacher media initialized');
+                if (localVideo) localVideo.srcObject = localStream;
+                if (isTeacher && teacherVideo) teacherVideo.srcObject = localStream;
+                console.log('✓ Media initialized');
             } catch (err) {
                 console.error('Media error:', err);
-                alert('Could not access camera/microphone.');
+                // Fallback to audio only if video fails
+                try {
+                    localStream = await navigator.mediaDevices.getUserMedia({
+                        video: false,
+                        audio: true
+                    });
+                    console.log('✓ Media initialized (audio only)');
+                } catch (audioErr) {
+                    console.error('Audio-only error:', audioErr);
+                    // alert('Could not access camera/microphone. You will be in listen-only mode.');
+                }
             }
         }
 
+        async function initTeacherMedia() {
+            // Keep for compatibility but replaced by initMedia()
+            return await initMedia();
+        }
+
         function initSocket() {
-            socket = io({ transports: ['websocket'] });
+            socket = io();
 
             socket.on('connect', () => {
                 console.log('✓ Socket connected:', socket.id);
@@ -341,12 +356,23 @@
             });
 
             socket.on('ice_candidate', async (data) => {
-                const candidate = new RTCIceCandidate(data.candidate);
-                if (isTeacher) {
-                    const pc = peers[data.from];
-                    if (pc) await pc.addIceCandidate(candidate);
+                const candidate = data.candidate;
+                const fromSid = data.from;
+
+                const pc = isTeacher ? peers[fromSid] : peerConnection;
+
+                if (pc && pc.remoteDescription && pc.remoteDescription.type) {
+                    try {
+                        await pc.addIceCandidate(new RTCIceCandidate(candidate));
+                    } catch (err) {
+                        console.error('Error adding ICE candidate:', err);
+                    }
                 } else {
-                    if (peerConnection) await peerConnection.addIceCandidate(candidate);
+                    // Queue candidate
+                    if (!pendingCandidates[fromSid]) {
+                        pendingCandidates[fromSid] = [];
+                    }
+                    pendingCandidates[fromSid].push(candidate);
                 }
             });
 
@@ -383,14 +409,19 @@
                 }
             };
 
-            // For student: handle incoming stream
-            if (!isTeacher) {
-                pc.ontrack = (event) => {
-                    console.log('✓ Received remote track');
+            // handle incoming stream
+            pc.ontrack = (event) => {
+                console.log('✓ Received remote track from', targetSid);
+                if (!isTeacher) {
+                    // Students show teacher video on main view
                     teacherVideo.srcObject = event.streams[0];
                     if (waitingOverlay) waitingOverlay.style.display = 'none';
-                };
-            }
+                } else {
+                    // Teacher might want to show student video? 
+                    // Currently no UI for multiple student videos, but we store the track
+                    console.log('Teacher received student track');
+                }
+            };
 
             if (isTeacher) {
                 peers[targetSid] = pc;
@@ -425,6 +456,15 @@
 
             try {
                 await pc.setRemoteDescription(new RTCSessionDescription(offer));
+
+                // Process queued candidates
+                if (pendingCandidates[fromSid]) {
+                    for (const candidate of pendingCandidates[fromSid]) {
+                        await pc.addIceCandidate(new RTCIceCandidate(candidate));
+                    }
+                    delete pendingCandidates[fromSid];
+                }
+
                 const answer = await pc.createAnswer();
                 await pc.setLocalDescription(answer);
                 socket.emit('answer', {
@@ -444,6 +484,14 @@
             if (pc) {
                 try {
                     await pc.setRemoteDescription(new RTCSessionDescription(answer));
+
+                    // Process queued candidates
+                    if (pendingCandidates[fromSid]) {
+                        for (const candidate of pendingCandidates[fromSid]) {
+                            await pc.addIceCandidate(new RTCIceCandidate(candidate));
+                        }
+                        delete pendingCandidates[fromSid];
+                    }
                 } catch (err) {
                     console.error('Handle answer error:', err);
                 }

@@ -10,6 +10,8 @@ socketio = SocketIO(cors_allowed_origins="*")
 
 # Store connected users per room
 room_users = {}
+# Store user names: sid -> name
+user_names = {}
 # Store user types: sid -> type
 user_types = {}
 
